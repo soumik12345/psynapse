@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from psynapse.core.nodes import AddNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.nodes.ops import AddNode, MultiplyNode, SubtractNode, ViewNode
 
 
 class NodeLibraryItem(QLabel):
@@ -184,3 +184,7 @@ class NodeLibraryPanel(QWidget):
         for node_class, node_name in nodes:
             node_item = NodeLibraryItem(node_class, node_name)
             layout.addWidget(node_item)
+
+    def get_node_class_map(self):
+        """Return a mapping of node class names to node classes."""
+        return {node_class.__name__: node_class for node_class, _ in self.node_types}
