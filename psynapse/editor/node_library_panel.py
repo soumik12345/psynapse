@@ -1,9 +1,8 @@
-"""Node library panel for browsing and adding nodes."""
-
 from PySide6.QtCore import QMimeData, QPoint, Qt
 from PySide6.QtGui import QDrag, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
+    QHBoxLayout,
     QLabel,
     QScrollArea,
     QVBoxLayout,
@@ -72,6 +71,93 @@ class NodeLibraryItem(QLabel):
             drag.exec(Qt.CopyAction)
 
 
+class CollapsibleSection(QWidget):
+    """A collapsible section with a header and content area."""
+
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+        self.title = title
+        self.is_expanded = True
+
+        # Main layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Header with toggle button
+        self.header = QWidget()
+        self.header.setCursor(Qt.PointingHandCursor)
+        header_layout = QHBoxLayout(self.header)
+        header_layout.setContentsMargins(4, 4, 4, 4)
+        header_layout.setSpacing(8)
+
+        # Arrow indicator
+        self.arrow = QLabel("▼")
+        self.arrow.setFixedWidth(12)
+        self.arrow.setStyleSheet(
+            """
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+            }
+        """
+        )
+        header_layout.addWidget(self.arrow)
+
+        # Title label
+        self.title_label = QLabel(title)
+        self.title_label.setStyleSheet(
+            """
+            QLabel {
+                color: #aaaaaa;
+                font-size: 11px;
+                font-weight: bold;
+            }
+        """
+        )
+        header_layout.addWidget(self.title_label, 1)
+
+        # Style the header
+        self.header.setStyleSheet(
+            """
+            QWidget {
+                background-color: transparent;
+            }
+            QWidget:hover {
+                background-color: #454545;
+            }
+        """
+        )
+
+        layout.addWidget(self.header)
+
+        # Content container
+        self.content = QWidget()
+        self.content_layout = QVBoxLayout(self.content)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(8)
+
+        layout.addWidget(self.content)
+
+        # Connect header click to toggle
+        self.header.mousePressEvent = self._toggle
+
+    def _toggle(self, event):
+        """Toggle the expanded/collapsed state."""
+        self.is_expanded = not self.is_expanded
+
+        if self.is_expanded:
+            self.arrow.setText("▼")
+            self.content.show()
+        else:
+            self.arrow.setText("▶")
+            self.content.hide()
+
+    def add_item(self, widget):
+        """Add a widget to the content area."""
+        self.content_layout.addWidget(widget)
+
+
 class NodeLibraryPanel(QWidget):
     """Panel displaying available nodes that can be added to the editor."""
 
@@ -124,26 +210,24 @@ class NodeLibraryPanel(QWidget):
         container_layout.setContentsMargins(8, 8, 8, 8)
         container_layout.setSpacing(8)
 
-        # Add section labels and nodes
-        self._add_section(
-            container_layout,
-            "Math Operations",
-            [
-                (AddNode, "Add"),
-                (SubtractNode, "Subtract"),
-                (MultiplyNode, "Multiply"),
-            ],
-        )
+        # Add collapsible sections with nodes
+        math_section = CollapsibleSection("Math Operations")
+        for node_class, node_name in [
+            (AddNode, "Add"),
+            (SubtractNode, "Subtract"),
+            (MultiplyNode, "Multiply"),
+        ]:
+            node_item = NodeLibraryItem(node_class, node_name)
+            math_section.add_item(node_item)
+        container_layout.addWidget(math_section)
 
         container_layout.addSpacing(8)
 
-        self._add_section(
-            container_layout,
-            "Display",
-            [
-                (ViewNode, "View"),
-            ],
-        )
+        display_section = CollapsibleSection("Display")
+        for node_class, node_name in [(ViewNode, "View")]:
+            node_item = NodeLibraryItem(node_class, node_name)
+            display_section.add_item(node_item)
+        container_layout.addWidget(display_section)
 
         # Add stretch to push everything to the top
         container_layout.addStretch()
@@ -163,27 +247,6 @@ class NodeLibraryPanel(QWidget):
             }
         """
         )
-
-    def _add_section(self, layout, section_name, nodes):
-        """Add a section with nodes to the layout."""
-        # Section label
-        section_label = QLabel(section_name)
-        section_label.setStyleSheet(
-            """
-            QLabel {
-                color: #aaaaaa;
-                font-size: 11px;
-                font-weight: bold;
-                padding: 4px 4px;
-            }
-        """
-        )
-        layout.addWidget(section_label)
-
-        # Add node items
-        for node_class, node_name in nodes:
-            node_item = NodeLibraryItem(node_class, node_name)
-            layout.addWidget(node_item)
 
     def get_node_class_map(self):
         """Return a mapping of node class names to node classes."""

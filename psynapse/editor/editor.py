@@ -1,5 +1,3 @@
-"""Main node editor window."""
-
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QKeySequence
 from PySide6.QtWidgets import QGraphicsTextItem, QMainWindow, QSplitter
