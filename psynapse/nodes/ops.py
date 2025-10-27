@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QGraphicsProxyWidget,
     QGraphicsTextItem,
+    QHBoxLayout,
     QLineEdit,
     QSpinBox,
     QVBoxLayout,
@@ -157,17 +158,18 @@ class ObjectNode(Node):
         # Create container widget
         self.widget_container = QWidget()
         self.widget_layout = QVBoxLayout()
-        self.widget_layout.setContentsMargins(5, 5, 5, 5)
-        self.widget_layout.setSpacing(5)
+        self.widget_layout.setContentsMargins(0, 0, 0, 0)
+        self.widget_layout.setSpacing(8)
+        self.widget_layout.setAlignment(Qt.AlignCenter)
         self.widget_container.setLayout(self.widget_layout)
 
         # Create type selector
         self.type_selector = QComboBox()
-        self.type_selector.addItem("Integer", SocketDataType.INT)
-        self.type_selector.addItem("Float", SocketDataType.FLOAT)
-        self.type_selector.addItem("String", SocketDataType.STRING)
-        self.type_selector.addItem("Boolean", SocketDataType.BOOL)
-        self.type_selector.setMaximumWidth(150)
+        self.type_selector.addItem("int", SocketDataType.INT)
+        self.type_selector.addItem("float", SocketDataType.FLOAT)
+        self.type_selector.addItem("str", SocketDataType.STRING)
+        self.type_selector.addItem("bool", SocketDataType.BOOL)
+        self.type_selector.setFixedWidth(160)
         self.type_selector.currentIndexChanged.connect(self._on_type_changed)
 
         # Style the type selector
@@ -177,14 +179,20 @@ class ObjectNode(Node):
                 color: #ffffff;
                 border: 1px solid #444444;
                 border-radius: 3px;
-                padding: 3px 5px;
-                font-size: 10px;
+                padding: 5px 8px;
+                padding-right: 25px;
+                font-size: 11px;
             }
             QComboBox:hover {
                 border: 1px solid #FF7700;
             }
             QComboBox::drop-down {
                 border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
             }
             QComboBox QAbstractItemView {
                 background-color: #2d2d2d;
@@ -200,13 +208,16 @@ class ObjectNode(Node):
         self.input_widget = None
         self._create_input_widget()
 
-        # Add widget to graphics
+        # Add widget to graphics and center it
         self.widget_proxy = QGraphicsProxyWidget(self.graphics)
         self.widget_proxy.setWidget(self.widget_container)
-        self.widget_proxy.setPos(10, 45)
+
+        # Center the widget container horizontally in the node
+        widget_x = (self.graphics.width - 160) / 2
+        self.widget_proxy.setPos(widget_x, 40)
 
         # Update node height to accommodate widgets
-        self.graphics.height = 150
+        self.graphics.height = 160
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
 
     def _on_type_changed(self, index: int):
@@ -244,7 +255,8 @@ class ObjectNode(Node):
         widget.setMinimum(-999999)
         widget.setMaximum(999999)
         widget.setValue(0)
-        widget.setMaximumWidth(150)
+        widget.setFixedWidth(160)
+        widget.setAlignment(Qt.AlignCenter)
         widget.valueChanged.connect(self._update_value)
 
         widget.setStyleSheet("""
@@ -253,8 +265,8 @@ class ObjectNode(Node):
                 color: #ffffff;
                 border: 1px solid #444444;
                 border-radius: 3px;
-                padding: 3px 5px;
-                font-size: 10px;
+                padding: 5px 8px;
+                font-size: 11px;
             }
             QSpinBox:focus {
                 border: 1px solid #FF7700;
@@ -262,6 +274,7 @@ class ObjectNode(Node):
             QSpinBox::up-button, QSpinBox::down-button {
                 background-color: #2d2d2d;
                 border: 1px solid #444444;
+                width: 20px;
             }
             QSpinBox::up-button:hover, QSpinBox::down-button:hover {
                 background-color: #FF7700;
@@ -278,7 +291,8 @@ class ObjectNode(Node):
         widget.setDecimals(4)
         widget.setSingleStep(0.1)
         widget.setValue(0.0)
-        widget.setMaximumWidth(150)
+        widget.setFixedWidth(160)
+        widget.setAlignment(Qt.AlignCenter)
         widget.valueChanged.connect(self._update_value)
 
         widget.setStyleSheet("""
@@ -287,8 +301,8 @@ class ObjectNode(Node):
                 color: #ffffff;
                 border: 1px solid #444444;
                 border-radius: 3px;
-                padding: 3px 5px;
-                font-size: 10px;
+                padding: 5px 8px;
+                font-size: 11px;
             }
             QDoubleSpinBox:focus {
                 border: 1px solid #FF7700;
@@ -296,6 +310,7 @@ class ObjectNode(Node):
             QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
                 background-color: #2d2d2d;
                 border: 1px solid #444444;
+                width: 20px;
             }
             QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
                 background-color: #FF7700;
@@ -308,7 +323,8 @@ class ObjectNode(Node):
         """Create string input widget."""
         widget = QLineEdit()
         widget.setPlaceholderText("Enter text...")
-        widget.setMaximumWidth(150)
+        widget.setFixedWidth(160)
+        widget.setAlignment(Qt.AlignCenter)
         widget.textChanged.connect(self._update_value)
 
         widget.setStyleSheet("""
@@ -317,8 +333,8 @@ class ObjectNode(Node):
                 color: #ffffff;
                 border: 1px solid #444444;
                 border-radius: 3px;
-                padding: 3px 5px;
-                font-size: 10px;
+                padding: 5px 8px;
+                font-size: 11px;
             }
             QLineEdit:focus {
                 border: 1px solid #FF7700;
@@ -329,6 +345,13 @@ class ObjectNode(Node):
 
     def _create_bool_widget(self):
         """Create boolean checkbox widget."""
+        # Create a container to center the checkbox
+        container = QWidget()
+        container.setFixedWidth(160)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignCenter)
+
         widget = QCheckBox("Value")
         widget.setChecked(False)
         widget.stateChanged.connect(self._update_value)
@@ -336,11 +359,12 @@ class ObjectNode(Node):
         widget.setStyleSheet("""
             QCheckBox {
                 color: #ffffff;
-                font-size: 10px;
+                font-size: 11px;
+                padding: 2px;
             }
             QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
+                width: 20px;
+                height: 20px;
                 background-color: #1a1a1a;
                 border: 1px solid #444444;
                 border-radius: 3px;
@@ -354,7 +378,8 @@ class ObjectNode(Node):
             }
         """)
 
-        return widget
+        layout.addWidget(widget)
+        return container
 
     def _update_value(self):
         """Update the current value from the input widget."""
@@ -369,7 +394,10 @@ class ObjectNode(Node):
         elif self.current_type == SocketDataType.STRING:
             self.current_value = self.input_widget.text()
         elif self.current_type == SocketDataType.BOOL:
-            self.current_value = self.input_widget.isChecked()
+            # For bool, input_widget is a container, find the checkbox
+            checkbox = self.input_widget.findChild(QCheckBox)
+            if checkbox:
+                self.current_value = checkbox.isChecked()
 
         # Update output socket value
         if self.output_sockets:
