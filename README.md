@@ -60,25 +60,6 @@ uv run python -m psynapse
    - Select nodes or connections
    - Press `Ctrl+D` (or `Cmd+D` on Mac)
 
-### Examples
-
-#### Basic Calculation
-Create a simple calculation:
-1. Add two Object nodes (set to Integer or Float)
-2. Add an Add node
-3. Add a View node
-4. Connect them: Object1 → Add, Object2 → Add, Add → View
-5. The View node will display the result
-
-#### Using Object Node
-Try different data types:
-1. Add an Object node
-2. Select Integer from the dropdown and enter a value using the spinbox
-3. Change to Float to see decimal input
-4. Change to String to enter text
-5. Change to Boolean to use a checkbox
-6. Connect to a View node to see the output
-
 ## Available Nodes
 
 ### Input Nodes
