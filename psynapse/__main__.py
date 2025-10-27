@@ -4,7 +4,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from psynapse.core.editor import NodeEditor
+from psynapse.editor import PsynapseEditor
 
 
 def main():
@@ -17,7 +17,7 @@ def main():
     app.setApplicationVersion("0.1.0")
 
     # Create and show editor
-    editor = NodeEditor()
+    editor = PsynapseEditor()
     editor.show()
 
     sys.exit(app.exec())

@@ -18,6 +18,7 @@ class NodeView(QGraphicsView):
         super().__init__(scene, parent)
 
         self.node_scene = scene
+        self.editor = parent  # Reference to the editor
 
         # View settings
         self.setRenderHints(
@@ -30,6 +31,9 @@ class NodeView(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setDragMode(QGraphicsView.RubberBandDrag)
+
+        # Enable drag and drop
+        self.setAcceptDrops(True)
 
         # Connection state
         self.temp_edge: Optional[Edge] = None
@@ -175,3 +179,33 @@ class NodeView(QGraphicsView):
                     self.scene().removeItem(item)
 
         super().keyPressEvent(event)
+
+    def dragEnterEvent(self, event):
+        """Handle drag enter event."""
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """Handle drag move event."""
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """Handle drop event."""
+        if event.mimeData().hasText():
+            node_class_name = event.mimeData().text()
+
+            # Convert view position to scene position
+            scene_pos = self.mapToScene(event.pos())
+
+            # Add node at drop position
+            if self.editor:
+                self.editor.add_node_at_position(node_class_name, scene_pos)
+
+            event.acceptProposedAction()
+        else:
+            event.ignore()

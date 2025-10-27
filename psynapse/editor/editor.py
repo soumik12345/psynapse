@@ -1,12 +1,11 @@
-"""Main node editor window."""
-
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QFont, QKeySequence
-from PySide6.QtWidgets import QGraphicsTextItem, QMainWindow, QMenu
+from PySide6.QtWidgets import QGraphicsTextItem, QMainWindow, QSplitter
 
-from psynapse.core.nodes import AddNode, MultiplyNode, SubtractNode, ViewNode
 from psynapse.core.scene import NodeScene
 from psynapse.core.view import NodeView
+from psynapse.editor.node_library_panel import NodeLibraryPanel
+from psynapse.nodes.ops import ViewNode
 
 
 class PsynapseEditor(QMainWindow):
@@ -15,13 +14,27 @@ class PsynapseEditor(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Psynapse - Node Editor")
+        self.setWindowTitle("Psynapse")
         self.setGeometry(100, 100, 1200, 800)
 
         # Create scene and view
         self.scene = NodeScene()
-        self.view = NodeView(self.scene)
-        self.setCentralWidget(self.view)
+        self.view = NodeView(self.scene, self)
+
+        # Create node library panel
+        self.node_library = NodeLibraryPanel(self)
+
+        # Create splitter to hold library and view
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.addWidget(self.node_library)
+        splitter.addWidget(self.view)
+
+        # Set initial sizes (library: 250px, view: rest)
+        splitter.setSizes([250, 950])
+        splitter.setStretchFactor(0, 0)  # Don't stretch library
+        splitter.setStretchFactor(1, 1)  # Stretch view
+
+        self.setCentralWidget(splitter)
 
         # Track all nodes
         self.nodes = []
@@ -35,11 +48,11 @@ class PsynapseEditor(QMainWindow):
         self.eval_timer.timeout.connect(self._execute_graph)
         self.eval_timer.start(100)  # Execute every 100ms
 
-        # Context menu position
-        self.context_pos = None
-
         # Add welcome message
         self._add_welcome_message()
+
+        # Node class mapping for drag-and-drop (get from library panel)
+        self.node_class_map = self.node_library.get_node_class_map()
 
     def _create_menu_bar(self):
         """Create menu bar with node options."""
@@ -59,27 +72,6 @@ class PsynapseEditor(QMainWindow):
         quit_action.setShortcut(QKeySequence.Quit)
         quit_action.triggered.connect(self.close)
         file_menu.addAction(quit_action)
-
-        # Nodes menu
-        nodes_menu = menubar.addMenu("&Nodes")
-
-        add_node_action = QAction("Add Node", self)
-        add_node_action.triggered.connect(lambda: self._add_node(AddNode))
-        nodes_menu.addAction(add_node_action)
-
-        subtract_node_action = QAction("Subtract Node", self)
-        subtract_node_action.triggered.connect(lambda: self._add_node(SubtractNode))
-        nodes_menu.addAction(subtract_node_action)
-
-        multiply_node_action = QAction("Multiply Node", self)
-        multiply_node_action.triggered.connect(lambda: self._add_node(MultiplyNode))
-        nodes_menu.addAction(multiply_node_action)
-
-        nodes_menu.addSeparator()
-
-        view_node_action = QAction("View Node", self)
-        view_node_action.triggered.connect(lambda: self._add_node(ViewNode))
-        nodes_menu.addAction(view_node_action)
 
         # View menu
         view_menu = menubar.addMenu("&View")
@@ -132,8 +124,8 @@ class PsynapseEditor(QMainWindow):
         welcome_text = QGraphicsTextItem()
         welcome_text.setPlainText(
             "Welcome to Psynapse!\n\n"
-            "Right-click anywhere to add nodes\n"
-            "or use the 'Nodes' menu at the top of your screen.\n\n"
+            "Drag nodes from the library panel on the left\n"
+            "into the editor to add them.\n\n"
             "Drag from output (●) to input (●) to connect nodes."
         )
         welcome_text.setDefaultTextColor(QColor("#888888"))
@@ -149,24 +141,13 @@ class PsynapseEditor(QMainWindow):
         self.scene.addItem(welcome_text)
         self.welcome_text = welcome_text
 
-    def _add_node(self, node_class):
-        """Add a new node to the scene."""
-        # Remove welcome message when first node is added
-        if hasattr(self, "welcome_text") and self.welcome_text:
-            self.scene.removeItem(self.welcome_text)
-            self.welcome_text = None
-
-        return self._add_node_internal(node_class)
-
-    def _add_node_internal(self, node_class):
+    def _add_node_internal(self, node_class, position=None):
         """Internal method to add a new node to the scene."""
         node = node_class()
 
-        # Position at center of view or at context menu position
-        if self.context_pos:
-            scene_pos = self.view.mapToScene(self.context_pos)
-            node.set_position(scene_pos.x(), scene_pos.y())
-            self.context_pos = None
+        # Position at specified location or center of view
+        if position:
+            node.set_position(position.x(), position.y())
         else:
             view_center = self.view.viewport().rect().center()
             scene_pos = self.view.mapToScene(view_center)
@@ -182,24 +163,14 @@ class PsynapseEditor(QMainWindow):
 
         return node
 
-    def contextMenuEvent(self, event):
-        """Show context menu for adding nodes."""
-        self.context_pos = event.pos()
+    def add_node_at_position(self, node_class_name, position):
+        """Add a node at a specific position (called from drag-and-drop)."""
+        if node_class_name in self.node_class_map:
+            node_class = self.node_class_map[node_class_name]
 
-        context_menu = QMenu(self)
+            # Remove welcome message when first node is added
+            if hasattr(self, "welcome_text") and self.welcome_text:
+                self.scene.removeItem(self.welcome_text)
+                self.welcome_text = None
 
-        add_action = context_menu.addAction("Add Node")
-        add_action.triggered.connect(lambda: self._add_node(AddNode))
-
-        subtract_action = context_menu.addAction("Subtract Node")
-        subtract_action.triggered.connect(lambda: self._add_node(SubtractNode))
-
-        multiply_action = context_menu.addAction("Multiply Node")
-        multiply_action.triggered.connect(lambda: self._add_node(MultiplyNode))
-
-        context_menu.addSeparator()
-
-        view_action = context_menu.addAction("View Node")
-        view_action.triggered.connect(lambda: self._add_node(ViewNode))
-
-        context_menu.exec(event.globalPos())
+            return self._add_node_internal(node_class, position)
