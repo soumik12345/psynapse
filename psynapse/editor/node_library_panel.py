@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from psynapse.nodes.ops import AddNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.nodes.ops import AddNode, MultiplyNode, ObjectNode, SubtractNode, ViewNode
 
 
 class NodeLibraryItem(QLabel):
@@ -170,6 +170,7 @@ class NodeLibraryPanel(QWidget):
             (SubtractNode, "Subtract"),
             (MultiplyNode, "Multiply"),
             (ViewNode, "View"),
+            (ObjectNode, "Object"),
         ]
 
         self._setup_ui()
@@ -211,6 +212,14 @@ class NodeLibraryPanel(QWidget):
         container_layout.setSpacing(8)
 
         # Add collapsible sections with nodes
+        input_section = CollapsibleSection("Input")
+        for node_class, node_name in [(ObjectNode, "Object")]:
+            node_item = NodeLibraryItem(node_class, node_name)
+            input_section.add_item(node_item)
+        container_layout.addWidget(input_section)
+
+        container_layout.addSpacing(8)
+
         math_section = CollapsibleSection("Math Operations")
         for node_class, node_name in [
             (AddNode, "Add"),

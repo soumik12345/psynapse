@@ -2,7 +2,17 @@ from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QGraphicsTextItem
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QGraphicsProxyWidget,
+    QGraphicsTextItem,
+    QLineEdit,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from psynapse.core.node import Node
 from psynapse.core.socket_types import SocketDataType
@@ -129,3 +139,242 @@ class ViewNode(Node):
             self.display_text.setPlainText(display_str)
 
         return value
+
+
+class ObjectNode(Node):
+    """Node that creates and outputs a typed value."""
+
+    def __init__(self):
+        super().__init__(
+            title="Object",
+            inputs=[],
+            outputs=[("Value", SocketDataType.ANY)],
+        )
+
+        self.current_value = None
+        self.current_type = SocketDataType.INT
+
+        # Create container widget
+        self.widget_container = QWidget()
+        self.widget_layout = QVBoxLayout()
+        self.widget_layout.setContentsMargins(5, 5, 5, 5)
+        self.widget_layout.setSpacing(5)
+        self.widget_container.setLayout(self.widget_layout)
+
+        # Create type selector
+        self.type_selector = QComboBox()
+        self.type_selector.addItem("Integer", SocketDataType.INT)
+        self.type_selector.addItem("Float", SocketDataType.FLOAT)
+        self.type_selector.addItem("String", SocketDataType.STRING)
+        self.type_selector.addItem("Boolean", SocketDataType.BOOL)
+        self.type_selector.setMaximumWidth(150)
+        self.type_selector.currentIndexChanged.connect(self._on_type_changed)
+
+        # Style the type selector
+        self.type_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 10px;
+            }
+            QComboBox:hover {
+                border: 1px solid #FF7700;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                selection-background-color: #FF7700;
+                border: 1px solid #444444;
+            }
+        """)
+
+        self.widget_layout.addWidget(self.type_selector)
+
+        # Placeholder for input widget
+        self.input_widget = None
+        self._create_input_widget()
+
+        # Add widget to graphics
+        self.widget_proxy = QGraphicsProxyWidget(self.graphics)
+        self.widget_proxy.setWidget(self.widget_container)
+        self.widget_proxy.setPos(10, 45)
+
+        # Update node height to accommodate widgets
+        self.graphics.height = 150
+        self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+    def _on_type_changed(self, index: int):
+        """Handle type selector change."""
+        self.current_type = self.type_selector.itemData(index)
+        self._create_input_widget()
+
+    def _create_input_widget(self):
+        """Create appropriate input widget based on selected type."""
+        # Remove old input widget if exists
+        if self.input_widget:
+            self.widget_layout.removeWidget(self.input_widget)
+            self.input_widget.deleteLater()
+            self.input_widget = None
+
+        # Create new input widget based on type
+        if self.current_type == SocketDataType.INT:
+            self.input_widget = self._create_int_widget()
+        elif self.current_type == SocketDataType.FLOAT:
+            self.input_widget = self._create_float_widget()
+        elif self.current_type == SocketDataType.STRING:
+            self.input_widget = self._create_string_widget()
+        elif self.current_type == SocketDataType.BOOL:
+            self.input_widget = self._create_bool_widget()
+
+        if self.input_widget:
+            self.widget_layout.addWidget(self.input_widget)
+
+        # Update the value
+        self._update_value()
+
+    def _create_int_widget(self):
+        """Create integer spinbox widget."""
+        widget = QSpinBox()
+        widget.setMinimum(-999999)
+        widget.setMaximum(999999)
+        widget.setValue(0)
+        widget.setMaximumWidth(150)
+        widget.valueChanged.connect(self._update_value)
+
+        widget.setStyleSheet("""
+            QSpinBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 10px;
+            }
+            QSpinBox:focus {
+                border: 1px solid #FF7700;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                background-color: #2d2d2d;
+                border: 1px solid #444444;
+            }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                background-color: #FF7700;
+            }
+        """)
+
+        return widget
+
+    def _create_float_widget(self):
+        """Create float spinbox widget."""
+        widget = QDoubleSpinBox()
+        widget.setMinimum(-999999.0)
+        widget.setMaximum(999999.0)
+        widget.setDecimals(4)
+        widget.setSingleStep(0.1)
+        widget.setValue(0.0)
+        widget.setMaximumWidth(150)
+        widget.valueChanged.connect(self._update_value)
+
+        widget.setStyleSheet("""
+            QDoubleSpinBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 10px;
+            }
+            QDoubleSpinBox:focus {
+                border: 1px solid #FF7700;
+            }
+            QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+                background-color: #2d2d2d;
+                border: 1px solid #444444;
+            }
+            QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+                background-color: #FF7700;
+            }
+        """)
+
+        return widget
+
+    def _create_string_widget(self):
+        """Create string input widget."""
+        widget = QLineEdit()
+        widget.setPlaceholderText("Enter text...")
+        widget.setMaximumWidth(150)
+        widget.textChanged.connect(self._update_value)
+
+        widget.setStyleSheet("""
+            QLineEdit {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 10px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #FF7700;
+            }
+        """)
+
+        return widget
+
+    def _create_bool_widget(self):
+        """Create boolean checkbox widget."""
+        widget = QCheckBox("Value")
+        widget.setChecked(False)
+        widget.stateChanged.connect(self._update_value)
+
+        widget.setStyleSheet("""
+            QCheckBox {
+                color: #ffffff;
+                font-size: 10px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                background-color: #1a1a1a;
+                border: 1px solid #444444;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:hover {
+                border: 1px solid #FF7700;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #FF7700;
+                border: 1px solid #FF7700;
+            }
+        """)
+
+        return widget
+
+    def _update_value(self):
+        """Update the current value from the input widget."""
+        if self.input_widget is None:
+            self.current_value = None
+            return
+
+        if self.current_type == SocketDataType.INT:
+            self.current_value = self.input_widget.value()
+        elif self.current_type == SocketDataType.FLOAT:
+            self.current_value = self.input_widget.value()
+        elif self.current_type == SocketDataType.STRING:
+            self.current_value = self.input_widget.text()
+        elif self.current_type == SocketDataType.BOOL:
+            self.current_value = self.input_widget.isChecked()
+
+        # Update output socket value
+        if self.output_sockets:
+            self.output_sockets[0].value = self.current_value
+
+    def execute(self) -> Any:
+        """Return the current value."""
+        return self.current_value

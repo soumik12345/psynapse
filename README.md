@@ -5,7 +5,8 @@ A beautiful node-based UI editor built with Python and PySide6, inspired by Node
 ## Features
 
 - **Visual Node Editor**: Intuitive drag-and-drop interface for creating node graphs
-- **Built-in Nodes**: Includes Add, Subtract, Multiply, and View nodes
+- **Built-in Nodes**: Includes Object, Add, Subtract, Multiply, and View nodes
+- **Typed Input Nodes**: Object node with dynamic widgets for different data types (int, float, string, bool)
 - **Real-time Evaluation**: Automatic graph evaluation and result display
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
 - **Flexible Connections**: Connect nodes with bezier curve edges
@@ -59,16 +60,40 @@ uv run python -m psynapse
    - Select nodes or connections
    - Press `Ctrl+D` (or `Cmd+D` on Mac)
 
-### Example
+### Examples
 
+#### Basic Calculation
 Create a simple calculation:
-1. Add two Add nodes
-2. Add a Multiply node
+1. Add two Object nodes (set to Integer or Float)
+2. Add an Add node
 3. Add a View node
-4. Connect them: Add1 → Multiply, Add2 → Multiply, Multiply → View
+4. Connect them: Object1 → Add, Object2 → Add, Add → View
 5. The View node will display the result
 
+#### Using Object Node
+Try different data types:
+1. Add an Object node
+2. Select Integer from the dropdown and enter a value using the spinbox
+3. Change to Float to see decimal input
+4. Change to String to enter text
+5. Change to Boolean to use a checkbox
+6. Connect to a View node to see the output
+
 ## Available Nodes
+
+### Input Nodes
+
+- **Object Node**: Creates and outputs typed values with dynamic input widgets
+  - Output type: Any (adapts to selected type)
+  - Features:
+    - **Type Selector**: Dropdown to choose data type (Integer, Float, String, Boolean)
+    - **Dynamic Widgets**:
+      - **Integer**: Spinbox with up/down arrows (range: -999999 to 999999)
+      - **Float**: Decimal spinbox with up/down arrows and 4 decimal places
+      - **String**: Text input field
+      - **Boolean**: Checkbox
+    - Widget automatically changes when type is switched
+    - Perfect for providing constant values to your node graph
 
 ### Math Nodes
 
@@ -165,15 +190,6 @@ When you use `INT`, `FLOAT`, or `STRING` types for input sockets:
 - **Left Drag (on socket)**: Create connection
 - **Right Drag**: Pan canvas
 - **Mouse Wheel**: Zoom in/out
-
-## Requirements
-
-- Python >= 3.10
-- PySide6 >= 6.10.0
-
-## License
-
-See LICENSE file for details.
 
 ## Acknowledgments
 
