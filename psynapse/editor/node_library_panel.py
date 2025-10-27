@@ -9,7 +9,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from psynapse.nodes.ops import AddNode, MultiplyNode, ObjectNode, SubtractNode, ViewNode
+from psynapse.nodes.object_node import ObjectNode
+from psynapse.nodes.ops import AddNode, MultiplyNode, SubtractNode, ViewNode
 
 
 class NodeLibraryItem(QLabel):
