@@ -10,10 +10,10 @@ from PySide6.QtWidgets import (
     QLineEdit,
 )
 
-from psynapse.socket_types import SocketDataType
+from psynapse.core.socket_types import SocketDataType
 
 if TYPE_CHECKING:
-    from psynapse.node import Node
+    from psynapse.core.node import Node
 
 
 class SocketType(Enum):

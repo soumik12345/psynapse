@@ -1,14 +1,14 @@
 """Psynapse - A node-based UI editor for Python."""
 
-from psynapse.editor import NodeEditor
-from psynapse.node import Node
-from psynapse.nodes import AddNode, MultiplyNode, SubtractNode, ViewNode
-from psynapse.scene import NodeScene
-from psynapse.socket_types import SocketDataType
-from psynapse.view import NodeView
+from psynapse.core.node import Node
+from psynapse.core.nodes import AddNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.core.scene import NodeScene
+from psynapse.core.socket_types import SocketDataType
+from psynapse.core.view import NodeView
+from psynapse.editor import PsynapseEditor
 
 __all__ = [
-    "NodeEditor",
+    "PsynapseEditor",
     "Node",
     "AddNode",
     "SubtractNode",

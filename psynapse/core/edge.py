@@ -6,7 +6,7 @@ from PySide6.QtCore import QPointF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
 
-from psynapse.socket import Socket
+from psynapse.core.socket import Socket
 
 
 class Edge:

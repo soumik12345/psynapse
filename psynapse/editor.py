@@ -4,12 +4,12 @@ from PySide6.QtCore import QTimer
 from PySide6.QtGui import QAction, QFont, QKeySequence
 from PySide6.QtWidgets import QGraphicsTextItem, QMainWindow, QMenu
 
-from psynapse.nodes import AddNode, MultiplyNode, SubtractNode, ViewNode
-from psynapse.scene import NodeScene
-from psynapse.view import NodeView
+from psynapse.core.nodes import AddNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.core.scene import NodeScene
+from psynapse.core.view import NodeView
 
 
-class NodeEditor(QMainWindow):
+class PsynapseEditor(QMainWindow):
     """Main node editor window."""
 
     def __init__(self):

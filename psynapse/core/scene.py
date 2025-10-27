@@ -1,5 +1,3 @@
-"""Node editor scene."""
-
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsScene
 

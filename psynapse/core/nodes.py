@@ -6,8 +6,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QGraphicsTextItem
 
-from psynapse.node import Node
-from psynapse.socket_types import SocketDataType
+from psynapse.core.node import Node
+from psynapse.core.socket_types import SocketDataType
 
 
 class AddNode(Node):

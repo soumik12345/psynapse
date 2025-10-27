@@ -6,9 +6,9 @@ from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QGraphicsView
 
-from psynapse.edge import Edge
-from psynapse.scene import NodeScene
-from psynapse.socket import Socket, SocketGraphics, SocketType
+from psynapse.core.edge import Edge
+from psynapse.core.scene import NodeScene
+from psynapse.core.socket import Socket, SocketGraphics, SocketType
 
 
 class NodeView(QGraphicsView):

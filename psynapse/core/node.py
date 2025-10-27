@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
     QGraphicsTextItem,
 )
 
-from psynapse.socket import Socket, SocketType
-from psynapse.socket_types import SocketDataType
+from psynapse.core.socket import Socket, SocketType
+from psynapse.core.socket_types import SocketDataType
 
 
 class Node:

@@ -4,7 +4,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from psynapse.editor import NodeEditor
+from psynapse.core.editor import NodeEditor
 
 
 def main():
