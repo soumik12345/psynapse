@@ -1,0 +1,77 @@
+site_name: Psynapse
+repo_name: soumik12345/psynapse
+repo_url: https://github.com/soumik12345/psynapse
+edit_uri: https://github.com/soumik12345/psynapse/tree/main/docs
+
+theme:
+  name: material
+  icon:
+    edit: material/pencil
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.tabs.link
+    - content.tooltips
+    - navigation.tracking
+    - navigation.expand
+    - navigation.tabs
+
+markdown_extensions:
+  - admonition
+  # Code syntax highlighting with line numbers and anchors
+  - pymdownx.highlight:
+      # Adds anchors to line numbers
+      anchor_linenums: true
+      # Wraps lines in span elements
+      line_spans: __span
+      # Adds language class to code blocks
+      pygments_lang_class: true
+  # Enables inline code highlighting
+  - pymdownx.inlinehilite
+  # Allows including content from other files
+  - pymdownx.snippets
+  # Enables nested code blocks and custom fences
+  - pymdownx.superfences
+  # Adds support for callouts/notes/warnings
+  - admonition
+  # Enables collapsible blocks (expandable content)
+  - pymdownx.details
+  # Creates tabbed content (like installation examples)
+  - pymdownx.tabbed:
+      # Uses an alternative styling for tabs
+      alternate_style: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            # Controls whether to show symbol types in the table of contents
+            show_symbol_type_toc: true
+            # Controls whether to show symbol type in the heading
+            show_symbol_type_heading: true
+            # Controls whether to show the root heading (module/class name)
+            show_root_heading: true
+            # Controls whether to show the source code
+            show_source: false
+            # Specifies the docstring style to parse (Google style in this case)
+            docstring_style: google
+            # Controls the order of members (by source order in this case)
+            members_order: source
+            # Controls whether to sort members alphabetically
+            sort_members: false
+
+nav:
+  - Home: index.md
+  - Error Handling: error.md
