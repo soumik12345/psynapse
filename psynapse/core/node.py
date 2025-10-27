@@ -1,5 +1,3 @@
-"""Base node class."""
-
 from typing import Any
 
 from PySide6.QtCore import Qt
@@ -18,6 +16,9 @@ from psynapse.core.socket_types import SocketDataType
 class Node:
     """Base class for all nodes."""
 
+    # Class-level error handler (set by editor)
+    error_handler = None
+
     def __init__(
         self,
         title: str = "Node",
@@ -28,6 +29,7 @@ class Node:
         # Handle both old format (list of strings) and new format (list of tuples)
         self.inputs = inputs or []
         self.outputs = outputs or []
+        self._last_error = None
 
         # Create graphics item
         self.graphics = NodeGraphics(self)
@@ -100,6 +102,20 @@ class Node:
         """Execute node - override in subclasses."""
         return None
 
+    def execute_safe(self) -> Any:
+        """Execute node with error handling."""
+        try:
+            self._last_error = None
+            return self.execute()
+        except Exception as e:
+            self._last_error = e
+            if Node.error_handler:
+                Node.error_handler(self, e)
+            # Return default value instead of propagating error
+            if self.output_sockets:
+                return self.output_sockets[0].value
+            return None
+
     def get_input_value(self, index: int) -> Any:
         """Get value from input socket."""
         if index >= len(self.input_sockets):
@@ -127,15 +143,21 @@ class NodeGraphics(QGraphicsRectItem):
         self._color_background = QColor("#212121")
         self._color_title = QColor("#2d2d2d")
         self._color_selected = QColor("#FFA637")
+        self._color_error = QColor("#ff4444")
 
         # Pens and brushes
         self._pen_default = QPen(QColor("#000000"))
         self._pen_default.setWidth(2)
         self._pen_selected = QPen(self._color_selected)
         self._pen_selected.setWidth(3)
+        self._pen_error = QPen(self._color_error)
+        self._pen_error.setWidth(3)
 
         self._brush_title = QBrush(self._color_title)
         self._brush_background = QBrush(self._color_background)
+
+        # Error state
+        self.has_error = False
 
         # Set up
         self.setRect(0, 0, self.width, self.height)
@@ -164,6 +186,11 @@ class NodeGraphics(QGraphicsRectItem):
             self.node.update_edges()
         return super().itemChange(change, value)
 
+    def set_error_state(self, has_error: bool):
+        """Set or clear the error state for this node."""
+        self.has_error = has_error
+        self.update()  # Trigger a repaint
+
     def paint(self, painter: QPainter, option, widget=None):
         """Custom paint method."""
         # Draw title background
@@ -188,8 +215,10 @@ class NodeGraphics(QGraphicsRectItem):
         )
         painter.drawRect(0, self.title_height, self.width, self.edge_size)
 
-        # Draw outline
-        if self.isSelected():
+        # Draw outline - error state takes priority over selection
+        if self.has_error:
+            painter.setPen(self._pen_error)
+        elif self.isSelected():
             painter.setPen(self._pen_selected)
         else:
             painter.setPen(self._pen_default)

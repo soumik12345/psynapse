@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QGraphicsTextItem, QMainWindow, QSplitter
 from psynapse.core.scene import NodeScene
 from psynapse.core.view import NodeView
 from psynapse.editor.node_library_panel import NodeLibraryPanel
+from psynapse.editor.toast_notification import ToastManager
 from psynapse.nodes.ops import ViewNode
 
 
@@ -40,6 +41,18 @@ class PsynapseEditor(QMainWindow):
         self.nodes = []
         self.view_nodes = []
 
+        # Create toast manager for error notifications
+        self.toast_manager = ToastManager(self)
+
+        # Track current errors to prevent duplicates and stop execution
+        self.current_errors = {}  # node_id -> error_message
+        self.execution_paused = False
+
+        # Set up error handler for nodes
+        from psynapse.core.node import Node
+
+        Node.error_handler = self._handle_node_error
+
         # Create menu bar
         self._create_menu_bar()
 
@@ -53,6 +66,9 @@ class PsynapseEditor(QMainWindow):
 
         # Node class mapping for drag-and-drop (get from library panel)
         self.node_class_map = self.node_library.get_node_class_map()
+
+        # Add status bar to show execution state
+        self.statusBar().showMessage("Ready")
 
     def _create_menu_bar(self):
         """Create menu bar with node options."""
@@ -114,8 +130,65 @@ class PsynapseEditor(QMainWindow):
 
     def _execute_graph(self):
         """Execute all view nodes in the graph."""
+        # Skip execution if paused due to error
+        if self.execution_paused:
+            return
+
         for view_node in self.view_nodes:
-            view_node.execute()
+            view_node.execute_safe()
+
+            # If node executed successfully and was previously in error, clear the highlight
+            node_id = id(view_node)
+            if node_id not in self.current_errors and view_node.graphics.has_error:
+                view_node.graphics.set_error_state(False)
+
+    def _handle_node_error(self, node, exception: Exception):
+        """Handle node execution errors by showing a toast notification."""
+        node_id = id(node)
+        error_message = f"{type(exception).__name__}: {str(exception)}"
+
+        # Only show toast if this is a new error or different error message
+        if (
+            node_id not in self.current_errors
+            or self.current_errors[node_id] != error_message
+        ):
+            self.current_errors[node_id] = error_message
+
+            # Highlight the node with a red border
+            node.graphics.set_error_state(True)
+
+            self.toast_manager.show_error(
+                error_message,
+                node.title,
+                on_close=lambda n=node: self._on_toast_closed(n),
+            )
+            # Pause execution when error occurs
+            if not self.execution_paused:
+                self.execution_paused = True
+                self.statusBar().showMessage(
+                    "⏸ Execution Paused - Fix error and close toast to resume"
+                )
+
+    def _on_toast_closed(self, node):
+        """Handle toast close - resume execution to check if error is resolved."""
+        node_id = id(node)
+
+        # Clear the error from tracking
+        if node_id in self.current_errors:
+            del self.current_errors[node_id]
+
+        # Clear the error highlight from the node
+        node.graphics.set_error_state(False)
+
+        # Resume execution - if error still exists, it will be caught again
+        self.execution_paused = False
+        self.statusBar().showMessage("▶ Execution Resumed")
+
+    def resizeEvent(self, event):
+        """Handle resize events to reposition toasts."""
+        super().resizeEvent(event)
+        if hasattr(self, "toast_manager"):
+            self.toast_manager._reposition_toasts()
 
     def _add_welcome_message(self):
         """Add a welcome message to guide users."""

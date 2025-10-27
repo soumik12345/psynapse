@@ -10,7 +10,16 @@ from PySide6.QtWidgets import (
 )
 
 from psynapse.nodes.object_node import ObjectNode
-from psynapse.nodes.ops import AddNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.nodes.ops import AddNode, DivideNode, MultiplyNode, SubtractNode, ViewNode
+
+DEFAULT_NODE_TYPES = [
+    (AddNode, "Add"),
+    (SubtractNode, "Subtract"),
+    (MultiplyNode, "Multiply"),
+    (DivideNode, "Divide"),
+    (ViewNode, "View"),
+    (ObjectNode, "Object"),
+]
 
 
 class NodeLibraryItem(QLabel):
@@ -165,18 +174,20 @@ class NodeLibraryPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Available node types
-        self.node_types = [
-            (AddNode, "Add"),
-            (SubtractNode, "Subtract"),
-            (MultiplyNode, "Multiply"),
-            (ViewNode, "View"),
-            (ObjectNode, "Object"),
-        ]
+        self.node_types = []
+        self.setup_ui()
 
-        self._setup_ui()
+    def add_default_nodes(self, container_layout):
+        """Add the default nodes to the container layout."""
+        self.node_types.extend(DEFAULT_NODE_TYPES)
+        math_section = CollapsibleSection("Default Nodes")
+        for node_class, node_name in DEFAULT_NODE_TYPES:
+            node_item = NodeLibraryItem(node_class, node_name)
+            math_section.add_item(node_item)
+        container_layout.addWidget(math_section)
+        container_layout.addSpacing(8)
 
-    def _setup_ui(self):
+    def setup_ui(self):
         """Set up the user interface."""
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -212,32 +223,7 @@ class NodeLibraryPanel(QWidget):
         container_layout.setContentsMargins(8, 8, 8, 8)
         container_layout.setSpacing(8)
 
-        # Add collapsible sections with nodes
-        input_section = CollapsibleSection("Input")
-        for node_class, node_name in [(ObjectNode, "Object")]:
-            node_item = NodeLibraryItem(node_class, node_name)
-            input_section.add_item(node_item)
-        container_layout.addWidget(input_section)
-
-        container_layout.addSpacing(8)
-
-        math_section = CollapsibleSection("Math Operations")
-        for node_class, node_name in [
-            (AddNode, "Add"),
-            (SubtractNode, "Subtract"),
-            (MultiplyNode, "Multiply"),
-        ]:
-            node_item = NodeLibraryItem(node_class, node_name)
-            math_section.add_item(node_item)
-        container_layout.addWidget(math_section)
-
-        container_layout.addSpacing(8)
-
-        display_section = CollapsibleSection("Display")
-        for node_class, node_name in [(ViewNode, "View")]:
-            node_item = NodeLibraryItem(node_class, node_name)
-            display_section.add_item(node_item)
-        container_layout.addWidget(display_section)
+        self.add_default_nodes(container_layout)
 
         # Add stretch to push everything to the top
         container_layout.addStretch()
