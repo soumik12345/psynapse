@@ -1,5 +1,3 @@
-"""Toast notification widget for error messages."""
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -8,7 +6,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
-    QWidget,
 )
 
 
@@ -24,10 +21,9 @@ class ToastNotification(QFrame):
         self.on_close_callback = on_close_callback
 
         self._setup_ui()
-        self.setWindowFlags(
-            Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-        )
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        # Make it stay on top of other widgets but within the parent window
+        self.setAutoFillBackground(True)
+        self.raise_()
 
     def _setup_ui(self):
         """Set up the toast UI."""
@@ -89,7 +85,7 @@ class ToastNotification(QFrame):
         message_label.setStyleSheet("color: #cccccc;")
         main_layout.addWidget(message_label)
 
-        # Style the toast
+        # Style the toast with solid background
         self.setStyleSheet("""
             ToastNotification {
                 background-color: #2d2d2d;
@@ -97,6 +93,7 @@ class ToastNotification(QFrame):
                 border-radius: 8px;
             }
         """)
+        self.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
 
         # Set minimum size
         self.setMinimumWidth(300)
@@ -104,36 +101,35 @@ class ToastNotification(QFrame):
 
     def close_toast(self):
         """Close this toast notification."""
-        # Call the close callback if provided
+        # Hide immediately for instant visual feedback
+        self.hide()
+
+        # Find and notify the toast manager
+        parent = self.parent()
+        if parent and hasattr(parent, "toast_manager"):
+            parent.toast_manager._remove_toast(self)
+
+        # Call the close callback if provided (after removing from manager)
         if self.on_close_callback:
             self.on_close_callback()
 
-        if self.parent():
-            # Remove from parent's toast list
-            parent = self.parent()
-            if hasattr(parent, "_remove_toast"):
-                parent._remove_toast(self)
+        # Schedule deletion
         self.deleteLater()
 
 
-class ToastManager(QWidget):
+class ToastManager:
     """Manages multiple toast notifications."""
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent_window):
+        self.parent_window = parent_window
         self.toasts = []
         self.toast_spacing = 10
         self.bottom_margin = 20
         self.right_margin = 20
 
-        # Make this widget transparent and not blocking
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-
     def show_error(self, message: str, node_title: str = None, on_close=None):
         """Show an error toast notification."""
-        toast = ToastNotification(message, node_title, on_close, self.parent())
+        toast = ToastNotification(message, node_title, on_close, self.parent_window)
         self.toasts.append(toast)
         self._reposition_toasts()
         toast.show()
@@ -146,18 +142,28 @@ class ToastManager(QWidget):
 
     def _reposition_toasts(self):
         """Reposition all toasts in a stack at the bottom-right."""
-        if not self.parent():
+        if not self.parent_window:
             return
 
-        parent_rect = self.parent().rect()
-        y_position = parent_rect.height() - self.bottom_margin
+        # Get the parent window's size
+        parent_width = self.parent_window.width()
+        parent_height = self.parent_window.height()
+
+        # Account for status bar height
+        status_bar_height = 0
+        if hasattr(self.parent_window, "statusBar") and self.parent_window.statusBar():
+            status_bar_height = self.parent_window.statusBar().height()
+
+        y_position = parent_height - self.bottom_margin - status_bar_height
 
         # Position toasts from bottom to top
         for toast in reversed(self.toasts):
-            toast_height = toast.sizeHint().height()
-            toast_width = toast.sizeHint().width()
+            # Ensure toast is properly sized
+            toast.adjustSize()
+            toast_height = toast.height()
+            toast_width = toast.width()
 
-            x_position = parent_rect.width() - toast_width - self.right_margin
+            x_position = parent_width - toast_width - self.right_margin
             y_position -= toast_height
 
             toast.move(x_position, y_position)

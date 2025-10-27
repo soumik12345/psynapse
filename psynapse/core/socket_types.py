@@ -1,5 +1,3 @@
-"""Socket data types for type checking and input widgets."""
-
 from enum import Enum
 
 

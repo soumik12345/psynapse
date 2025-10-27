@@ -1,5 +1,3 @@
-"""Socket (connection point) for nodes."""
-
 from enum import Enum
 from typing import TYPE_CHECKING
 

@@ -1,5 +1,3 @@
-"""Connection edge between sockets."""
-
 from typing import Optional
 
 from PySide6.QtCore import QPointF

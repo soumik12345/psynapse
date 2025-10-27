@@ -137,6 +137,11 @@ class PsynapseEditor(QMainWindow):
         for view_node in self.view_nodes:
             view_node.execute_safe()
 
+            # If node executed successfully and was previously in error, clear the highlight
+            node_id = id(view_node)
+            if node_id not in self.current_errors and view_node.graphics.has_error:
+                view_node.graphics.set_error_state(False)
+
     def _handle_node_error(self, node, exception: Exception):
         """Handle node execution errors by showing a toast notification."""
         node_id = id(node)
@@ -148,6 +153,10 @@ class PsynapseEditor(QMainWindow):
             or self.current_errors[node_id] != error_message
         ):
             self.current_errors[node_id] = error_message
+
+            # Highlight the node with a red border
+            node.graphics.set_error_state(True)
+
             self.toast_manager.show_error(
                 error_message,
                 node.title,
@@ -167,6 +176,9 @@ class PsynapseEditor(QMainWindow):
         # Clear the error from tracking
         if node_id in self.current_errors:
             del self.current_errors[node_id]
+
+        # Clear the error highlight from the node
+        node.graphics.set_error_state(False)
 
         # Resume execution - if error still exists, it will be caught again
         self.execution_paused = False

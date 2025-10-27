@@ -121,6 +121,7 @@ Psynapse includes a comprehensive error handling system that catches and display
 - **Toast Notifications**: Errors appear as toast notifications at the bottom-right corner of the editor
 - **Execution Pause**: When an error occurs, graph execution is automatically paused
 - **Single Toast Per Error**: Only one toast is shown for each unique error to avoid clutter
+- **Visual Node Highlighting**: Nodes with errors are highlighted with a **red border** for easy identification
 - **Visual Feedback**: Status bar shows "⏸ Execution Paused" when errors are present
 - **Error Details**: Each toast shows:
   - The node where the error occurred
@@ -130,23 +131,31 @@ Psynapse includes a comprehensive error handling system that catches and display
 ### How It Works
 
 1. When a node's `execute()` method raises an exception, the error is caught by the error handling system
-2. A toast notification appears at the bottom-right corner with the error details
-3. **Graph execution is paused** to prevent cascading errors
-4. The status bar displays "⏸ Execution Paused - Fix error and close toast to resume"
-5. **Fix the error** (e.g., change input values to avoid division by zero)
-6. **Click the ✕ button** on the toast to dismiss it
-7. Execution automatically resumes:
+2. The **node is highlighted with a red border** to visually indicate the error source
+3. A toast notification appears at the bottom-right corner with the error details
+4. **Graph execution is paused** to prevent cascading errors
+5. The status bar displays "⏸ Execution Paused - Fix error and close toast to resume"
+6. **Fix the error** (e.g., change input values to avoid division by zero)
+7. **Click the ✕ button** on the toast to dismiss it
+8. The red border is removed from the node
+9. Execution automatically resumes:
    - If the error is fixed, execution continues normally
-   - If the error persists, a new toast appears and execution pauses again
+   - If the error persists, the node is highlighted again and a new toast appears
 
 ### Error Flow
 
 ```
-Error Occurs → Toast Shown → Execution Paused → User Fixes Error → User Closes Toast → Execution Resumes
-                                                                              ↓
-                                                                    Error Still Exists?
-                                                                              ↓
-                                                                    New Toast → Pause Again
+Error Occurs → Node Highlighted (Red Border) → Toast Shown → Execution Paused
+                                                                      ↓
+                                                            User Fixes Error
+                                                                      ↓
+                                                          User Closes Toast
+                                                                      ↓
+                                                    Red Border Removed → Execution Resumes
+                                                                      ↓
+                                                            Error Still Exists?
+                                                                      ↓
+                                                    New Red Border → New Toast → Pause Again
 ```
 
 ### Example
@@ -158,10 +167,12 @@ uv run python examples/error_handling_demo.py
 
 This example demonstrates division by zero error handling:
 1. The demo starts with a divide-by-zero error
-2. A toast notification appears and execution pauses
-3. Change the denominator to a non-zero value
-4. Click the ✕ button on the toast
-5. Execution resumes and the error is resolved!
+2. The Divide node is **highlighted with a red border**
+3. A toast notification appears and execution pauses
+4. Change the denominator to a non-zero value
+5. Click the ✕ button on the toast
+6. The red border disappears and execution resumes
+7. If error is fixed, the graph continues normally!
 
 ## Extending Psynapse
 
