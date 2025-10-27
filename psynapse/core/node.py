@@ -18,6 +18,9 @@ from psynapse.core.socket_types import SocketDataType
 class Node:
     """Base class for all nodes."""
 
+    # Class-level error handler (set by editor)
+    error_handler = None
+
     def __init__(
         self,
         title: str = "Node",
@@ -28,6 +31,7 @@ class Node:
         # Handle both old format (list of strings) and new format (list of tuples)
         self.inputs = inputs or []
         self.outputs = outputs or []
+        self._last_error = None
 
         # Create graphics item
         self.graphics = NodeGraphics(self)
@@ -99,6 +103,20 @@ class Node:
     def execute(self) -> Any:
         """Execute node - override in subclasses."""
         return None
+
+    def execute_safe(self) -> Any:
+        """Execute node with error handling."""
+        try:
+            self._last_error = None
+            return self.execute()
+        except Exception as e:
+            self._last_error = e
+            if Node.error_handler:
+                Node.error_handler(self, e)
+            # Return default value instead of propagating error
+            if self.output_sockets:
+                return self.output_sockets[0].value
+            return None
 
     def get_input_value(self, index: int) -> Any:
         """Get value from input socket."""

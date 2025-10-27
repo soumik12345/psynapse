@@ -114,12 +114,10 @@ class DivideNode(Node):
         if b is None:
             b = 1.0
 
-        try:
-            result = float(a) / float(b)
-            self.output_sockets[0].value = result
-            return result
-        except (TypeError, ValueError):
-            return 0.0
+        # Convert to float and perform division (errors will be caught by error handler)
+        result = float(a) / float(b)
+        self.output_sockets[0].value = result
+        return result
 
 
 class ViewNode(Node):

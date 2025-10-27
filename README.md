@@ -5,8 +5,9 @@ A beautiful node-based UI editor built with Python and PySide6, inspired by Node
 ## Features
 
 - **Visual Node Editor**: Intuitive drag-and-drop interface for creating node graphs
-- **Built-in Nodes**: Includes Object, Add, Subtract, Multiply, and View nodes
+- **Built-in Nodes**: Includes Object, Add, Subtract, Multiply, Divide, and View nodes
 - **Typed Input Nodes**: Object node with dynamic widgets for different data types (int, float, string, bool)
+- **Error Handling**: Comprehensive error handling with persistent toast notifications
 - **Real-time Evaluation**: Automatic graph evaluation and result display
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
 - **Flexible Connections**: Connect nodes with bezier curve edges
@@ -87,6 +88,10 @@ uv run python -m psynapse
 - **Multiply Node**: Multiplies two numbers (A × B)
   - Input types: Float, Float
   - Includes input fields for direct value entry
+- **Divide Node**: Divides two numbers (A ÷ B)
+  - Input types: Float, Float
+  - Includes input fields for direct value entry
+  - Demonstrates error handling with division by zero
 
 ### Display Nodes
 
@@ -99,11 +104,64 @@ The editor is built with a modular architecture:
 
 - `scene.py`: Graphics scene with grid background
 - `view.py`: Interactive view with pan/zoom and connection handling
-- `node.py`: Base node class with socket management
+- `node.py`: Base node class with socket management and error handling
 - `socket.py`: Connection points for nodes
 - `edge.py`: Connections between sockets
 - `nodes.py`: Specific node implementations
 - `editor.py`: Main window and application logic
+- `toast_notification.py`: Error notification system
+
+## Error Handling
+
+Psynapse includes a comprehensive error handling system that catches and displays errors during node execution:
+
+### Features
+
+- **Automatic Error Detection**: All node execution errors are automatically caught
+- **Toast Notifications**: Errors appear as toast notifications at the bottom-right corner of the editor
+- **Execution Pause**: When an error occurs, graph execution is automatically paused
+- **Single Toast Per Error**: Only one toast is shown for each unique error to avoid clutter
+- **Visual Feedback**: Status bar shows "⏸ Execution Paused" when errors are present
+- **Error Details**: Each toast shows:
+  - The node where the error occurred
+  - The error type (e.g., `ZeroDivisionError`, `TypeError`, `ValueError`)
+  - The error message
+
+### How It Works
+
+1. When a node's `execute()` method raises an exception, the error is caught by the error handling system
+2. A toast notification appears at the bottom-right corner with the error details
+3. **Graph execution is paused** to prevent cascading errors
+4. The status bar displays "⏸ Execution Paused - Fix error and close toast to resume"
+5. **Fix the error** (e.g., change input values to avoid division by zero)
+6. **Click the ✕ button** on the toast to dismiss it
+7. Execution automatically resumes:
+   - If the error is fixed, execution continues normally
+   - If the error persists, a new toast appears and execution pauses again
+
+### Error Flow
+
+```
+Error Occurs → Toast Shown → Execution Paused → User Fixes Error → User Closes Toast → Execution Resumes
+                                                                              ↓
+                                                                    Error Still Exists?
+                                                                              ↓
+                                                                    New Toast → Pause Again
+```
+
+### Example
+
+Try the error handling demo:
+```bash
+uv run python examples/error_handling_demo.py
+```
+
+This example demonstrates division by zero error handling:
+1. The demo starts with a divide-by-zero error
+2. A toast notification appears and execution pauses
+3. Change the denominator to a non-zero value
+4. Click the ✕ button on the toast
+5. Execution resumes and the error is resolved!
 
 ## Extending Psynapse
 

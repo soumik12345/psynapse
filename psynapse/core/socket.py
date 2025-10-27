@@ -116,7 +116,7 @@ class Socket:
         if self.has_edge():
             edge = self.edges[0]
             if edge.start_socket and edge.start_socket.node:
-                return edge.start_socket.node.execute()
+                return edge.start_socket.node.execute_safe()
 
         # Otherwise return local value
         return self.value
