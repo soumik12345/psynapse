@@ -1,6 +1,6 @@
 # Psynapse
 
-A beautiful node-based UI editor built with Python and PySide6, inspired by Nodezator.
+A python-native node-based UI editor.
 
 ## Features
 
