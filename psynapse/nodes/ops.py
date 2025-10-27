@@ -94,6 +94,34 @@ class MultiplyNode(Node):
             return 0.0
 
 
+class DivideNode(Node):
+    """Node that divides two numbers."""
+
+    def __init__(self):
+        super().__init__(
+            title="Divide",
+            inputs=[("A", SocketDataType.FLOAT), ("B", SocketDataType.FLOAT)],
+            outputs=[("Result", SocketDataType.FLOAT)],
+        )
+
+    def execute(self) -> Any:
+        """Divide two input values."""
+        a = self.get_input_value(0)
+        b = self.get_input_value(1)
+
+        if a is None:
+            a = 1.0
+        if b is None:
+            b = 1.0
+
+        try:
+            result = float(a) / float(b)
+            self.output_sockets[0].value = result
+            return result
+        except (TypeError, ValueError):
+            return 0.0
+
+
 class ViewNode(Node):
     """Node that displays a value."""
 

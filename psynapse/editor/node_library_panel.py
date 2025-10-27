@@ -10,7 +10,16 @@ from PySide6.QtWidgets import (
 )
 
 from psynapse.nodes.object_node import ObjectNode
-from psynapse.nodes.ops import AddNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.nodes.ops import AddNode, DivideNode, MultiplyNode, SubtractNode, ViewNode
+
+DEFAULT_NODE_TYPES = [
+    (AddNode, "Add"),
+    (SubtractNode, "Subtract"),
+    (MultiplyNode, "Multiply"),
+    (DivideNode, "Divide"),
+    (ViewNode, "View"),
+    (ObjectNode, "Object"),
+]
 
 
 class NodeLibraryItem(QLabel):
@@ -165,27 +174,14 @@ class NodeLibraryPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Available node types
-        self.node_types = [
-            (AddNode, "Add"),
-            (SubtractNode, "Subtract"),
-            (MultiplyNode, "Multiply"),
-            (ViewNode, "View"),
-            (ObjectNode, "Object"),
-        ]
-
+        self.node_types = []
         self.setup_ui()
 
     def add_default_nodes(self, container_layout):
         """Add the default nodes to the container layout."""
+        self.node_types.extend(DEFAULT_NODE_TYPES)
         math_section = CollapsibleSection("Default Nodes")
-        for node_class, node_name in [
-            (AddNode, "Add"),
-            (SubtractNode, "Subtract"),
-            (MultiplyNode, "Multiply"),
-            (ViewNode, "View"),
-            (ObjectNode, "Object"),
-        ]:
+        for node_class, node_name in DEFAULT_NODE_TYPES:
             node_item = NodeLibraryItem(node_class, node_name)
             math_section.add_item(node_item)
         container_layout.addWidget(math_section)
