@@ -2807,6 +2807,10 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+backend = [
+    { name = "aiohttp" },
+    { name = "fastapi", extra = ["all"] },
+]
 build = [
     { name = "build" },
     { name = "twine" },
@@ -2842,6 +2846,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+backend = [
+    { name = "aiohttp", specifier = ">=3.13.1" },
+    { name = "fastapi", extras = ["all"], specifier = ">=0.120.1" },
+]
 build = [
     { name = "build", specifier = ">=0.10" },
     { name = "twine", specifier = ">=5.1.1" },

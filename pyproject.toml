@@ -41,6 +41,10 @@ build = [
     "wheel>=0.40",
     "build>=0.10"
 ]
+backend = [
+    "aiohttp>=3.13.1",
+    "fastapi[all]>=0.120.1",
+]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
