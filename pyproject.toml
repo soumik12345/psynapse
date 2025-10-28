@@ -1,15 +1,18 @@
 [project]
 name = "psynapse"
 dynamic = ["version"]
-description = "A node-based UI editor using PySide6"
+description = "A node-based UI editor using PySide6 with FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "aiohttp>=3.13.1",
+    "fastapi[all]>=0.120.1",
     "pyside6>=6.10.0",
 ]
 
 [project.scripts]
 psynapse = "psynapse.__main__:main"
+psynapse-backend = "uvicorn:main"
 
 [dependency-groups]
 dev = [
