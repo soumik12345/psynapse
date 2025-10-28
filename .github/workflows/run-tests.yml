@@ -28,5 +28,36 @@ jobs:
       - name: 🚀 Install Packages
         run: uv pip install -r pyproject.toml --group dev
 
+      - name: 🔧 Start Backend Server
+        run: |
+          uv run psynapse-backend &
+          BACKEND_PID=$!
+          echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
+          echo "Backend server started with PID: $BACKEND_PID"
+          
+          # Wait for backend to be ready (max 30 seconds)
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Backend server is ready!"
+              break
+            fi
+            echo "Waiting for backend server... ($i/30)"
+            sleep 1
+          done
+          
+          # Verify backend is actually running
+          if ! curl -f http://localhost:8000/health > /dev/null 2>&1; then
+            echo "Backend server failed to start!"
+            exit 1
+          fi
+
       - name: 🧪 Run the Tests
-        run: uv run pytest tests/
+        run: uv run pytest tests/ -v
+
+      - name: 🛑 Stop Backend Server
+        if: always()
+        run: |
+          if [ ! -z "$BACKEND_PID" ]; then
+            echo "Stopping backend server (PID: $BACKEND_PID)"
+            kill $BACKEND_PID || true
+          fi
