@@ -1,13 +1,13 @@
-"""Main entry point for Psynapse node editor."""
-
+import subprocess
 import sys
 
+import rich
 from PySide6.QtWidgets import QApplication
 
 from psynapse.editor import PsynapseEditor
 
 
-def main():
+def run_psynapse_editor():
     """Run the node editor application."""
     app = QApplication(sys.argv)
 
@@ -23,5 +23,24 @@ def main():
     sys.exit(app.exec())
 
 
-if __name__ == "__main__":
-    main()
+def run_psynapse_backend():
+    """Start the FastAPI backend server."""
+    rich.print("[green]INFO:[/green]\t  Starting Psynapse backend server...")
+    rich.print(
+        "[green]INFO:[/green]\t  Backend will be available at http://localhost:8000"
+    )
+    rich.print(
+        "[green]INFO:[/green]\t  Endpoints documentation will be available at http://localhost:8000/docs"
+    )
+
+    try:
+        subprocess.run(
+            ["uvicorn", "psynapse.backend.server:app", "--reload", "--host", "0.0.0.0"],
+            check=True,
+        )
+    except KeyboardInterrupt:
+        rich.print("\nShutting down backend server...")
+        sys.exit(0)
+    except subprocess.CalledProcessError as e:
+        rich.print(f"Error starting backend: {e}", file=sys.stderr)
+        sys.exit(1)

@@ -11,8 +11,8 @@ dependencies = [
 ]
 
 [project.scripts]
-psynapse = "psynapse.__main__:main"
-psynapse-backend = "uvicorn:main"
+psynapse = "psynapse.__main__:run_psynapse_editor"
+psynapse-backend = "psynapse.__main__:run_psynapse_backend"
 
 [dependency-groups]
 dev = [
