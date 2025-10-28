@@ -23,6 +23,8 @@ dev = [
     "ruff>=0.6.9",
     "textual-dev>=1.7.0",
     "openai>=1.108.2",
+    "pytest-anyio>=0.0.0",
+    "trio>=0.31.0",
 ]
 docs = [
     "mkdocs>=1.6.1",
