@@ -1,0 +1,32 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-tests:
+    name: Run Unit Tests
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 📥 Checkout the repository
+        uses: actions/checkout@v5
+
+      - name: 🐍 Install uv and set Python version ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7.1.1
+        with:
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+
+
+      - name: 🚀 Install Packages
+        run: uv pip install -r pyproject.toml --group dev
+
+      - name: 🧪 Run the Tests
+        run: uv run pytest tests/
