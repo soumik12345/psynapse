@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from psynapse.backend.executor import GraphExecutor
 from psynapse.backend.node_schemas import get_node_schemas
+from psynapse.utils import pretty_print_payload
 
 app = FastAPI(title="Psynapse Backend", version="0.1.0")
 
@@ -48,9 +49,14 @@ async def execute_graph(graph_data: GraphData):
     Returns:
         Dictionary mapping ViewNode IDs to their computed values
     """
+    pretty_print_payload(graph_data.model_dump(), "Received Graph Payload on Backend")
+
     try:
-        executor = GraphExecutor(graph_data.dict())
+        executor = GraphExecutor(graph_data.model_dump())
         results = executor.execute()
+
+        pretty_print_payload(results, "Execution Results")
+
         return {"results": results}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

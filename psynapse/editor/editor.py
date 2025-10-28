@@ -16,6 +16,7 @@ from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.toast_notification import ToastManager
 from psynapse.nodes.ops import ViewNode
+from psynapse.utils import pretty_print_payload
 
 
 class PsynapseEditor(QMainWindow):
@@ -191,6 +192,8 @@ class PsynapseEditor(QMainWindow):
             # Serialize the graph
             self.statusBar().showMessage("Serializing graph...")
             graph_data = GraphSerializer.serialize_graph(self.nodes)
+
+            pretty_print_payload(graph_data, "Graph Payload")
 
             # Execute on backend
             self.statusBar().showMessage("Executing on backend...")
