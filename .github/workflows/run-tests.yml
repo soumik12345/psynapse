@@ -24,6 +24,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: true
 
+      - name: 📦 Install System Dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1
 
       - name: 🚀 Install Packages
         run: uv pip install -r pyproject.toml --group dev --group backend
