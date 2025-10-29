@@ -14,7 +14,7 @@ A cross-platform node-based UI editor for Python.
 
 <figure class="video_container">
   <video controls="true" allowfullscreen="true">
-    <source src="assets/demo.mp4" type="video/mp4">
+    <source src="docs/assets/demo.mp4" type="video/mp4">
   </video>
 </figure>
 
