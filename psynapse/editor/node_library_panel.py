@@ -12,7 +12,8 @@ from PySide6.QtWidgets import (
 )
 
 from psynapse.nodes.object_node import ObjectNode
-from psynapse.nodes.ops import OpNode, ViewNode
+from psynapse.nodes.ops import OpNode
+from psynapse.nodes.view_node import ViewNode
 
 
 def create_op_node_factory(schema: Dict[str, Any]):

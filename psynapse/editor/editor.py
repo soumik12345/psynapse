@@ -15,7 +15,7 @@ from psynapse.core.view import NodeView
 from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.toast_notification import ToastManager
-from psynapse.nodes.ops import ViewNode
+from psynapse.nodes.view_node import ViewNode
 from psynapse.utils import pretty_print_payload
 
 
