@@ -11,8 +11,6 @@ A python-native node-based UI editor.
 - **Error Handling**: Comprehensive error handling with persistent toast notifications
 - **On-Demand Execution**: Execute graphs when you're ready with the Run button
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
-- **Flexible Connections**: Connect nodes with bezier curve edges
-- **Modern UI**: Clean, dark-themed interface with smooth interactions
 
 ## Installation
 

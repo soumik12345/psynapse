@@ -5,13 +5,12 @@ A python-native node-based UI editor.
 ## Features
 
 - **Visual Node Editor**: Intuitive drag-and-drop interface for creating node graphs
+- **Decoupled Execution**: FastAPI backend handles graph execution separately from the UI
 - **Built-in Nodes**: Includes Object, Add, Subtract, Multiply, Divide, and View nodes
 - **Typed Input Nodes**: Object node with dynamic widgets for different data types (int, float, string, bool)
 - **Error Handling**: Comprehensive error handling with persistent toast notifications
-- **Real-time Evaluation**: Automatic graph evaluation and result display
+- **On-Demand Execution**: Execute graphs when you're ready with the Run button
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
-- **Flexible Connections**: Connect nodes with bezier curve edges
-- **Modern UI**: Clean, dark-themed interface with smooth interactions
 
 ## Installation
 
@@ -21,16 +20,22 @@ uv pip install -U git+https://github.com/soumik12345/psynapse.git
 
 ## Usage
 
-### Running the Editor
+### Quick Start
+
+**1. Start the Backend Server**
+
+```bash
+uv run psynapse-backend
+```
+
+The backend will be available at `http://localhost:8000`. You can also use:
+
+**2. Launch the Editor**
+
+In another terminal:
 
 ```bash
 uv run psynapse
-```
-
-Or using Python directly:
-
-```bash
-uv run python -m psynapse
 ```
 
 ### Creating a Node Graph
@@ -48,16 +53,21 @@ uv run python -m psynapse
    - Click and drag nodes to reposition them
    - Connections update automatically
 
-4. **Viewing Results**:
-   - Add a View node to display computation results
-   - Results update in real-time as you modify the graph
+4. **Executing the Graph**:
+   - Click the "▶ Run Graph" button at the top of the editor
+   - The graph will be sent to the backend for execution
+   - Results will appear in View nodes
 
-5. **Navigation**:
+5. **Viewing Results**:
+   - Add View nodes to display computation results
+   - Results update when you run the graph
+
+6. **Navigation**:
    - **Pan**: Right-click and drag
    - **Zoom**: Mouse wheel
    - **Reset Zoom**: `Ctrl+0`
 
-6. **Deleting**:
+7. **Deleting**:
    - Select nodes or connections
    - Press `Ctrl+D` (or `Cmd+D` on Mac)
 
@@ -98,38 +108,6 @@ uv run python -m psynapse
 - **View Node**: Displays the input value in the node
   - Input type: Any (accepts any data type)
 
-## Extending Psynapse
-
-### Creating Custom Nodes
-
-Psynapse supports a type system for sockets with automatic input fields for basic types:
-
-```python
-from psynapse import Node, SocketDataType
-
-class CustomNode(Node):
-    def __init__(self):
-        super().__init__(
-            title="Custom",
-            inputs=[
-                ("Input1", SocketDataType.FLOAT),
-                ("Input2", SocketDataType.INT)
-            ],
-            outputs=[("Output", SocketDataType.FLOAT)]
-        )
-    
-    def execute(self):
-        # Get input values (automatically from widgets or connections)
-        a = self.get_input_value(0)
-        b = self.get_input_value(1)
-        
-        # Perform computation
-        result = a + b  # Your logic here
-        
-        # Store and return result
-        self.output_sockets[0].value = result
-        return result
-```
 
 ### Available Socket Types
 
