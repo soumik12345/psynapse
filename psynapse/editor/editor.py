@@ -108,6 +108,9 @@ class PsynapseEditor(QMainWindow):
         # Add welcome message
         self._add_welcome_message()
 
+        # Load node schemas from backend
+        self._load_node_schemas()
+
         # Node class mapping for drag-and-drop (get from library panel)
         self.node_class_map = self.node_library.get_node_class_map()
 
@@ -150,6 +153,27 @@ class PsynapseEditor(QMainWindow):
         reset_zoom_action.setShortcut("Ctrl+0")
         reset_zoom_action.triggered.connect(self._reset_zoom)
         view_menu.addAction(reset_zoom_action)
+
+    def _load_node_schemas(self):
+        """Load node schemas from the backend and populate the node library."""
+        try:
+            # Try to fetch schemas from backend
+            response = self.backend_client.get_node_schemas_sync()
+            # Backend returns {"nodes": [...]} not {"schemas": [...]}
+            schemas = response.get("nodes", [])
+            if schemas:
+                self.node_library.load_schemas(schemas)
+                self.statusBar().showMessage(
+                    f"✓ Loaded {len(schemas)} node types from backend"
+                )
+            else:
+                self.statusBar().showMessage("⚠ No schemas received from backend")
+        except Exception as e:
+            # If backend is not available, continue without schemas
+            # The operation nodes will not be available, but the app can still function
+            self.statusBar().showMessage(
+                f"⚠ Could not load node schemas from backend: {str(e)}"
+            )
 
     def _clear_scene(self):
         """Clear all nodes from the scene."""

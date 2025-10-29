@@ -3,18 +3,14 @@
 from typing import Any, Dict, List
 
 from psynapse.core.node import Node
-from psynapse.nodes.ops import AddNode, DivideNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.nodes.ops import OpNode, ViewNode
 
 
 class GraphSerializer:
     """Serializes a node graph to a format suitable for backend execution."""
 
-    # Map node classes to their backend type names
+    # Map node classes to their backend type names (for non-OpNode nodes)
     NODE_TYPE_MAP = {
-        AddNode: "add",
-        SubtractNode: "subtract",
-        MultiplyNode: "multiply",
-        DivideNode: "divide",
         ViewNode: "view",
     }
 
@@ -113,6 +109,11 @@ class GraphSerializer:
         Returns:
             Type name string (e.g., 'add', 'subtract')
         """
+        # Check if this is an OpNode (schema-based node)
+        if isinstance(node, OpNode):
+            return node.node_type
+
+        # Check the NODE_TYPE_MAP for other node types
         for node_class, type_name in GraphSerializer.NODE_TYPE_MAP.items():
             if isinstance(node, node_class):
                 return type_name
