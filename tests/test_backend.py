@@ -26,7 +26,8 @@ async def test_node_schemas():
     client = BackendClient()
     schemas_response = await client.get_node_schemas()
     schemas = schemas_response.get("nodes", [])
-    assert len(schemas) == 5, "Expected 5 node schemas, got " + str(len(schemas))
+    # ViewNode is frontend-only, so we expect 4 operation schemas
+    assert len(schemas) == 4, "Expected 4 node schemas, got " + str(len(schemas))
 
 
 @pytest.mark.anyio

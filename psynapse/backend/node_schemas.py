@@ -3,6 +3,8 @@
 from typing import Any, Dict, List
 
 # Define node schemas
+# Note: ViewNode is not included here because it's a frontend-only node
+# that displays values but doesn't perform backend computation
 NODE_SCHEMAS = [
     {
         "name": "add",
@@ -43,13 +45,6 @@ NODE_SCHEMAS = [
         "returns": [
             {"name": "result", "type": "float"},
         ],
-    },
-    {
-        "name": "view",
-        "params": [
-            {"name": "value", "type": "any"},
-        ],
-        "returns": [],
     },
 ]
 
