@@ -59,6 +59,17 @@ class GraphExecutor:
         if not node:
             raise ValueError(f"Node {node_id} not found")
 
+        # Special handling for ObjectNode - it has a preset output value
+        if node["type"] == "object":
+            # ObjectNode has no inputs, just return its output value
+            output_sockets = node.get("output_sockets", [])
+            if output_sockets and "value" in output_sockets[0]:
+                result = output_sockets[0]["value"]
+            else:
+                result = None
+            self.node_cache[node_id] = result
+            return result
+
         # Get input values by recursively executing connected nodes
         inputs = self._get_node_inputs(node_id)
 

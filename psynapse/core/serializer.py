@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 from psynapse.core.node import Node
+from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
 from psynapse.nodes.view_node import ViewNode
 
@@ -12,6 +13,7 @@ class GraphSerializer:
 
     # Map node classes to their backend type names (for non-OpNode nodes)
     NODE_TYPE_MAP = {
+        ObjectNode: "object",
         ViewNode: "view",
     }
 
@@ -53,12 +55,14 @@ class GraphSerializer:
             # Serialize output sockets
             output_sockets = []
             for socket in node.output_sockets:
-                output_sockets.append(
-                    {
-                        "id": f"{node_id}_output_{socket.index}",
-                        "name": socket.label.lower(),
-                    }
-                )
+                socket_data = {
+                    "id": f"{node_id}_output_{socket.index}",
+                    "name": socket.label.lower(),
+                }
+                # Include value for output sockets that have a preset value (e.g., ObjectNode)
+                if socket.value is not None:
+                    socket_data["value"] = socket.value
+                output_sockets.append(socket_data)
 
             serialized_nodes.append(
                 {

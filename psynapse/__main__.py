@@ -39,7 +39,6 @@ def run_psynapse_backend():
             check=True,
         )
     except KeyboardInterrupt:
-        rich.print("\nShutting down backend server...")
         sys.exit(0)
     except subprocess.CalledProcessError as e:
         rich.print(f"Error starting backend: {e}", file=sys.stderr)
