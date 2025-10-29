@@ -26,7 +26,7 @@ async def test_node_schemas():
     client = BackendClient()
     schemas_response = await client.get_node_schemas()
     schemas = schemas_response.get("nodes", [])
-    # ViewNode is frontend-only, so we expect 4 operation schemas
+    # ViewNode and ObjectNode are frontend-only, so we expect 4 operation schemas
     assert len(schemas) == 4, "Expected 4 node schemas, got " + str(len(schemas))
 
 
@@ -125,3 +125,66 @@ async def test_backend_grapth_execution(graph_data: dict[str, Any]):
         assert results["node_2"].get("value") == 5.0, (
             "Expected result of 5.0, got " + str(results["node_2"].get("value"))
         )
+
+
+@pytest.mark.anyio
+async def test_object_node_as_input():
+    """Test that ObjectNode can provide values to operation nodes."""
+    client = BackendClient()
+
+    # Graph: ObjectNode(10.0) + ObjectNode(25.0) -> ViewNode
+    graph_data = {
+        "nodes": [
+            # ObjectNode #1 - provides value 10.0
+            {
+                "id": "node_0",
+                "type": "object",
+                "input_sockets": [],
+                "output_sockets": [
+                    {"id": "node_0_output_0", "name": "value", "value": 10.0}
+                ],
+            },
+            # ObjectNode #2 - provides value 25.0
+            {
+                "id": "node_1",
+                "type": "object",
+                "input_sockets": [],
+                "output_sockets": [
+                    {"id": "node_1_output_0", "name": "value", "value": 25.0}
+                ],
+            },
+            # Add node
+            {
+                "id": "node_2",
+                "type": "add",
+                "input_sockets": [
+                    {"id": "node_2_input_0", "name": "a", "value": None},
+                    {"id": "node_2_input_1", "name": "b", "value": None},
+                ],
+                "output_sockets": [{"id": "node_2_output_0", "name": "result"}],
+            },
+            # ViewNode
+            {
+                "id": "node_3",
+                "type": "view",
+                "input_sockets": [
+                    {"id": "node_3_input_0", "name": "value", "value": None}
+                ],
+                "output_sockets": [],
+            },
+        ],
+        "edges": [
+            {"start_socket": "node_0_output_0", "end_socket": "node_2_input_0"},
+            {"start_socket": "node_1_output_0", "end_socket": "node_2_input_1"},
+            {"start_socket": "node_2_output_0", "end_socket": "node_3_input_0"},
+        ],
+    }
+
+    result = await client.execute_graph(graph_data)
+    results = result.get("results", {})
+
+    assert "node_3" in results, "Expected result for node_3, got " + str(results)
+    assert results["node_3"].get("value") == 35.0, (
+        "Expected result of 35.0 (10.0 + 25.0), got "
+        + str(results["node_3"].get("value"))
+    )
