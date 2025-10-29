@@ -74,4 +74,6 @@ plugins:
 
 nav:
   - Home: index.md
-  - Error Handling: error.md
+  - Implementation Details:
+    - Architecture: implementation-details/architecture.md
+    - Backend: implementation-details/backend.md

@@ -1,15 +1,19 @@
 [project]
 name = "psynapse"
 dynamic = ["version"]
-description = "A node-based UI editor using PySide6"
+description = "A node-based UI editor using PySide6 with FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "aiohttp>=3.13.1",
+    "fastapi[all]>=0.120.1",
     "pyside6>=6.10.0",
+    "rich>=14.2.0",
 ]
 
 [project.scripts]
-psynapse = "psynapse.__main__:main"
+psynapse = "psynapse.__main__:run_psynapse_editor"
+psynapse-backend = "psynapse.__main__:run_psynapse_backend"
 
 [dependency-groups]
 dev = [
@@ -20,6 +24,8 @@ dev = [
     "ruff>=0.6.9",
     "textual-dev>=1.7.0",
     "openai>=1.108.2",
+    "pytest-anyio>=0.0.0",
+    "trio>=0.31.0",
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -35,6 +41,10 @@ build = [
     "twine>=5.1.1",
     "wheel>=0.40",
     "build>=0.10"
+]
+backend = [
+    "aiohttp>=3.13.1",
+    "fastapi[all]>=0.120.1",
 ]
 
 [build-system]

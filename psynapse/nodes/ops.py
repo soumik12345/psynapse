@@ -1,159 +1,70 @@
-from typing import Any
-
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (
-    QGraphicsTextItem,
-)
+from typing import Any, Dict
 
 from psynapse.core.node import Node
 from psynapse.core.socket_types import SocketDataType
 
 
-class AddNode(Node):
-    """Node that adds two numbers."""
+class OpNode(Node):
+    """Generalized operation node that can be created from a node schema.
 
-    def __init__(self):
-        super().__init__(
-            title="Add",
-            inputs=[("A", SocketDataType.FLOAT), ("B", SocketDataType.FLOAT)],
-            outputs=[("Result", SocketDataType.FLOAT)],
-        )
+    This node is dynamically configured based on the schema received from the backend.
+    The actual execution logic is handled by the backend's GraphExecutor, so this node
+    only serves as a visual representation in the frontend.
+    """
 
-    def execute(self) -> Any:
-        """Add two input values."""
-        a = self.get_input_value(0)
-        b = self.get_input_value(1)
+    def __init__(self, schema: Dict[str, Any]):
+        """Initialize an OpNode from a schema.
 
-        if a is None:
-            a = 0.0
-        if b is None:
-            b = 0.0
+        Args:
+            schema: Node schema dictionary containing:
+                - name: Node type name (e.g., "add", "subtract")
+                - params: List of input parameter definitions
+                - returns: List of output definitions
+        """
+        self.node_type = schema["name"]
 
-        try:
-            result = float(a) + float(b)
-            self.output_sockets[0].value = result
-            return result
-        except (TypeError, ValueError):
-            return 0.0
+        # Convert schema params to input socket specifications
+        inputs = []
+        for param in schema.get("params", []):
+            param_name = param["name"].upper()  # e.g., "a" -> "A"
+            param_type = self._map_type(param["type"])
+            inputs.append((param_name, param_type))
 
+        # Convert schema returns to output socket specifications
+        outputs = []
+        for return_spec in schema.get("returns", []):
+            return_name = return_spec["name"].capitalize()  # e.g., "result" -> "Result"
+            return_type = self._map_type(return_spec["type"])
+            outputs.append((return_name, return_type))
 
-class SubtractNode(Node):
-    """Node that subtracts two numbers."""
+        # Initialize with proper title (capitalize the node type name)
+        title = schema["name"].capitalize()
+        super().__init__(title=title, inputs=inputs, outputs=outputs)
 
-    def __init__(self):
-        super().__init__(
-            title="Subtract",
-            inputs=[("A", SocketDataType.FLOAT), ("B", SocketDataType.FLOAT)],
-            outputs=[("Result", SocketDataType.FLOAT)],
-        )
+    def _map_type(self, type_str: str) -> SocketDataType:
+        """Map schema type string to SocketDataType.
 
-    def execute(self) -> Any:
-        """Subtract B from A."""
-        a = self.get_input_value(0)
-        b = self.get_input_value(1)
+        Args:
+            type_str: Type string from schema (e.g., "float", "any")
 
-        if a is None:
-            a = 0.0
-        if b is None:
-            b = 0.0
-
-        try:
-            result = float(a) - float(b)
-            self.output_sockets[0].value = result
-            return result
-        except (TypeError, ValueError):
-            return 0.0
-
-
-class MultiplyNode(Node):
-    """Node that multiplies two numbers."""
-
-    def __init__(self):
-        super().__init__(
-            title="Multiply",
-            inputs=[("A", SocketDataType.FLOAT), ("B", SocketDataType.FLOAT)],
-            outputs=[("Result", SocketDataType.FLOAT)],
-        )
+        Returns:
+            Corresponding SocketDataType
+        """
+        type_mapping = {
+            "float": SocketDataType.FLOAT,
+            "int": SocketDataType.INT,
+            "string": SocketDataType.STRING,
+            "bool": SocketDataType.BOOL,
+            "any": SocketDataType.ANY,
+        }
+        return type_mapping.get(type_str.lower(), SocketDataType.ANY)
 
     def execute(self) -> Any:
-        """Multiply two input values."""
-        a = self.get_input_value(0)
-        b = self.get_input_value(1)
+        """No-op execution - actual execution happens on the backend.
 
-        if a is None:
-            a = 1.0
-        if b is None:
-            b = 1.0
-
-        try:
-            result = float(a) * float(b)
-            self.output_sockets[0].value = result
-            return result
-        except (TypeError, ValueError):
-            return 0.0
-
-
-class DivideNode(Node):
-    """Node that divides two numbers."""
-
-    def __init__(self):
-        super().__init__(
-            title="Divide",
-            inputs=[("A", SocketDataType.FLOAT), ("B", SocketDataType.FLOAT)],
-            outputs=[("Result", SocketDataType.FLOAT)],
-        )
-
-    def execute(self) -> Any:
-        """Divide two input values."""
-        a = self.get_input_value(0)
-        b = self.get_input_value(1)
-
-        if a is None:
-            a = 1.0
-        if b is None:
-            b = 1.0
-
-        # Convert to float and perform division (errors will be caught by error handler)
-        result = float(a) / float(b)
-        self.output_sockets[0].value = result
-        return result
-
-
-class ViewNode(Node):
-    """Node that displays a value."""
-
-    def __init__(self):
-        super().__init__(
-            title="View", inputs=[("Value", SocketDataType.ANY)], outputs=[]
-        )
-
-        # Create text display
-        self.display_text = QGraphicsTextItem(self.graphics)
-        self.display_text.setDefaultTextColor(Qt.white)
-        self.display_text.setPos(10, 50)
-        font = QFont()
-        font.setPointSize(12)
-        font.setBold(True)
-        self.display_text.setFont(font)
-        self.display_text.setPlainText("None")
-
-        self.cached_value = None
-
-    def execute(self) -> Any:
-        """Display input value."""
-        value = self.get_input_value(0)
-
-        # Update display
-        if value != self.cached_value:
-            self.cached_value = value
-            if value is None:
-                display_str = "None"
-            elif isinstance(value, float):
-                # Format floats nicely
-                display_str = f"{value:.4g}"
-            else:
-                display_str = str(value)
-            self.display_text.setPlainText(display_str)
-
-        return value
+        The frontend nodes no longer need to execute operations since the backend's
+        GraphExecutor handles all computation. This method exists only to satisfy
+        the Node interface.
+        """
+        # Return None - actual execution is handled by the backend
+        return None

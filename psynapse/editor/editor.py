@@ -1,12 +1,22 @@
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QFont, QKeySequence
-from PySide6.QtWidgets import QGraphicsTextItem, QMainWindow, QSplitter
+from PySide6.QtWidgets import (
+    QGraphicsTextItem,
+    QMainWindow,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from psynapse.core.scene import NodeScene
+from psynapse.core.serializer import GraphSerializer
 from psynapse.core.view import NodeView
+from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.toast_notification import ToastManager
-from psynapse.nodes.ops import ViewNode
+from psynapse.nodes.view_node import ViewNode
+from psynapse.utils import pretty_print_payload
 
 
 class PsynapseEditor(QMainWindow):
@@ -25,10 +35,44 @@ class PsynapseEditor(QMainWindow):
         # Create node library panel
         self.node_library = NodeLibraryPanel(self)
 
+        # Create Run button
+        self.run_button = QPushButton("▶ Run Graph")
+        self.run_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: bold;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #3d8b40;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+        """)
+        self.run_button.clicked.connect(self._run_graph)
+
+        # Create container for view and run button
+        view_container = QWidget()
+        view_layout = QVBoxLayout()
+        view_layout.addWidget(self.run_button)
+        view_layout.addWidget(self.view)
+        view_layout.setContentsMargins(5, 5, 5, 5)
+        view_layout.setSpacing(5)
+        view_container.setLayout(view_layout)
+
         # Create splitter to hold library and view
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(self.node_library)
-        splitter.addWidget(self.view)
+        splitter.addWidget(view_container)
 
         # Set initial sizes (library: 250px, view: rest)
         splitter.setSizes([250, 950])
@@ -56,13 +100,16 @@ class PsynapseEditor(QMainWindow):
         # Create menu bar
         self._create_menu_bar()
 
-        # Set up auto-execution timer
-        self.eval_timer = QTimer()
-        self.eval_timer.timeout.connect(self._execute_graph)
-        self.eval_timer.start(100)  # Execute every 100ms
+        # Backend client for graph execution
+        self.backend_client = BackendClient()
+
+        # NOTE: Removed auto-execution timer - graphs are now executed on-demand via Run button
 
         # Add welcome message
         self._add_welcome_message()
+
+        # Load node schemas from backend
+        self._load_node_schemas()
 
         # Node class mapping for drag-and-drop (get from library panel)
         self.node_class_map = self.node_library.get_node_class_map()
@@ -107,6 +154,27 @@ class PsynapseEditor(QMainWindow):
         reset_zoom_action.triggered.connect(self._reset_zoom)
         view_menu.addAction(reset_zoom_action)
 
+    def _load_node_schemas(self):
+        """Load node schemas from the backend and populate the node library."""
+        try:
+            # Try to fetch schemas from backend
+            response = self.backend_client.get_node_schemas_sync()
+            # Backend returns {"nodes": [...]} not {"schemas": [...]}
+            schemas = response.get("nodes", [])
+            if schemas:
+                self.node_library.load_schemas(schemas)
+                self.statusBar().showMessage(
+                    f"✓ Loaded {len(schemas)} node types from backend"
+                )
+            else:
+                self.statusBar().showMessage("⚠ No schemas received from backend")
+        except Exception as e:
+            # If backend is not available, continue without schemas
+            # The operation nodes will not be available, but the app can still function
+            self.statusBar().showMessage(
+                f"⚠ Could not load node schemas from backend: {str(e)}"
+            )
+
     def _clear_scene(self):
         """Clear all nodes from the scene."""
         self.scene.clear()
@@ -128,19 +196,83 @@ class PsynapseEditor(QMainWindow):
         self.view.resetTransform()
         self.view.zoom_factor = 1.0
 
-    def _execute_graph(self):
-        """Execute all view nodes in the graph."""
-        # Skip execution if paused due to error
-        if self.execution_paused:
-            return
+    def _run_graph(self):
+        """Execute the graph via the backend."""
+        # Check if backend is available
+        self.statusBar().showMessage("Checking backend connection...")
+        self.run_button.setEnabled(False)
 
-        for view_node in self.view_nodes:
-            view_node.execute_safe()
+        try:
+            # Health check (with timeout)
+            if not self.backend_client.health_check_sync():
+                self.toast_manager.show_error(
+                    "Backend server is not running. Please start it with: uvicorn psynapse.backend.server:app --reload",
+                    "Backend Connection Error",
+                )
+                self.statusBar().showMessage("❌ Backend not available")
+                self.run_button.setEnabled(True)
+                return
 
-            # If node executed successfully and was previously in error, clear the highlight
-            node_id = id(view_node)
-            if node_id not in self.current_errors and view_node.graphics.has_error:
-                view_node.graphics.set_error_state(False)
+            # Serialize the graph
+            self.statusBar().showMessage("Serializing graph...")
+            graph_data = GraphSerializer.serialize_graph(self.nodes)
+
+            pretty_print_payload(graph_data, "Graph Payload")
+
+            # Execute on backend
+            self.statusBar().showMessage("Executing on backend...")
+            response = self.backend_client.execute_graph_sync(graph_data)
+
+            # Update ViewNodes with results
+            results = response.get("results", {})
+            self._update_view_nodes_with_results(results)
+
+            self.statusBar().showMessage("✓ Execution completed successfully")
+
+        except Exception as e:
+            self.toast_manager.show_error(
+                f"Failed to execute graph: {str(e)}",
+                "Execution Error",
+            )
+            self.statusBar().showMessage(f"❌ Execution failed: {str(e)}")
+
+        finally:
+            self.run_button.setEnabled(True)
+
+    def _update_view_nodes_with_results(self, results: dict):
+        """Update ViewNodes with results from backend execution.
+
+        Args:
+            results: Dictionary mapping node IDs to their values
+        """
+        # Build a mapping from node IDs to ViewNode instances
+        node_id_map = {}
+        for i, node in enumerate(self.nodes):
+            node_id = f"node_{i}"
+            node_id_map[node_id] = node
+
+        # Update each ViewNode
+        for node_id, result_data in results.items():
+            node = node_id_map.get(node_id)
+            if node and isinstance(node, ViewNode):
+                value = result_data.get("value")
+                error = result_data.get("error")
+
+                if error:
+                    # Show error in ViewNode
+                    node.display_text.setPlainText(f"Error: {error}")
+                    node.graphics.set_error_state(True)
+                else:
+                    # Update display with value
+                    if value is None:
+                        display_str = "None"
+                    elif isinstance(value, float):
+                        display_str = f"{value:.4g}"
+                    else:
+                        display_str = str(value)
+                    node.display_text.setPlainText(display_str)
+                    node.cached_value = value
+                    node.graphics.set_error_state(False)
 
     def _handle_node_error(self, node, exception: Exception):
         """Handle node execution errors by showing a toast notification."""
