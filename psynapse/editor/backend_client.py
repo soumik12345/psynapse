@@ -77,6 +77,14 @@ class BackendClient:
         """
         return asyncio.run(self.execute_graph(graph_data))
 
+    def get_node_schemas_sync(self) -> Dict[str, Any]:
+        """Synchronous wrapper for get_node_schemas.
+
+        Returns:
+            Dictionary containing node schemas
+        """
+        return asyncio.run(self.get_node_schemas())
+
     def health_check_sync(self) -> bool:
         """Synchronous wrapper for health_check.
 

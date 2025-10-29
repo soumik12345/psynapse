@@ -9,7 +9,7 @@ def pretty_print_payload(payload: dict, title: str):
     console = Console()
     console.print(
         Panel(
-            Syntax(json.dumps(payload, indent=4), "json", line_numbers=True),
+            Syntax(json.dumps(payload, indent=4), "json"),
             title=title,
         )
     )

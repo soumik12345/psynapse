@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from PySide6.QtCore import QMimeData, QPoint, Qt
 from PySide6.QtGui import QDrag, QPainter, QPixmap
 from PySide6.QtWidgets import (
@@ -9,16 +11,30 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from psynapse.nodes.object_node import ObjectNode
-from psynapse.nodes.ops import AddNode, DivideNode, MultiplyNode, SubtractNode, ViewNode
+from psynapse.nodes.ops import OpNode
+from psynapse.nodes.view_node import ViewNode
 
+
+def create_op_node_factory(schema: Dict[str, Any]):
+    """Create a factory function that creates an OpNode from a schema.
+
+    Args:
+        schema: Node schema from the backend
+
+    Returns:
+        Factory function that creates an OpNode instance
+    """
+
+    def factory():
+        return OpNode(schema)
+
+    return factory
+
+
+# Default node types that don't come from schemas
 DEFAULT_NODE_TYPES = [
-    (AddNode, "Add"),
-    (SubtractNode, "Subtract"),
-    (MultiplyNode, "Multiply"),
-    (DivideNode, "Divide"),
     (ViewNode, "View"),
-    (ObjectNode, "Object"),
+    # (ObjectNode, "Object"),
 ]
 
 
@@ -175,17 +191,50 @@ class NodeLibraryPanel(QWidget):
         super().__init__(parent)
 
         self.node_types = []
+        self.container_layout = None  # Store reference to update later
         self.setup_ui()
+
+    def add_schema_nodes(self, schemas: list[Dict[str, Any]]):
+        """Add nodes from backend schemas to the container layout.
+
+        Args:
+            schemas: List of node schemas from the backend
+        """
+        if not schemas or not self.container_layout:
+            return
+
+        # Create operations section
+        ops_section = CollapsibleSection("Operations")
+        for schema in schemas:
+            node_name = schema["name"].capitalize()
+            node_factory = create_op_node_factory(schema)
+            # Store with a unique class name based on the schema
+            node_factory.__name__ = f"OpNode_{schema['name']}"
+            self.node_types.append((node_factory, node_name))
+            node_item = NodeLibraryItem(node_factory, node_name)
+            ops_section.add_item(node_item)
+
+        # Insert at the beginning (before default nodes)
+        self.container_layout.insertWidget(0, ops_section)
+        self.container_layout.insertSpacing(1, 8)
 
     def add_default_nodes(self, container_layout):
         """Add the default nodes to the container layout."""
         self.node_types.extend(DEFAULT_NODE_TYPES)
-        math_section = CollapsibleSection("Default Nodes")
+        default_section = CollapsibleSection("Default Nodes")
         for node_class, node_name in DEFAULT_NODE_TYPES:
             node_item = NodeLibraryItem(node_class, node_name)
-            math_section.add_item(node_item)
-        container_layout.addWidget(math_section)
+            default_section.add_item(node_item)
+        container_layout.addWidget(default_section)
         container_layout.addSpacing(8)
+
+    def load_schemas(self, schemas: list[Dict[str, Any]]):
+        """Load and display nodes from backend schemas.
+
+        Args:
+            schemas: List of node schemas from the backend
+        """
+        self.add_schema_nodes(schemas)
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -219,14 +268,17 @@ class NodeLibraryPanel(QWidget):
 
         # Container for node items
         container = QWidget()
-        container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(8, 8, 8, 8)
-        container_layout.setSpacing(8)
+        self.container_layout = QVBoxLayout(container)
+        self.container_layout.setContentsMargins(8, 8, 8, 8)
+        self.container_layout.setSpacing(8)
 
-        self.add_default_nodes(container_layout)
+        # Default nodes are added at the end (after schema nodes will be added)
+        # Note: Schema nodes will be added via load_schemas() call from editor
+
+        self.add_default_nodes(self.container_layout)
 
         # Add stretch to push everything to the top
-        container_layout.addStretch()
+        self.container_layout.addStretch()
 
         scroll_area.setWidget(container)
         main_layout.addWidget(scroll_area)
