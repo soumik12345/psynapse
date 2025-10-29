@@ -1,6 +1,6 @@
 # Psynapse
 
-A python-native node-based UI editor.
+A cross-platform node-based UI editor for Python.
 
 ## Features
 
@@ -11,6 +11,12 @@ A python-native node-based UI editor.
 - **Error Handling**: Comprehensive error handling with persistent toast notifications
 - **On-Demand Execution**: Execute graphs when you're ready with the Run button
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
+
+<figure class="video_container">
+  <video controls="true" allowfullscreen="true">
+    <source src="assets/demo.mp4" type="video/mp4">
+  </video>
+</figure>
 
 ## Installation
 
