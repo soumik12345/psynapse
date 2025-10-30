@@ -23,8 +23,15 @@ from psynapse.utils import pretty_print_payload
 class PsynapseEditor(QMainWindow):
     """Main node editor window."""
 
-    def __init__(self):
+    def __init__(self, backend_port=None):
+        """Initialize the editor.
+
+        Args:
+            backend_port: Optional port number of existing backend to connect to.
+                         If None, a new backend will be spawned.
+        """
         super().__init__()
+        self.backend_port = backend_port or 8000
 
         self.setWindowTitle("Psynapse")
         self.setGeometry(100, 100, 1200, 800)
@@ -71,7 +78,7 @@ class PsynapseEditor(QMainWindow):
         view_container.setLayout(view_layout)
 
         # Create terminal panel for backend output
-        self.terminal_panel = TerminalPanel(self)
+        self.terminal_panel = TerminalPanel(self, backend_port=backend_port)
         # Connect signal to load schemas when backend is ready
         self.terminal_panel.backend_ready.connect(self._load_node_schemas)
 
@@ -109,7 +116,8 @@ class PsynapseEditor(QMainWindow):
         self._create_menu_bar()
 
         # Backend client for graph execution
-        self.backend_client = BackendClient()
+        base_url = f"http://localhost:{self.backend_port}"
+        self.backend_client = BackendClient(base_url=base_url)
 
         # NOTE: Removed auto-execution timer - graphs are now executed on-demand via Run button
 
@@ -123,7 +131,12 @@ class PsynapseEditor(QMainWindow):
         self.node_class_map = self.node_library.get_node_class_map()
 
         # Add status bar to show execution state
-        self.statusBar().showMessage("Ready")
+        if backend_port is None:
+            self.statusBar().showMessage("Ready - Starting backend...")
+        else:
+            self.statusBar().showMessage(
+                f"Ready - Connecting to backend on port {backend_port}..."
+            )
 
     def _create_menu_bar(self):
         """Create menu bar with node options."""

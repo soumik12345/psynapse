@@ -20,11 +20,13 @@ class TerminalPanel(QWidget):
     # Signal emitted when backend is ready
     backend_ready = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, backend_port=None):
         """Initialize the terminal panel.
 
         Args:
             parent: Parent widget
+            backend_port: Optional port number of existing backend to connect to.
+                         If None, a new backend will be spawned.
         """
         super().__init__(parent)
         self.parent = parent
@@ -32,9 +34,14 @@ class TerminalPanel(QWidget):
         self.backend_process = None
         self.backend_ready_emitted = False
         self.health_check_timer = None
+        self.backend_port = backend_port or 8000
+        self.use_existing_backend = backend_port is not None
 
         self._setup_ui()
-        self._start_backend()
+        if self.use_existing_backend:
+            self._connect_to_existing_backend()
+        else:
+            self._start_backend()
 
     def _setup_ui(self):
         """Set up the UI components."""
@@ -226,7 +233,8 @@ class TerminalPanel(QWidget):
             import urllib.error
             import urllib.request
 
-            req = urllib.request.Request("http://localhost:8000/health")
+            url = f"http://localhost:{self.backend_port}/health"
+            req = urllib.request.Request(url)
             req.add_header("User-Agent", "Psynapse-Editor")
             with urllib.request.urlopen(req, timeout=0.5) as response:
                 if response.status == 200:
@@ -235,11 +243,42 @@ class TerminalPanel(QWidget):
             # Backend not ready yet, continue checking
             pass
 
+    def _connect_to_existing_backend(self):
+        """Connect to an existing backend running on the specified port."""
+        self._append_output(
+            f"Connecting to existing backend on port {self.backend_port}...\n",
+            QColor("#4CAF50"),
+        )
+        self.title_label.setText("Backend Terminal (Connecting...)")
+        self.title_label.setStyleSheet(
+            "font-weight: bold; font-size: 12px; color: #ff9800;"
+        )
+
+        # Start health check to verify backend is available
+        self._start_health_check()
+
+        # Note: We can't show logs from an existing backend process we didn't spawn,
+        # but we can show status messages
+        self._append_output(
+            f"Note: Logs from existing backend are not available.\n"
+            f"Backend status will be shown here.\n",
+            QColor("#d4d4d4"),
+        )
+
     def _mark_backend_ready(self):
         """Mark backend as ready and emit signal."""
         if not self.backend_ready_emitted:
             self.backend_ready_emitted = True
-            self.title_label.setText("Backend Terminal (Running)")
+            if self.use_existing_backend:
+                self.title_label.setText(
+                    f"Backend Terminal (Connected - Port {self.backend_port})"
+                )
+                self._append_output(
+                    f"✓ Successfully connected to backend on port {self.backend_port}\n",
+                    QColor("#4CAF50"),
+                )
+            else:
+                self.title_label.setText("Backend Terminal (Running)")
             self.title_label.setStyleSheet(
                 "font-weight: bold; font-size: 12px; color: #4CAF50;"
             )
@@ -269,10 +308,11 @@ class TerminalPanel(QWidget):
         scrollbar.setValue(scrollbar.maximum())
 
     def stop_backend(self):
-        """Stop the backend process."""
+        """Stop the backend process (only if we spawned it)."""
         self._stop_health_check()
         if (
-            self.backend_process
+            not self.use_existing_backend
+            and self.backend_process
             and self.backend_process.state() == QProcess.ProcessState.Running
         ):
             self._append_output("\nStopping backend server...\n", QColor("#ff9800"))
@@ -280,6 +320,11 @@ class TerminalPanel(QWidget):
             if not self.backend_process.waitForFinished(3000):
                 self.backend_process.kill()
                 self.backend_process.waitForFinished(3000)
+        elif self.use_existing_backend:
+            self._append_output(
+                f"\nDisconnected from backend on port {self.backend_port}\n",
+                QColor("#d4d4d4"),
+            )
         self.backend_ready_emitted = False
 
     def closeEvent(self, event):
