@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import sys
 
@@ -9,6 +10,16 @@ from psynapse.editor import PsynapseEditor
 
 def run_psynapse_editor():
     """Run the node editor application."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Psynapse Node Editor")
+    parser.add_argument(
+        "--backend-port",
+        type=int,
+        default=None,
+        help="Port of existing backend to connect to (if not specified, spawns new backend)",
+    )
+    args, unknown = parser.parse_known_args()
+
     app = QApplication(sys.argv)
 
     # Set application metadata
@@ -16,8 +27,8 @@ def run_psynapse_editor():
     app.setOrganizationName("Psynapse")
     app.setApplicationVersion("0.1.0")
 
-    # Create and show editor
-    editor = PsynapseEditor()
+    # Create and show editor with backend port
+    editor = PsynapseEditor(backend_port=args.backend_port)
     editor.show()
 
     sys.exit(app.exec())
