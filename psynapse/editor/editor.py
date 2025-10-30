@@ -14,6 +14,7 @@ from psynapse.core.serializer import GraphSerializer
 from psynapse.core.view import NodeView
 from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
+from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
 from psynapse.nodes.view_node import ViewNode
 from psynapse.utils import pretty_print_payload
@@ -69,15 +70,22 @@ class PsynapseEditor(QMainWindow):
         view_layout.setSpacing(5)
         view_container.setLayout(view_layout)
 
-        # Create splitter to hold library and view
+        # Create terminal panel for backend output
+        self.terminal_panel = TerminalPanel(self)
+        # Connect signal to load schemas when backend is ready
+        self.terminal_panel.backend_ready.connect(self._load_node_schemas)
+
+        # Create splitter to hold library, view, and terminal
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(self.node_library)
         splitter.addWidget(view_container)
+        splitter.addWidget(self.terminal_panel)
 
-        # Set initial sizes (library: 250px, view: rest)
-        splitter.setSizes([250, 950])
+        # Set initial sizes (library: 250px, view: rest, terminal: 400px)
+        splitter.setSizes([250, 700, 400])
         splitter.setStretchFactor(0, 0)  # Don't stretch library
         splitter.setStretchFactor(1, 1)  # Stretch view
+        splitter.setStretchFactor(2, 0)  # Don't stretch terminal
 
         self.setCentralWidget(splitter)
 
@@ -108,8 +116,8 @@ class PsynapseEditor(QMainWindow):
         # Add welcome message
         self._add_welcome_message()
 
-        # Load node schemas from backend
-        self._load_node_schemas()
+        # Note: Node schemas will be loaded automatically when backend is ready
+        # via the backend_ready signal from terminal_panel
 
         # Node class mapping for drag-and-drop (get from library panel)
         self.node_class_map = self.node_library.get_node_class_map()
@@ -163,6 +171,8 @@ class PsynapseEditor(QMainWindow):
             schemas = response.get("nodes", [])
             if schemas:
                 self.node_library.load_schemas(schemas)
+                # Update node class map after loading schemas so drag-and-drop works
+                self.node_class_map = self.node_library.get_node_class_map()
                 self.statusBar().showMessage(
                     f"✓ Loaded {len(schemas)} node types from backend"
                 )
@@ -206,10 +216,12 @@ class PsynapseEditor(QMainWindow):
             # Health check (with timeout)
             if not self.backend_client.health_check_sync():
                 self.toast_manager.show_error(
-                    "Backend server is not running. Please start it with: uvicorn psynapse.backend.server:app --reload",
+                    "Backend server is not running. Please check the terminal panel on the right for backend status.",
                     "Backend Connection Error",
                 )
-                self.statusBar().showMessage("❌ Backend not available")
+                self.statusBar().showMessage(
+                    "❌ Backend not available - check terminal panel"
+                )
                 self.run_button.setEnabled(True)
                 return
 
@@ -379,3 +391,9 @@ class PsynapseEditor(QMainWindow):
                 self.welcome_text = None
 
             return self._add_node_internal(node_class, position)
+
+    def closeEvent(self, event):
+        """Handle close event - stop backend process."""
+        if hasattr(self, "terminal_panel"):
+            self.terminal_panel.stop_backend()
+        super().closeEvent(event)
