@@ -1,6 +1,7 @@
 """Terminal panel widget for displaying backend output."""
 
 import sys
+import threading
 
 from PySide6.QtCore import QProcess, QProcessEnvironment, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QTextCharFormat
@@ -19,6 +20,8 @@ class TerminalPanel(QWidget):
 
     # Signal emitted when backend is ready
     backend_ready = Signal()
+    # Signal emitted when a log message is received from SSE
+    log_received = Signal(str)
 
     def __init__(self, parent=None, backend_port=None):
         """Initialize the terminal panel.
@@ -36,6 +39,11 @@ class TerminalPanel(QWidget):
         self.health_check_timer = None
         self.backend_port = backend_port or 8000
         self.use_existing_backend = backend_port is not None
+        self.sse_thread = None
+        self.sse_stop_event = threading.Event()
+
+        # Connect signal for thread-safe log display
+        self.log_received.connect(self._display_log_message)
 
         self._setup_ui()
         if self.use_existing_backend:
@@ -257,13 +265,68 @@ class TerminalPanel(QWidget):
         # Start health check to verify backend is available
         self._start_health_check()
 
-        # Note: We can't show logs from an existing backend process we didn't spawn,
-        # but we can show status messages
+        # Start SSE log streaming in a separate thread
+        self._start_sse_log_stream()
+
+    def _start_sse_log_stream(self):
+        """Start SSE log streaming in a background thread."""
         self._append_output(
-            f"Note: Logs from existing backend are not available.\n"
-            f"Backend status will be shown here.\n",
+            "Starting log stream from backend...\n",
             QColor("#d4d4d4"),
         )
+
+        def sse_worker():
+            """Worker function to receive SSE log messages."""
+            import urllib.error
+            import urllib.request
+
+            url = f"http://localhost:{self.backend_port}/logs"
+            try:
+                req = urllib.request.Request(url)
+                req.add_header("Accept", "text/event-stream")
+                req.add_header("User-Agent", "Psynapse-Editor")
+
+                with urllib.request.urlopen(req, timeout=None) as response:
+                    # Read SSE stream line by line
+                    for line in response:
+                        if self.sse_stop_event.is_set():
+                            break
+
+                        line_str = line.decode("utf-8").strip()
+                        if line_str.startswith("data: "):
+                            # Extract log message from SSE data field
+                            log_msg = line_str[6:]  # Remove "data: " prefix
+                            self.log_received.emit(log_msg)
+
+            except Exception as e:
+                if not self.sse_stop_event.is_set():
+                    # Only show error if we didn't intentionally stop
+                    self.log_received.emit(
+                        f"[SSE Error] Failed to connect to log stream: {str(e)}"
+                    )
+
+        self.sse_stop_event.clear()
+        self.sse_thread = threading.Thread(target=sse_worker, daemon=True)
+        self.sse_thread.start()
+
+    def _display_log_message(self, message: str):
+        """Display a log message received from SSE stream.
+
+        This method is called from the Qt main thread via signal/slot.
+
+        Args:
+            message: Log message to display
+        """
+        # Determine color based on log level
+        color = QColor("#d4d4d4")  # Default white-ish
+        if "[SSE Error]" in message or "ERROR" in message or "Error" in message:
+            color = QColor("#f44336")  # Red
+        elif "WARNING" in message or "Warning" in message:
+            color = QColor("#ff9800")  # Orange
+        elif "INFO" in message or "✓" in message:
+            color = QColor("#4CAF50")  # Green
+
+        self._append_output(message + "\n", color)
 
     def _mark_backend_ready(self):
         """Mark backend as ready and emit signal."""
@@ -310,6 +373,13 @@ class TerminalPanel(QWidget):
     def stop_backend(self):
         """Stop the backend process (only if we spawned it)."""
         self._stop_health_check()
+
+        # Stop SSE thread if running
+        if self.sse_thread and self.sse_thread.is_alive():
+            self.sse_stop_event.set()
+            # Give thread a moment to stop gracefully
+            self.sse_thread.join(timeout=1.0)
+
         if (
             not self.use_existing_backend
             and self.backend_process
