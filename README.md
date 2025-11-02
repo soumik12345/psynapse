@@ -31,7 +31,7 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 1. Start the execution runtime locally or in a remote VM using
 
     ```bash
-    uv run psynapse-backend
+    psynapse-backend
     ```
 
     The backend will be available at `http://localhost:8000`.
@@ -39,7 +39,7 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 2. Launch the Psynapse editor using
 
     ```bash
-    uv run psynapse
+    psynapse
     ```
 
 ### Creating a Node Graph
