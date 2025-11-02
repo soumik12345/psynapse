@@ -175,6 +175,13 @@ class PsynapseEditor(QMainWindow):
         reset_zoom_action.triggered.connect(self._reset_zoom)
         view_menu.addAction(reset_zoom_action)
 
+        view_menu.addSeparator()
+
+        toggle_terminal_action = QAction("Toggle Terminal", self)
+        toggle_terminal_action.setShortcut("Ctrl+`")
+        toggle_terminal_action.triggered.connect(self._toggle_terminal_panel)
+        view_menu.addAction(toggle_terminal_action)
+
     def _load_node_schemas(self):
         """Load node schemas from the backend and populate the node library."""
         try:
@@ -218,6 +225,13 @@ class PsynapseEditor(QMainWindow):
         """Reset zoom to 100%."""
         self.view.resetTransform()
         self.view.zoom_factor = 1.0
+
+    def _toggle_terminal_panel(self):
+        """Toggle the visibility of the terminal panel."""
+        if self.terminal_panel.isVisible():
+            self.terminal_panel.hide()
+        else:
+            self.terminal_panel.show()
 
     def _run_graph(self):
         """Execute the graph via the backend."""
