@@ -14,6 +14,7 @@ from psynapse.core.serializer import GraphSerializer
 from psynapse.core.view import NodeView
 from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
+from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
 from psynapse.nodes.view_node import ViewNode
 from psynapse.utils import pretty_print_payload
@@ -22,8 +23,15 @@ from psynapse.utils import pretty_print_payload
 class PsynapseEditor(QMainWindow):
     """Main node editor window."""
 
-    def __init__(self):
+    def __init__(self, backend_port=None):
+        """Initialize the editor.
+
+        Args:
+            backend_port: Optional port number of existing backend to connect to.
+                         If None, a new backend will be spawned.
+        """
         super().__init__()
+        self.backend_port = backend_port or 8000
 
         self.setWindowTitle("Psynapse")
         self.setGeometry(100, 100, 1200, 800)
@@ -69,15 +77,22 @@ class PsynapseEditor(QMainWindow):
         view_layout.setSpacing(5)
         view_container.setLayout(view_layout)
 
-        # Create splitter to hold library and view
+        # Create terminal panel for backend output
+        self.terminal_panel = TerminalPanel(self, backend_port=backend_port)
+        # Connect signal to load schemas when backend is ready
+        self.terminal_panel.backend_ready.connect(self._load_node_schemas)
+
+        # Create splitter to hold library, view, and terminal
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(self.node_library)
         splitter.addWidget(view_container)
+        splitter.addWidget(self.terminal_panel)
 
-        # Set initial sizes (library: 250px, view: rest)
-        splitter.setSizes([250, 950])
+        # Set initial sizes (library: 250px, view: rest, terminal: 400px)
+        splitter.setSizes([250, 700, 400])
         splitter.setStretchFactor(0, 0)  # Don't stretch library
         splitter.setStretchFactor(1, 1)  # Stretch view
+        splitter.setStretchFactor(2, 0)  # Don't stretch terminal
 
         self.setCentralWidget(splitter)
 
@@ -101,21 +116,27 @@ class PsynapseEditor(QMainWindow):
         self._create_menu_bar()
 
         # Backend client for graph execution
-        self.backend_client = BackendClient()
+        base_url = f"http://localhost:{self.backend_port}"
+        self.backend_client = BackendClient(base_url=base_url)
 
         # NOTE: Removed auto-execution timer - graphs are now executed on-demand via Run button
 
         # Add welcome message
         self._add_welcome_message()
 
-        # Load node schemas from backend
-        self._load_node_schemas()
+        # Note: Node schemas will be loaded automatically when backend is ready
+        # via the backend_ready signal from terminal_panel
 
         # Node class mapping for drag-and-drop (get from library panel)
         self.node_class_map = self.node_library.get_node_class_map()
 
         # Add status bar to show execution state
-        self.statusBar().showMessage("Ready")
+        if backend_port is None:
+            self.statusBar().showMessage("Ready - Starting backend...")
+        else:
+            self.statusBar().showMessage(
+                f"Ready - Connecting to backend on port {backend_port}..."
+            )
 
     def _create_menu_bar(self):
         """Create menu bar with node options."""
@@ -154,6 +175,18 @@ class PsynapseEditor(QMainWindow):
         reset_zoom_action.triggered.connect(self._reset_zoom)
         view_menu.addAction(reset_zoom_action)
 
+        view_menu.addSeparator()
+
+        toggle_library_action = QAction("Toggle Node Library", self)
+        toggle_library_action.setShortcut("Ctrl+B")
+        toggle_library_action.triggered.connect(self._toggle_library_panel)
+        view_menu.addAction(toggle_library_action)
+
+        toggle_terminal_action = QAction("Toggle Terminal", self)
+        toggle_terminal_action.setShortcut("Ctrl+`")
+        toggle_terminal_action.triggered.connect(self._toggle_terminal_panel)
+        view_menu.addAction(toggle_terminal_action)
+
     def _load_node_schemas(self):
         """Load node schemas from the backend and populate the node library."""
         try:
@@ -163,6 +196,8 @@ class PsynapseEditor(QMainWindow):
             schemas = response.get("nodes", [])
             if schemas:
                 self.node_library.load_schemas(schemas)
+                # Update node class map after loading schemas so drag-and-drop works
+                self.node_class_map = self.node_library.get_node_class_map()
                 self.statusBar().showMessage(
                     f"✓ Loaded {len(schemas)} node types from backend"
                 )
@@ -196,6 +231,20 @@ class PsynapseEditor(QMainWindow):
         self.view.resetTransform()
         self.view.zoom_factor = 1.0
 
+    def _toggle_library_panel(self):
+        """Toggle the visibility of the node library panel."""
+        if self.node_library.isVisible():
+            self.node_library.hide()
+        else:
+            self.node_library.show()
+
+    def _toggle_terminal_panel(self):
+        """Toggle the visibility of the terminal panel."""
+        if self.terminal_panel.isVisible():
+            self.terminal_panel.hide()
+        else:
+            self.terminal_panel.show()
+
     def _run_graph(self):
         """Execute the graph via the backend."""
         # Check if backend is available
@@ -206,10 +255,12 @@ class PsynapseEditor(QMainWindow):
             # Health check (with timeout)
             if not self.backend_client.health_check_sync():
                 self.toast_manager.show_error(
-                    "Backend server is not running. Please start it with: uvicorn psynapse.backend.server:app --reload",
+                    "Backend server is not running. Please check the terminal panel on the right for backend status.",
                     "Backend Connection Error",
                 )
-                self.statusBar().showMessage("❌ Backend not available")
+                self.statusBar().showMessage(
+                    "❌ Backend not available - check terminal panel"
+                )
                 self.run_button.setEnabled(True)
                 return
 
@@ -379,3 +430,9 @@ class PsynapseEditor(QMainWindow):
                 self.welcome_text = None
 
             return self._add_node_internal(node_class, position)
+
+    def closeEvent(self, event):
+        """Handle close event - stop backend process."""
+        if hasattr(self, "terminal_panel"):
+            self.terminal_panel.stop_backend()
+        super().closeEvent(event)

@@ -24,21 +24,23 @@ uv pip install -U git+https://github.com/soumik12345/psynapse.git
 
 ### Quick Start
 
-**1. Start the Backend Server**
+Simply run the command `psynapse` in the terminal, this would launch the Psynapse application with a locally hosted execution runtime.
 
-```bash
-uv run psynapse-backend
-```
+### Run with a remote backend
 
-The backend will be available at `http://localhost:8000`. You can also use:
+1. Start the execution runtime locally or in a remote VM using
 
-**2. Launch the Editor**
+    ```bash
+    uv run psynapse-backend
+    ```
 
-In another terminal:
+    The backend will be available at `http://localhost:8000`.
 
-```bash
-uv run psynapse
-```
+2. Launch the Psynapse editor using
+
+    ```bash
+    uv run psynapse
+    ```
 
 ### Creating a Node Graph
 
@@ -136,6 +138,8 @@ When you use `INT`, `FLOAT`, or `STRING` types for input sockets:
 - `Ctrl+-` (or `Cmd+-` on Mac): Zoom out
 - `Ctrl+0` (or `Cmd+0` on Mac): Reset zoom
 - `Ctrl+D` (or `Cmd+D` on Mac): Delete selected items
+- `Ctrl+B` (or `Cmd+B` on Mac): Toggle node library panel
+- `Ctrl+` (or `Cmd+` on Mac): Toggle terminal panel
 
 ## Mouse Controls
 
