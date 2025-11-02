@@ -177,6 +177,11 @@ class PsynapseEditor(QMainWindow):
 
         view_menu.addSeparator()
 
+        toggle_library_action = QAction("Toggle Node Library", self)
+        toggle_library_action.setShortcut("Ctrl+B")
+        toggle_library_action.triggered.connect(self._toggle_library_panel)
+        view_menu.addAction(toggle_library_action)
+
         toggle_terminal_action = QAction("Toggle Terminal", self)
         toggle_terminal_action.setShortcut("Ctrl+`")
         toggle_terminal_action.triggered.connect(self._toggle_terminal_panel)
@@ -225,6 +230,13 @@ class PsynapseEditor(QMainWindow):
         """Reset zoom to 100%."""
         self.view.resetTransform()
         self.view.zoom_factor = 1.0
+
+    def _toggle_library_panel(self):
+        """Toggle the visibility of the node library panel."""
+        if self.node_library.isVisible():
+            self.node_library.hide()
+        else:
+            self.node_library.show()
 
     def _toggle_terminal_panel(self):
         """Toggle the visibility of the terminal panel."""
