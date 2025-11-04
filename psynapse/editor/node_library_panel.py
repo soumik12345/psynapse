@@ -207,7 +207,7 @@ class NodeLibraryPanel(QWidget):
         # Create operations section
         ops_section = CollapsibleSection("Operations")
         for schema in schemas:
-            node_name = schema["name"].capitalize()
+            node_name = schema["name"]
             node_factory = create_op_node_factory(schema)
             # Store with a unique class name based on the schema
             node_factory.__name__ = f"OpNode_{schema['name']}"

@@ -1,6 +1,6 @@
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QGraphicsItem,
@@ -73,8 +73,10 @@ class Node:
 
             # Position input widget if it exists
             if socket.input_widget:
-                socket.input_proxy = QGraphicsProxyWidget(self.graphics)
-                socket.input_proxy.setWidget(socket.input_widget)
+                # Only create proxy widget if it doesn't exist
+                if not hasattr(socket, "input_proxy") or socket.input_proxy is None:
+                    socket.input_proxy = QGraphicsProxyWidget(self.graphics)
+                    socket.input_proxy.setWidget(socket.input_widget)
                 # Position widget to the right of the socket
                 socket.input_proxy.setPos(20, y - 10)
 
@@ -159,6 +161,12 @@ class NodeGraphics(QGraphicsRectItem):
         # Error state
         self.has_error = False
 
+        # Resize state
+        self.is_resizing = False
+        self.resize_handle_size = 15
+        self.min_width = 120
+        self.min_height = 80
+
         # Set up
         self.setRect(0, 0, self.width, self.height)
         self.setPen(self._pen_default)
@@ -168,6 +176,7 @@ class NodeGraphics(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
+        self.setAcceptHoverEvents(True)
 
         # Title text
         self.title_item = QGraphicsTextItem(self)
@@ -190,6 +199,74 @@ class NodeGraphics(QGraphicsRectItem):
         """Set or clear the error state for this node."""
         self.has_error = has_error
         self.update()  # Trigger a repaint
+
+    def get_resize_handle_rect(self) -> QRectF:
+        """Get the rectangle for the resize handle in the bottom-right corner."""
+        return QRectF(
+            self.width - self.resize_handle_size,
+            self.height - self.resize_handle_size,
+            self.resize_handle_size,
+            self.resize_handle_size,
+        )
+
+    def is_in_resize_handle(self, pos: QPointF) -> bool:
+        """Check if a position is within the resize handle."""
+        return self.get_resize_handle_rect().contains(pos)
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events."""
+        if event.button() == Qt.LeftButton and self.is_in_resize_handle(event.pos()):
+            self.is_resizing = True
+            self.setFlag(QGraphicsItem.ItemIsMovable, False)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move events."""
+        if self.is_resizing:
+            # Calculate new size
+            new_width = max(self.min_width, event.pos().x())
+            new_height = max(self.min_height, event.pos().y())
+
+            # Update dimensions
+            self.width = new_width
+            self.height = new_height
+            self.setRect(0, 0, self.width, self.height)
+
+            # Reposition sockets
+            self.node._position_sockets()
+
+            # Update edges
+            self.node.update_edges()
+
+            # Trigger repaint
+            self.update()
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events."""
+        if event.button() == Qt.LeftButton and self.is_resizing:
+            self.is_resizing = False
+            self.setFlag(QGraphicsItem.ItemIsMovable, True)
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def hoverMoveEvent(self, event):
+        """Handle hover move events to change cursor."""
+        if self.is_in_resize_handle(event.pos()):
+            self.setCursor(Qt.SizeFDiagCursor)
+        else:
+            self.setCursor(Qt.ArrowCursor)
+        super().hoverMoveEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        """Reset cursor when leaving the item."""
+        self.setCursor(Qt.ArrowCursor)
+        super().hoverLeaveEvent(event)
 
     def paint(self, painter: QPainter, option, widget=None):
         """Custom paint method."""
@@ -226,3 +303,14 @@ class NodeGraphics(QGraphicsRectItem):
         painter.drawRoundedRect(
             0, 0, self.width, self.height, self.edge_size, self.edge_size
         )
+
+        # Draw resize handle indicator (three diagonal lines in bottom-right corner)
+        painter.setPen(QPen(QColor("#666666"), 1.5))
+        handle_offset = 4
+        handle_spacing = 4
+        for i in range(3):
+            x_start = self.width - handle_offset - i * handle_spacing
+            y_start = self.height - handle_offset
+            x_end = self.width - handle_offset
+            y_end = self.height - handle_offset - i * handle_spacing
+            painter.drawLine(QPointF(x_start, y_start), QPointF(x_end, y_end))

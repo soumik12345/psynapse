@@ -26,8 +26,23 @@ async def test_node_schemas():
     client = BackendClient()
     schemas_response = await client.get_node_schemas()
     schemas = schemas_response.get("nodes", [])
-    # ViewNode and ObjectNode are frontend-only, so we expect 4 operation schemas
-    assert len(schemas) == 4, "Expected 4 node schemas, got " + str(len(schemas))
+    # ViewNode and ObjectNode are frontend-only
+    # We now dynamically load all operations from nodepacks/basic.py
+    assert len(schemas) == 9, "Expected 9 node schemas, got " + str(len(schemas))
+
+    # Verify that the core operations are present
+    schema_names = [schema["name"] for schema in schemas]
+    core_operations = ["add", "subtract", "multiply", "divide"]
+    for op in core_operations:
+        assert op in schema_names, f"Expected operation '{op}' not found in schemas"
+
+    # Verify schema structure for one operation
+    add_schema = next((s for s in schemas if s["name"] == "add"), None)
+    assert add_schema is not None, "add schema not found"
+    assert "params" in add_schema, "add schema missing params"
+    assert "returns" in add_schema, "add schema missing returns"
+    assert len(add_schema["params"]) == 2, "add should have 2 parameters"
+    assert len(add_schema["returns"]) == 1, "add should have 1 return value"
 
 
 @pytest.mark.anyio

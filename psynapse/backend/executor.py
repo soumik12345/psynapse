@@ -1,7 +1,14 @@
 """Graph execution engine for the backend."""
 
+import importlib.util
+import sys
 from collections import deque
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
+
+from psynapse.backend.node_schemas import get_node_schema
+
+# Global cache for loaded functions from nodepacks
+_FUNCTION_CACHE: Dict[str, Callable] = {}
 
 
 class GraphExecutor:
@@ -218,37 +225,53 @@ class GraphExecutor:
         """Execute a node's operation based on its type.
 
         Args:
-            node_type: Type of node (add, subtract, multiply, divide, view)
+            node_type: Type of node (e.g., add, subtract, multiply, divide, view)
             inputs: Dictionary of input values
 
         Returns:
             Result of the operation
         """
-        if node_type == "add":
-            a = float(inputs.get("a", 0.0))
-            b = float(inputs.get("b", 0.0))
-            return a + b
-
-        elif node_type == "subtract":
-            a = float(inputs.get("a", 0.0))
-            b = float(inputs.get("b", 0.0))
-            return a - b
-
-        elif node_type == "multiply":
-            a = float(inputs.get("a", 1.0))
-            b = float(inputs.get("b", 1.0))
-            return a * b
-
-        elif node_type == "divide":
-            a = float(inputs.get("a", 1.0))
-            b = float(inputs.get("b", 1.0))
-            if b == 0:
-                raise ZeroDivisionError("Division by zero")
-            return a / b
-
-        elif node_type == "view":
+        # Special handling for view node
+        if node_type == "view":
             # View node just passes through its input
             return inputs.get("value")
 
-        else:
+        # Check if function is already cached
+        if node_type in _FUNCTION_CACHE:
+            func = _FUNCTION_CACHE[node_type]
+            return func(**inputs)
+
+        # Get the node schema from nodepacks
+        schema = get_node_schema(node_type)
+        if not schema:
             raise ValueError(f"Unknown node type: {node_type}")
+
+        # Load the function from the nodepack file
+        filepath = schema["filepath"]
+
+        # Create a unique module name based on the filepath
+        module_name = f"nodepack_{filepath.replace('/', '_').replace('.', '_')}"
+
+        # Check if module is already loaded
+        if module_name in sys.modules:
+            module = sys.modules[module_name]
+        else:
+            spec = importlib.util.spec_from_file_location(module_name, filepath)
+            if spec is None or spec.loader is None:
+                raise ValueError(f"Could not load module from {filepath}")
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
+
+        # Get the function from the module
+        if not hasattr(module, node_type):
+            raise ValueError(f"Function {node_type} not found in {filepath}")
+
+        func = getattr(module, node_type)
+
+        # Cache the function for future use
+        _FUNCTION_CACHE[node_type] = func
+
+        # Call the function with the inputs
+        return func(**inputs)

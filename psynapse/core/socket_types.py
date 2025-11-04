@@ -62,4 +62,9 @@ class SocketDataType(Enum):
 
     def needs_input_widget(self):
         """Check if this type needs an input widget."""
-        return self in (SocketDataType.INT, SocketDataType.FLOAT, SocketDataType.STRING)
+        return self in (
+            SocketDataType.INT,
+            SocketDataType.FLOAT,
+            SocketDataType.STRING,
+            SocketDataType.BOOL,
+        )
