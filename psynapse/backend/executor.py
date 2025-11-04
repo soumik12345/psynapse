@@ -3,9 +3,12 @@
 import importlib.util
 import sys
 from collections import deque
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from psynapse.backend.node_schemas import get_node_schema
+
+# Global cache for loaded functions from nodepacks
+_FUNCTION_CACHE: Dict[str, Callable] = {}
 
 
 class GraphExecutor:
@@ -233,6 +236,11 @@ class GraphExecutor:
             # View node just passes through its input
             return inputs.get("value")
 
+        # Check if function is already cached
+        if node_type in _FUNCTION_CACHE:
+            func = _FUNCTION_CACHE[node_type]
+            return func(**inputs)
+
         # Get the node schema from nodepacks
         schema = get_node_schema(node_type)
         if not schema:
@@ -240,19 +248,30 @@ class GraphExecutor:
 
         # Load the function from the nodepack file
         filepath = schema["filepath"]
-        spec = importlib.util.spec_from_file_location("nodepack_module", filepath)
-        if spec is None or spec.loader is None:
-            raise ValueError(f"Could not load module from {filepath}")
 
-        module = importlib.util.module_from_spec(spec)
-        sys.modules["nodepack_module"] = module
-        spec.loader.exec_module(module)
+        # Create a unique module name based on the filepath
+        module_name = f"nodepack_{filepath.replace('/', '_').replace('.', '_')}"
+
+        # Check if module is already loaded
+        if module_name in sys.modules:
+            module = sys.modules[module_name]
+        else:
+            spec = importlib.util.spec_from_file_location(module_name, filepath)
+            if spec is None or spec.loader is None:
+                raise ValueError(f"Could not load module from {filepath}")
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
 
         # Get the function from the module
         if not hasattr(module, node_type):
             raise ValueError(f"Function {node_type} not found in {filepath}")
 
         func = getattr(module, node_type)
+
+        # Cache the function for future use
+        _FUNCTION_CACHE[node_type] = func
 
         # Call the function with the inputs
         return func(**inputs)
