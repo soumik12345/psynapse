@@ -1,6 +1,7 @@
 """Graph execution engine for the backend."""
 
 import importlib.util
+import os
 import sys
 from collections import deque
 from typing import Any, Callable, Dict, List
@@ -14,17 +15,19 @@ _FUNCTION_CACHE: Dict[str, Callable] = {}
 class GraphExecutor:
     """Executes a node graph and returns results."""
 
-    def __init__(self, graph_data: Dict[str, Any]):
+    def __init__(self, graph_data: Dict[str, Any], env_vars: Dict[str, str] = None):
         """Initialize executor with graph data.
 
         Args:
             graph_data: Dictionary containing:
                 - nodes: List of node definitions with id, type, and params
                 - edges: List of connections between nodes
+            env_vars: Optional environment variables to set during execution
         """
         self.nodes = graph_data.get("nodes", [])
         self.edges = graph_data.get("edges", [])
         self.node_cache = {}  # Cache for node execution results
+        self.env_vars = env_vars or {}
         # Build node lookup map for faster access
         self.node_map = {node["id"]: node for node in self.nodes}
 
@@ -36,6 +39,12 @@ class GraphExecutor:
         """
         # Clear cache for fresh execution
         self.node_cache = {}
+
+        # Save current environment variables and set new ones
+        original_env = {}
+        for key, value in self.env_vars.items():
+            original_env[key] = os.environ.get(key)
+            os.environ[key] = value
 
         try:
             # Perform topological sort to get execution order
@@ -73,6 +82,16 @@ class GraphExecutor:
             for view_node_id in view_node_ids:
                 results[view_node_id] = {"value": None, "error": str(e)}
             return results
+
+        finally:
+            # Restore original environment variables
+            for key, original_value in original_env.items():
+                if original_value is None:
+                    # Variable didn't exist before, remove it
+                    os.environ.pop(key, None)
+                else:
+                    # Restore original value
+                    os.environ[key] = original_value
 
     def _topological_sort(self) -> List[str]:
         """Perform topological sort using Kahn's algorithm.

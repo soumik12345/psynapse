@@ -14,6 +14,7 @@ from psynapse.core.serializer import GraphSerializer
 from psynapse.core.view import NodeView
 from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
+from psynapse.editor.settings_dialog import SettingsDialog
 from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
 from psynapse.nodes.view_node import ViewNode
@@ -152,6 +153,13 @@ class PsynapseEditor(QMainWindow):
 
         file_menu.addSeparator()
 
+        settings_action = QAction("&Settings", self)
+        settings_action.setShortcut("Ctrl+,")
+        settings_action.triggered.connect(self._open_settings)
+        file_menu.addAction(settings_action)
+
+        file_menu.addSeparator()
+
         quit_action = QAction("&Quit", self)
         quit_action.setShortcut(QKeySequence.Quit)
         quit_action.triggered.connect(self.close)
@@ -218,6 +226,11 @@ class PsynapseEditor(QMainWindow):
         self.welcome_text = None
         self._add_welcome_message()
 
+    def _open_settings(self):
+        """Open the settings dialog."""
+        dialog = SettingsDialog(self)
+        dialog.exec()
+
     def _zoom_in(self):
         """Zoom in the view."""
         self.view.scale(1.2, 1.2)
@@ -270,9 +283,12 @@ class PsynapseEditor(QMainWindow):
 
             pretty_print_payload(graph_data, "Graph Payload")
 
+            # Load environment variables from settings
+            env_vars = SettingsDialog.load_env_vars()
+
             # Execute on backend
             self.statusBar().showMessage("Executing on backend...")
-            response = self.backend_client.execute_graph_sync(graph_data)
+            response = self.backend_client.execute_graph_sync(graph_data, env_vars)
 
             # Update ViewNodes with results
             results = response.get("results", {})

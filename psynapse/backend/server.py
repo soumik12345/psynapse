@@ -66,6 +66,13 @@ class GraphData(BaseModel):
     edges: list[Dict[str, Any]]
 
 
+class ExecutionRequest(BaseModel):
+    """Execution request with graph and environment variables."""
+
+    graph: GraphData
+    env_vars: Dict[str, str] = {}
+
+
 @app.get("/nodes")
 async def get_nodes():
     """Get all available node schemas.
@@ -80,22 +87,26 @@ async def get_nodes():
 
 
 @app.post("/execute")
-async def execute_graph(graph_data: GraphData):
+async def execute_graph(request: ExecutionRequest):
     """Execute a node graph and return results.
 
     Args:
-        graph_data: Graph structure with nodes and edges
+        request: Execution request with graph data and environment variables
 
     Returns:
         Dictionary mapping ViewNode IDs to their computed values
     """
     logger.info(
-        f"Executing graph with {len(graph_data.nodes)} nodes and {len(graph_data.edges)} edges"
+        f"Executing graph with {len(request.graph.nodes)} nodes and {len(request.graph.edges)} edges"
     )
-    pretty_print_payload(graph_data.model_dump(), "Received Graph Payload on Backend")
+    if request.env_vars:
+        logger.info(f"Using {len(request.env_vars)} environment variables")
+    pretty_print_payload(
+        request.graph.model_dump(), "Received Graph Payload on Backend"
+    )
 
     try:
-        executor = GraphExecutor(graph_data.model_dump())
+        executor = GraphExecutor(request.graph.model_dump(), request.env_vars)
         results = executor.execute()
 
         pretty_print_payload(results, "Execution Results")
