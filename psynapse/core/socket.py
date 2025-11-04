@@ -1,11 +1,17 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 from PySide6.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
     QGraphicsEllipseItem,
     QGraphicsItem,
+    QHBoxLayout,
     QLineEdit,
+    QSpinBox,
+    QWidget,
 )
 
 from psynapse.core.socket_types import SocketDataType
@@ -68,26 +74,101 @@ class Socket:
 
     def _create_input_widget(self):
         """Create input widget for editable socket types."""
-        self.input_widget = QLineEdit()
-        self.input_widget.setMaximumWidth(80)
-        self.input_widget.setMaximumHeight(20)
-
-        # Set placeholder based on type
         if self.data_type == SocketDataType.INT:
-            self.input_widget.setPlaceholderText("0")
+            self.input_widget = self._create_int_widget()
         elif self.data_type == SocketDataType.FLOAT:
-            self.input_widget.setPlaceholderText("0.0")
+            self.input_widget = self._create_float_widget()
         elif self.data_type == SocketDataType.STRING:
-            self.input_widget.setPlaceholderText('""')
+            self.input_widget = self._create_string_widget()
+        elif self.data_type == SocketDataType.BOOL:
+            self.input_widget = self._create_bool_widget()
+        else:
+            # Fallback for other types
+            self.input_widget = self._create_string_widget()
 
-        # Set initial value
-        self.input_widget.setText(str(self.value))
+    def _create_int_widget(self):
+        """Create integer spinbox widget."""
+        widget = QSpinBox()
+        widget.setMinimum(-999999)
+        widget.setMaximum(999999)
+        widget.setValue(int(self.value) if self.value else 0)
+        widget.setFixedWidth(80)
+        widget.setFixedHeight(26)
+        widget.setAlignment(Qt.AlignCenter)
+        widget.valueChanged.connect(self._on_int_changed)
 
-        # Connect value change
-        self.input_widget.textChanged.connect(self._on_input_changed)
+        widget.setStyleSheet("""
+            QSpinBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 2px 4px;
+                font-size: 10px;
+            }
+            QSpinBox:focus {
+                border: 1px solid #FF7700;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                background-color: #2d2d2d;
+                border: 1px solid #444444;
+                width: 16px;
+            }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                background-color: #FF7700;
+            }
+        """)
 
-        # Style the widget
-        self.input_widget.setStyleSheet("""
+        return widget
+
+    def _create_float_widget(self):
+        """Create float spinbox widget."""
+        widget = QDoubleSpinBox()
+        widget.setMinimum(-999999.0)
+        widget.setMaximum(999999.0)
+        widget.setDecimals(4)
+        widget.setSingleStep(0.1)
+        widget.setValue(float(self.value) if self.value else 0.0)
+        widget.setFixedWidth(80)
+        widget.setFixedHeight(26)
+        widget.setAlignment(Qt.AlignCenter)
+        widget.valueChanged.connect(self._on_float_changed)
+
+        widget.setStyleSheet("""
+            QDoubleSpinBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 2px 4px;
+                font-size: 10px;
+            }
+            QDoubleSpinBox:focus {
+                border: 1px solid #FF7700;
+            }
+            QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+                background-color: #2d2d2d;
+                border: 1px solid #444444;
+                width: 16px;
+            }
+            QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+                background-color: #FF7700;
+            }
+        """)
+
+        return widget
+
+    def _create_string_widget(self):
+        """Create string input widget."""
+        widget = QLineEdit()
+        widget.setPlaceholderText("Enter text...")
+        widget.setText(str(self.value) if self.value else "")
+        widget.setFixedWidth(80)
+        widget.setFixedHeight(26)
+        widget.setAlignment(Qt.AlignCenter)
+        widget.textChanged.connect(self._on_string_changed)
+
+        widget.setStyleSheet("""
             QLineEdit {
                 background-color: #1a1a1a;
                 color: #ffffff;
@@ -101,12 +182,61 @@ class Socket:
             }
         """)
 
-    def _on_input_changed(self, text: str):
-        """Handle input widget text change."""
-        if text:
-            self.value = self.data_type.validate(text)
-        else:
-            self.value = self.data_type.get_default_value()
+        return widget
+
+    def _create_bool_widget(self):
+        """Create boolean checkbox widget."""
+        # Create a container to center the checkbox
+        container = QWidget()
+        container.setFixedWidth(80)
+        container.setFixedHeight(26)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignCenter)
+
+        widget = QCheckBox()
+        widget.setChecked(bool(self.value) if self.value else False)
+        widget.stateChanged.connect(self._on_bool_changed)
+
+        widget.setStyleSheet("""
+            QCheckBox {
+                color: #ffffff;
+                font-size: 10px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                background-color: #1a1a1a;
+                border: 1px solid #444444;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator:hover {
+                border: 1px solid #FF7700;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #FF7700;
+                border: 1px solid #FF7700;
+            }
+        """)
+
+        layout.addWidget(widget)
+        return container
+
+    def _on_int_changed(self, value: int):
+        """Handle integer spinbox value change."""
+        self.value = value
+
+    def _on_float_changed(self, value: float):
+        """Handle float spinbox value change."""
+        self.value = value
+
+    def _on_string_changed(self, text: str):
+        """Handle string input text change."""
+        self.value = text if text else ""
+
+    def _on_bool_changed(self, state: int):
+        """Handle checkbox state change."""
+        self.value = bool(state)
 
     def get_value(self):
         """Get the current value from input or connected edge."""
