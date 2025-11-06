@@ -45,6 +45,9 @@ class GraphExecutor:
         for key, value in self.env_vars.items():
             original_env[key] = os.environ.get(key)
             os.environ[key] = value
+            print(
+                f"[Executor] Set environment variable: {key} = {'*' * min(len(value), 8)}"
+            )
 
         try:
             # Perform topological sort to get execution order

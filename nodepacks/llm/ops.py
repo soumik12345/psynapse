@@ -8,3 +8,17 @@ def LLM_Message(
         "role": role,
         "content": content,
     }
+
+
+def create_openai_reponse(model: str, prompt: str) -> dict[str, Any | dict[str, Any]]:
+    import os
+
+    from openai import OpenAI
+
+    # Check if API key is available in environment
+    api_key_present = "OPENAI_API_KEY" in os.environ
+    if not api_key_present:
+        raise ValueError("OPENAI_API_KEY is not set in the environment")
+    client = OpenAI()
+    response = client.responses.create(model=model, input=prompt).model_dump()
+    return response

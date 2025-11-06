@@ -286,6 +286,16 @@ class PsynapseEditor(QMainWindow):
             # Load environment variables from settings
             env_vars = SettingsDialog.load_env_vars()
 
+            # Log environment variables for debugging
+            if env_vars:
+                print(
+                    f"[Editor] Loaded {len(env_vars)} environment variables from settings"
+                )
+                for key in env_vars.keys():
+                    print(f"[Editor]   - {key}: {'*' * 8}")  # Mask values for security
+            else:
+                print("[Editor] No environment variables loaded from settings")
+
             # Execute on backend
             self.statusBar().showMessage("Executing on backend...")
             response = self.backend_client.execute_graph_sync(graph_data, env_vars)
