@@ -330,15 +330,9 @@ class PsynapseEditor(QMainWindow):
                     node.display_text.setPlainText(f"Error: {error}")
                     node.graphics.set_error_state(True)
                 else:
-                    # Update display with value
-                    if value is None:
-                        display_str = "None"
-                    elif isinstance(value, float):
-                        display_str = f"{value:.4g}"
-                    else:
-                        display_str = str(value)
-                    node.display_text.setPlainText(display_str)
-                    node.cached_value = value
+                    # Update display with value using ViewNode's set_value method
+                    # This properly handles dictionaries and other complex types
+                    node.set_value(value)
                     node.graphics.set_error_state(False)
 
     def _handle_node_error(self, node, exception: Exception):
