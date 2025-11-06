@@ -1,3 +1,6 @@
+from typing import Any
+
+
 def add(a: float, b: float) -> float:
     return a + b
 
@@ -40,3 +43,11 @@ def exp(a: float) -> float:
     import math
 
     return math.exp(a)
+
+
+def at_index(
+    object: list | dict, index: Any
+) -> list | dict | None | str | int | float | bool:
+    if isinstance(object, list) and not isinstance(index, int):
+        raise ValueError("Index for a list must be an integer")
+    return object[index]

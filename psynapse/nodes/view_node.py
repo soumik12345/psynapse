@@ -319,7 +319,7 @@ class ViewNode(Node):
                 isinstance(item, dict) for item in value
             ):
                 # Show lists containing dictionaries in tree view
-                self._show_tree_view(value)
+                self._show_tree_view({"": value})
             else:
                 # Show simple values in text view
                 if isinstance(value, float):
