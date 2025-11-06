@@ -28,11 +28,23 @@ async def test_node_schemas():
     schemas = schemas_response.get("nodes", [])
     # ViewNode and ObjectNode are frontend-only
     # We dynamically load all operations from nodepacks/basic.py and nodepacks/llm/ops.py
-    assert len(schemas) == 12, "Expected 12 node schemas, got " + str(len(schemas))
+    assert len(schemas) == 13, "Expected 13 node schemas, got " + str(len(schemas))
 
     # Verify that the core operations are present
     schema_names = [schema["name"] for schema in schemas]
-    core_operations = ["add", "subtract", "multiply", "divide"]
+    core_operations = [
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "modulo",
+        "power",
+        "sqrt",
+        "log",
+        "exp",
+        "at_index",
+        "query_with_index",
+    ]
     for op in core_operations:
         assert op in schema_names, f"Expected operation '{op}' not found in schemas"
 
