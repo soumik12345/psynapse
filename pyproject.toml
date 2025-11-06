@@ -17,8 +17,10 @@ psynapse = "psynapse.__main__:run_psynapse_editor"
 psynapse-backend = "psynapse.__main__:run_psynapse_backend"
 
 [project.optional-dependencies]
-openai = [
+llm = [
+    "litellm>=1.79.1",
     "openai>=2.6.1",
+    "pydantic>=2.12.3",
 ]
 
 [dependency-groups]
