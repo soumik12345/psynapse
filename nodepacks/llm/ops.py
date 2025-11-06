@@ -11,6 +11,16 @@ def LLM_Message(
 
 
 def create_openai_reponse(model: str, prompt: str) -> dict[str, Any | dict[str, Any]]:
+    """
+    Create an OpenAI response.
+
+    Args:
+        model: The model to use
+        prompt: The prompt to send to the model
+
+    Returns:
+        The response from the model
+    """
     import os
 
     from openai import OpenAI
