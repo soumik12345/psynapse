@@ -1,10 +1,11 @@
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDoubleSpinBox,
     QGraphicsEllipseItem,
     QGraphicsItem,
@@ -37,12 +38,14 @@ class Socket:
         socket_type: SocketType,
         label: str = "",
         data_type: SocketDataType = SocketDataType.ANY,
+        options: Optional[List[str]] = None,
     ):
         self.node = node
         self.index = index
         self.socket_type = socket_type
         self.label = label
         self.data_type = data_type
+        self.options = options  # For Literal types with specific allowed values
         self.edges = []
         self.value = data_type.get_default_value()
 
@@ -52,8 +55,13 @@ class Socket:
         # Create input widget for input sockets with editable types
         self.input_widget = None
         self.input_proxy = None
-        if socket_type == SocketType.INPUT and data_type.needs_input_widget():
-            self._create_input_widget()
+        if socket_type == SocketType.INPUT:
+            # Create dropdown for options (Literal types)
+            if options:
+                self._create_input_widget()
+            # Create standard widgets for editable types
+            elif data_type.needs_input_widget():
+                self._create_input_widget()
 
     def get_position(self) -> tuple[float, float]:
         """Get socket position in scene coordinates."""
@@ -74,7 +82,10 @@ class Socket:
 
     def _create_input_widget(self):
         """Create input widget for editable socket types."""
-        if self.data_type == SocketDataType.INT:
+        # If options are provided (Literal types), create dropdown
+        if self.options:
+            self.input_widget = self._create_dropdown_widget()
+        elif self.data_type == SocketDataType.INT:
             self.input_widget = self._create_int_widget()
         elif self.data_type == SocketDataType.FLOAT:
             self.input_widget = self._create_float_widget()
@@ -222,6 +233,52 @@ class Socket:
         layout.addWidget(widget)
         return container
 
+    def _create_dropdown_widget(self):
+        """Create dropdown widget for Literal types with options."""
+        widget = QComboBox()
+        widget.setFixedWidth(100)
+        widget.setFixedHeight(26)
+
+        # Add options to the dropdown
+        for option in self.options:
+            widget.addItem(str(option))
+
+        # Set default value to first option
+        if self.options:
+            self.value = str(self.options[0])
+
+        widget.currentTextChanged.connect(self._on_dropdown_changed)
+
+        widget.setStyleSheet("""
+            QComboBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 2px 8px;
+                font-size: 10px;
+            }
+            QComboBox:focus {
+                border: 1px solid #FF7700;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                selection-background-color: #FF7700;
+                border: 1px solid #444444;
+            }
+        """)
+
+        return widget
+
     def _on_int_changed(self, value: int):
         """Handle integer spinbox value change."""
         self.value = value
@@ -237,6 +294,10 @@ class Socket:
     def _on_bool_changed(self, state: int):
         """Handle checkbox state change."""
         self.value = bool(state)
+
+    def _on_dropdown_changed(self, text: str):
+        """Handle dropdown selection change."""
+        self.value = text
 
     def get_value(self):
         """Get the current value from input or connected edge."""

@@ -39,13 +39,24 @@ class Node:
         self.output_sockets = []
 
         for i, input_spec in enumerate(self.inputs):
-            # Support both tuple (label, type) and string (label) formats
+            # Support tuple formats: (label,), (label, type), or (label, type, options)
+            options = None
             if isinstance(input_spec, tuple):
-                label, data_type = input_spec
+                if len(input_spec) >= 3:
+                    label, data_type, options = (
+                        input_spec[0],
+                        input_spec[1],
+                        input_spec[2],
+                    )
+                elif len(input_spec) == 2:
+                    label, data_type = input_spec
+                else:
+                    label = input_spec[0]
+                    data_type = SocketDataType.ANY
             else:
                 label = input_spec
                 data_type = SocketDataType.ANY
-            socket = Socket(self, i, SocketType.INPUT, label, data_type)
+            socket = Socket(self, i, SocketType.INPUT, label, data_type, options)
             self.input_sockets.append(socket)
 
         for i, output_spec in enumerate(self.outputs):
