@@ -76,7 +76,8 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
         {
             "name": str,
             "params": [{"name": str, "type": str, "options": List[str] (optional)}, ...],
-            "returns": [{"name": str, "type": str}, ...]
+            "returns": [{"name": str, "type": str}, ...],
+            "docstring": str (optional)
         }
     """
     # Get function name
@@ -87,6 +88,9 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
 
     # Get function signature
     sig = inspect.signature(func)
+
+    # Get docstring
+    docstring = inspect.getdoc(func)
 
     # Build params list
     params = []
@@ -111,11 +115,17 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
         type_str = type_to_string(return_type)
         returns.append({"name": "result", "type": type_str})
 
-    return {
+    schema = {
         "name": name,
         "params": params,
         "returns": returns,
     }
+
+    # Add docstring if available
+    if docstring:
+        schema["docstring"] = docstring
+
+    return schema
 
 
 def get_functions_from_file(filepath: str) -> list[callable]:

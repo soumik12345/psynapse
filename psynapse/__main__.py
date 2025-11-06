@@ -27,6 +27,20 @@ def run_psynapse_editor():
     app.setOrganizationName("Psynapse")
     app.setApplicationVersion("0.1.0")
 
+    # Set global tooltip styling
+    app.setStyleSheet(
+        """
+        QToolTip {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border: 1px solid #5a5a5a;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 12px;
+        }
+        """
+    )
+
     # Create and show editor with backend port
     editor = PsynapseEditor(backend_port=args.backend_port)
     editor.show()

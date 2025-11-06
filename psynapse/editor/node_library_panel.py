@@ -42,7 +42,7 @@ DEFAULT_NODE_TYPES = [
 class NodeLibraryItem(QLabel):
     """A single node item in the library that can be dragged."""
 
-    def __init__(self, node_class, node_name, parent=None):
+    def __init__(self, node_class, node_name, docstring=None, parent=None):
         super().__init__(parent)
         self.node_class = node_class
         self.node_name = node_name
@@ -53,6 +53,10 @@ class NodeLibraryItem(QLabel):
         self.setMinimumHeight(40)
         self.setMaximumHeight(40)
         self.setCursor(Qt.PointingHandCursor)
+
+        # Set tooltip with docstring if available
+        if docstring:
+            self.setToolTip(docstring)
 
         # Style
         self.setStyleSheet(
@@ -235,11 +239,12 @@ class NodeLibraryPanel(QWidget):
 
             for schema in nodepack_schemas:
                 node_name = schema["name"]
+                docstring = schema.get("docstring", None)
                 node_factory = create_op_node_factory(schema)
                 # Store with a unique class name based on the schema
                 node_factory.__name__ = f"OpNode_{schema['name']}"
                 self.node_types.append((node_factory, node_name))
-                node_item = NodeLibraryItem(node_factory, node_name)
+                node_item = NodeLibraryItem(node_factory, node_name, docstring)
                 nodepack_section.add_item(node_item)
 
             # Insert at the current position (before default nodes)
