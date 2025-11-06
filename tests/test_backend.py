@@ -28,8 +28,8 @@ async def test_node_schemas():
     schemas = schemas_response.get("nodes", [])
     # ViewNode and ObjectNode are frontend-only
     # We dynamically load all operations from nodepacks/basic.py and nodepacks/llm/ops.py
-    # Expected: 9 from basic + 1 from llm = 10 total
-    assert len(schemas) == 10, "Expected 10 node schemas, got " + str(len(schemas))
+    # Expected: 9 from basic + 2 from llm = 11 total
+    assert len(schemas) == 11, "Expected 11 node schemas, got " + str(len(schemas))
 
     # Verify that the core operations are present
     schema_names = [schema["name"] for schema in schemas]
