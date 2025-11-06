@@ -51,3 +51,36 @@ def at_index(
     if isinstance(object, list) and not isinstance(index, int):
         raise ValueError("Index for a list must be an integer")
     return object[index]
+
+
+def query_with_index(obj: list | dict, query: str) -> Any:
+    """
+    Query a nested list or dict using bracket notation.
+
+    Args:
+        obj: The list or dict to query
+        query: A string query in bracket notation, e.g., "['output'][0]['content'][0]['text']"
+
+    Returns:
+        The value at the specified path
+
+    Example:
+        >>> data = {'output': [1, 2, 3]}
+        >>> query_with_index(data, "['output'][0]")
+        1
+    """
+    import re
+
+    # Parse the query string to extract indices using bracket notation
+    # Pattern matches ['key'] or ["key"] or [0] style indexing
+    pattern = r"\[(['\"]?)([^'\"]+?)\1\]"
+    matches = re.findall(pattern, query)
+
+    result = obj
+    for quote, index in matches:
+        if quote:  # String key (quoted)
+            result = result[index]
+        else:  # Numeric index (unquoted)
+            result = result[int(index)]
+
+    return result
