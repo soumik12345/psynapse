@@ -68,7 +68,6 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 
 6. **Navigation**:
    - **Pan**: Right-click and drag
-   - **Zoom**: Mouse wheel
    - **Reset Zoom**: `Ctrl+0`
 
 7. **Deleting**:
@@ -147,7 +146,6 @@ When you use `INT`, `FLOAT`, or `STRING` types for input sockets:
 - **Left Drag (on node)**: Move node
 - **Left Drag (on socket)**: Create connection
 - **Right Drag**: Pan canvas
-- **Mouse Wheel**: Zoom in/out
 
 ## Acknowledgments
 

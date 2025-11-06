@@ -47,6 +47,45 @@ class ViewNode(Node):
         self.cached_value = None
         self.is_showing_tree = False
 
+        # Override the graphics mouseMoveEvent to handle content resizing
+        self._original_mouse_move = self.graphics.mouseMoveEvent
+        self.graphics.mouseMoveEvent = self._on_graphics_mouse_move
+
+    def _on_graphics_mouse_move(self, event):
+        """Handle mouse move on graphics item, updating content sizes when resizing."""
+        # Call original mouseMoveEvent
+        self._original_mouse_move(event)
+
+        # If we're resizing, update content sizes
+        if self.graphics.is_resizing:
+            self._update_content_sizes()
+
+    def _update_content_sizes(self):
+        """Update the sizes of text and tree widgets to fit the current node size."""
+        # Update text display width
+        if self.display_text:
+            # Set text width to allow wrapping within node bounds
+            text_width = max(50, self.graphics.width - 20)
+            self.display_text.setTextWidth(text_width)
+
+        # Update tree widget sizes
+        if self.tree_widget and self.tree_proxy:
+            # Calculate available space (accounting for margins, title bar, etc.)
+            available_width = max(100, self.graphics.width - 30)
+            available_height = max(80, self.graphics.height - 70)
+
+            # Update tree widget size constraints for both width AND height
+            self.tree_widget.setMinimumWidth(available_width)
+            self.tree_widget.setMaximumWidth(available_width)
+            self.tree_widget.setMinimumHeight(available_height)
+            self.tree_widget.setMaximumHeight(available_height)
+
+            # Update container widget size for both width AND height
+            if self.tree_proxy.widget():
+                container = self.tree_proxy.widget()
+                container.setFixedWidth(available_width + 10)
+                container.setFixedHeight(available_height + 10)
+
     def _create_tree_widget(self):
         """Create the tree widget for displaying dictionaries."""
         if self.tree_widget is not None:
@@ -88,16 +127,25 @@ class ViewNode(Node):
 
         self.tree_widget = QTreeWidget()
         self.tree_widget.setHeaderHidden(True)
-        self.tree_widget.setMinimumWidth(220)
-        self.tree_widget.setMinimumHeight(100)
-        self.tree_widget.setMaximumWidth(self.graphics.width - 20)
-        self.tree_widget.setMaximumHeight(300)
+        # Initial sizes - will be updated dynamically on resize
+        initial_width = max(100, self.graphics.width - 30)
+        initial_height = max(80, self.graphics.height - 70)
+        self.tree_widget.setMinimumWidth(initial_width)
+        self.tree_widget.setMaximumWidth(initial_width)
+        self.tree_widget.setMinimumHeight(initial_height)
+        self.tree_widget.setMaximumHeight(initial_height)
 
         # Connect expand/collapse signals to update indicators
         self.tree_widget.itemExpanded.connect(self._on_item_expanded)
         self.tree_widget.itemCollapsed.connect(self._on_item_collapsed)
+        # Connect click signal to toggle expansion
+        self.tree_widget.itemClicked.connect(self._on_item_clicked)
 
         layout.addWidget(self.tree_widget)
+
+        # Set container size for both width and height
+        container.setFixedWidth(initial_width + 10)
+        container.setFixedHeight(initial_height + 10)
 
         # Add the widget to the graphics scene via proxy
         self.tree_proxy = QGraphicsProxyWidget(self.graphics)
@@ -107,6 +155,14 @@ class ViewNode(Node):
 
         # Ensure the proxy widget is on top
         self.tree_proxy.setZValue(1)
+
+    def _on_item_clicked(self, item, column):
+        """Toggle expansion when an item with children is clicked."""
+        if item.childCount() > 0:  # Only toggle if item has children
+            if item.isExpanded():
+                item.setExpanded(False)
+            else:
+                item.setExpanded(True)
 
     def _on_item_expanded(self, item):
         """Update item text when expanded."""
@@ -206,11 +262,13 @@ class ViewNode(Node):
                 if text.startswith("▶ "):
                     child.setText(0, text.replace("▶ ", "▼ "))
 
-        # Resize node to accommodate tree widget
-        tree_height = min(self.tree_widget.sizeHint().height() + 20, 320)
-        new_height = max(200, 80 + tree_height)
-        self.graphics.height = new_height
-        self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+        # Ensure the node has a reasonable minimum height for tree view
+        if self.graphics.height < 200:
+            self.graphics.height = 200
+            self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+        # Update content sizes to fit current node dimensions
+        self._update_content_sizes()
 
         # Show tree, hide text
         self.tree_proxy.setVisible(True)
@@ -225,10 +283,14 @@ class ViewNode(Node):
         if self.tree_proxy is not None:
             self.tree_proxy.setVisible(False)
 
-        # Reset node height to default
-        default_height = 100 + max(len(self.inputs), len(self.outputs)) * 30
-        self.graphics.height = default_height
-        self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+        # Ensure node has minimum height for text view
+        min_height = 100 + max(len(self.inputs), len(self.outputs)) * 30
+        if self.graphics.height < min_height:
+            self.graphics.height = min_height
+            self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+        # Update content sizes to fit current node dimensions
+        self._update_content_sizes()
 
         self.is_showing_tree = False
 
