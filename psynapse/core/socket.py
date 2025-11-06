@@ -77,6 +77,10 @@ class Socket:
         if not self.label:
             return
 
+        # Only create labels for input sockets
+        if self.socket_type != SocketType.INPUT:
+            return
+
         self.label_item = QGraphicsTextItem()
         self.label_item.setDefaultTextColor(Qt.white)
         self.label_item.setPlainText(self.label)
