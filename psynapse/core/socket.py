@@ -2,13 +2,14 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor, QPen
+from PySide6.QtGui import QBrush, QColor, QFont, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
     QGraphicsEllipseItem,
     QGraphicsItem,
+    QGraphicsTextItem,
     QHBoxLayout,
     QLineEdit,
     QSpinBox,
@@ -52,6 +53,10 @@ class Socket:
         # Create graphics item
         self.graphics = SocketGraphics(self)
 
+        # Create label text item
+        self.label_item = None
+        self._create_label()
+
         # Create input widget for input sockets with editable types
         self.input_widget = None
         self.input_proxy = None
@@ -66,6 +71,20 @@ class Socket:
     def get_position(self) -> tuple[float, float]:
         """Get socket position in scene coordinates."""
         return self.graphics.get_position()
+
+    def _create_label(self):
+        """Create label text item for the socket."""
+        if not self.label:
+            return
+
+        self.label_item = QGraphicsTextItem()
+        self.label_item.setDefaultTextColor(Qt.white)
+        self.label_item.setPlainText(self.label)
+
+        # Set font
+        font = QFont()
+        font.setPointSize(9)
+        self.label_item.setFont(font)
 
     def add_edge(self, edge):
         """Add edge connected to this socket."""
