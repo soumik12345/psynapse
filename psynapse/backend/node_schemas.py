@@ -40,12 +40,20 @@ def populate_node_schemas() -> List[Dict[str, Any]]:
         nodepacks_dir = Path.cwd() / "nodepacks"
 
     if nodepacks_dir.exists():
-        for filepath in nodepacks_dir.glob("*.py"):
-            functions = get_functions_from_file(str(filepath))
-            for func in functions:
-                node_schema = generate_node_schema_from_python_function(func)
-                node_schema["filepath"] = str(filepath)
-                node_schemas.append(node_schema)
+        # Iterate through subdirectories in nodepacks
+        for nodepack_dir in nodepacks_dir.iterdir():
+            # Skip non-directories and special directories like __pycache__
+            if not nodepack_dir.is_dir() or nodepack_dir.name.startswith("__"):
+                continue
+
+            # Look for ops.py in each nodepack directory
+            ops_file = nodepack_dir / "ops.py"
+            if ops_file.exists():
+                functions = get_functions_from_file(str(ops_file))
+                for func in functions:
+                    node_schema = generate_node_schema_from_python_function(func)
+                    node_schema["filepath"] = str(ops_file)
+                    node_schemas.append(node_schema)
 
     _SCHEMA_CACHE = node_schemas
     return node_schemas
