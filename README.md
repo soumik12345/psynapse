@@ -12,8 +12,6 @@ A cross-platform node-based UI editor for Python.
 - **On-Demand Execution**: Execute graphs when you're ready with the Run button
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
 
-https://github.com/user-attachments/assets/864dcdad-00cc-40ec-b146-1084af17951a
-
 ## Installation
 
 ```bash
