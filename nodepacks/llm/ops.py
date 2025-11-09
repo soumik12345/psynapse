@@ -10,13 +10,15 @@ def LLM_Message(
     }
 
 
-def create_openai_reponse(model: str, prompt: str) -> dict[str, Any | dict[str, Any]]:
+def create_openai_reponse(
+    model: str, messages: list[dict[str, Any | dict[str, Any]]]
+) -> dict[str, Any | dict[str, Any]]:
     """
     Create an OpenAI response.
 
     Args:
         model: The model to use
-        prompt: The prompt to send to the model
+        messages: The messages to send to the model
 
     Returns:
         The response from the model
@@ -30,5 +32,31 @@ def create_openai_reponse(model: str, prompt: str) -> dict[str, Any | dict[str, 
     if not api_key_present:
         raise ValueError("OPENAI_API_KEY is not set in the environment")
     client = OpenAI()
-    response = client.responses.create(model=model, input=prompt).model_dump()
+    response = client.responses.create(
+        model=model, input=messages, stream=False
+    ).model_dump()
+    return response
+
+
+def create_litellm_response(
+    model: str, messages: list[dict[str, Any | dict[str, Any]]]
+) -> dict[str, Any | dict[str, Any]]:
+    """
+    Create a LiteLLM response.
+
+    Args:
+        model: The model to use
+        messages: The messages to send to the model
+
+    Returns:
+        The response from the model
+    """
+    from litellm import completion
+
+    response = completion(
+        model=model,
+        messages=messages,
+        stream=False,
+    )
+    response = response.model_dump()
     return response
