@@ -332,10 +332,6 @@ class TextNode(ObjectNode):
         # Update the graphics width to accommodate the wider text editor
         self.graphics.width = 340
 
-        # Update widget positioning
-        widget_x = (self.graphics.width - 300) / 2
-        self.widget_proxy.setPos(widget_x, 40)
-
         # Increase node height to accommodate the text editor
         self.graphics.height = 320
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
@@ -343,6 +339,13 @@ class TextNode(ObjectNode):
         # Add these attributes for compatibility with ObjectNode interface
         self.type_selector = None
         self.input_widget = self.text_editor
+
+        # Update widget sizes and positions
+        self._update_widget_sizes()
+
+        # Override the graphics mouseMoveEvent to handle widget resizing
+        self._original_mouse_move = self.graphics.mouseMoveEvent
+        self.graphics.mouseMoveEvent = self._on_graphics_mouse_move
 
     def _on_text_type_changed(self, index: int):
         """Handle text type selector change to update syntax highlighting."""
@@ -376,3 +379,34 @@ class TextNode(ObjectNode):
     def execute(self) -> Any:
         """Return the current text value."""
         return self.current_value
+
+    def _on_graphics_mouse_move(self, event):
+        """Handle mouse move on graphics item, updating widget sizes when resizing."""
+        # Call original mouseMoveEvent
+        self._original_mouse_move(event)
+
+        # If we're resizing, update widget sizes
+        if self.graphics.is_resizing:
+            self._update_widget_sizes()
+
+    def _update_widget_sizes(self):
+        """Update the sizes of widgets to fit the current node size."""
+        # Calculate available width (leave margins on both sides)
+        left_margin = 10
+        right_margin = 10
+        available_width = max(120, self.graphics.width - left_margin - right_margin)
+
+        # Calculate available height for text editor (account for type selector and margins)
+        available_height = max(100, self.graphics.height - 120)
+
+        # Update container width
+        self.widget_container.setFixedWidth(available_width)
+
+        # Update individual widget widths and heights
+        self.text_type_selector.setFixedWidth(available_width)
+        self.text_editor.setFixedWidth(available_width)
+        self.text_editor.setFixedHeight(available_height)
+
+        # Center the widget container horizontally in the node
+        widget_x = (self.graphics.width - available_width) / 2
+        self.widget_proxy.setPos(widget_x, 40)

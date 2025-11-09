@@ -89,13 +89,16 @@ class ObjectNode(Node):
         # Set high z-value to ensure dropdown appears above other elements
         self.widget_proxy.setZValue(200)
 
-        # Center the widget container horizontally in the node
-        widget_x = (self.graphics.width - 160) / 2
-        self.widget_proxy.setPos(widget_x, 40)
-
         # Update node height to accommodate widgets
         self.graphics.height = 160
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+        # Update widget sizes and positions
+        self._update_widget_sizes()
+
+        # Override the graphics mouseMoveEvent to handle widget resizing
+        self._original_mouse_move = self.graphics.mouseMoveEvent
+        self.graphics.mouseMoveEvent = self._on_graphics_mouse_move
 
     def _on_type_changed(self, index: int):
         """Handle type selector change."""
@@ -283,3 +286,31 @@ class ObjectNode(Node):
     def execute(self) -> Any:
         """Return the current value."""
         return self.current_value
+
+    def _on_graphics_mouse_move(self, event):
+        """Handle mouse move on graphics item, updating widget sizes when resizing."""
+        # Call original mouseMoveEvent
+        self._original_mouse_move(event)
+
+        # If we're resizing, update widget sizes
+        if self.graphics.is_resizing:
+            self._update_widget_sizes()
+
+    def _update_widget_sizes(self):
+        """Update the sizes of widgets to fit the current node size."""
+        # Calculate available width (leave margins on both sides)
+        left_margin = 10
+        right_margin = 10
+        available_width = max(80, self.graphics.width - left_margin - right_margin)
+
+        # Update container width
+        self.widget_container.setFixedWidth(available_width)
+
+        # Update individual widget widths
+        self.type_selector.setFixedWidth(available_width)
+        if self.input_widget:
+            self.input_widget.setFixedWidth(available_width)
+
+        # Center the widget container horizontally in the node
+        widget_x = (self.graphics.width - available_width) / 2
+        self.widget_proxy.setPos(widget_x, 40)

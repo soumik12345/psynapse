@@ -363,6 +363,22 @@ class Socket:
         if self.input_proxy:
             self.input_proxy.setVisible(visible)
 
+    def resize_input_widget(self, width: int):
+        """Resize the input widget to the specified width.
+
+        Args:
+            width: The new width for the widget in pixels
+        """
+        if not self.input_widget:
+            return
+
+        # For checkbox widgets (wrapped in a container), resize the container
+        if isinstance(self.input_widget, QWidget) and self.input_widget.layout():
+            self.input_widget.setFixedWidth(width)
+        # For regular widgets (QComboBox, QLineEdit, QSpinBox, etc.)
+        else:
+            self.input_widget.setFixedWidth(width)
+
 
 class SocketGraphics(QGraphicsEllipseItem):
     """Graphics representation of a socket."""

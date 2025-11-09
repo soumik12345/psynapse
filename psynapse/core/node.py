@@ -99,11 +99,25 @@ class Node:
                     # Set z-value to ensure input widgets appear above other elements
                     # Use higher z-value based on socket index to prevent overlap
                     socket.input_proxy.setZValue(100 + i)
-                # Position widget to the right of the label
-                # Calculate position based on label width if present
+
+                # Calculate available width for the widget
+                # Start position: after socket and label
                 widget_x = 15
                 if socket.label_item:
                     widget_x = 15 + socket.label_item.boundingRect().width() + 5
+
+                # End position: leave margin before right edge
+                right_margin = 10
+                available_width = self.graphics.width - widget_x - right_margin
+
+                # Set minimum width to ensure widget is usable
+                min_widget_width = 60
+                widget_width = max(min_widget_width, available_width)
+
+                # Resize the widget to fit available space
+                socket.resize_input_widget(widget_width)
+
+                # Position widget
                 socket.input_proxy.setPos(widget_x, y - 10)
 
         for i, socket in enumerate(self.output_sockets):
