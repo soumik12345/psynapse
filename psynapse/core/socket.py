@@ -259,7 +259,7 @@ class Socket:
     def _create_dropdown_widget(self):
         """Create dropdown widget for Literal types with options."""
         widget = QComboBox()
-        widget.setFixedWidth(100)
+        widget.setFixedWidth(160)
         widget.setFixedHeight(26)
 
         # Add options to the dropdown
