@@ -272,6 +272,31 @@ class Socket:
 
         widget.currentTextChanged.connect(self._on_dropdown_changed)
 
+        # Store reference to socket for event handling
+        widget.socket_ref = self
+
+        # Override showPopup to ensure dropdown appears on top
+        original_show_popup = widget.showPopup
+
+        def custom_show_popup():
+            # Temporarily increase z-value when showing popup
+            if hasattr(self, "input_proxy") and self.input_proxy:
+                self.input_proxy.setZValue(1000)
+            original_show_popup()
+
+        # Override hidePopup to restore normal z-value
+        original_hide_popup = widget.hidePopup
+
+        def custom_hide_popup():
+            original_hide_popup()
+            # Restore original z-value after popup closes
+            if hasattr(self, "input_proxy") and self.input_proxy:
+                # Restore to original z-value based on socket index
+                self.input_proxy.setZValue(100 + self.index)
+
+        widget.showPopup = custom_show_popup
+        widget.hidePopup = custom_hide_popup
+
         widget.setStyleSheet("""
             QComboBox {
                 background-color: #1a1a1a;

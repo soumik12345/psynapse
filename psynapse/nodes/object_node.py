@@ -86,6 +86,8 @@ class ObjectNode(Node):
         # Add widget to graphics and center it
         self.widget_proxy = QGraphicsProxyWidget(self.graphics)
         self.widget_proxy.setWidget(self.widget_container)
+        # Set high z-value to ensure dropdown appears above other elements
+        self.widget_proxy.setZValue(200)
 
         # Center the widget container horizontally in the node
         widget_x = (self.graphics.width - 160) / 2

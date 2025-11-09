@@ -96,6 +96,9 @@ class Node:
                 if not hasattr(socket, "input_proxy") or socket.input_proxy is None:
                     socket.input_proxy = QGraphicsProxyWidget(self.graphics)
                     socket.input_proxy.setWidget(socket.input_widget)
+                    # Set z-value to ensure input widgets appear above other elements
+                    # Use higher z-value based on socket index to prevent overlap
+                    socket.input_proxy.setZValue(100 + i)
                 # Position widget to the right of the label
                 # Calculate position based on label width if present
                 widget_x = 15
