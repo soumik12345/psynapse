@@ -16,6 +16,13 @@ dependencies = [
 psynapse = "psynapse.__main__:run_psynapse_editor"
 psynapse-backend = "psynapse.__main__:run_psynapse_backend"
 
+[project.optional-dependencies]
+llm = [
+    "litellm>=1.79.1",
+    "openai>=2.6.1",
+    "pydantic>=2.12.3",
+]
+
 [dependency-groups]
 dev = [
     "uv>=0.4.20",
@@ -23,8 +30,6 @@ dev = [
     "isort>=5.13.2",
     "black>=24.10.0",
     "ruff>=0.6.9",
-    "textual-dev>=1.7.0",
-    "openai>=1.108.2",
     "pytest-anyio>=0.0.0",
     "trio>=0.31.0",
 ]

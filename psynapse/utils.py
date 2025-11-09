@@ -1,11 +1,18 @@
 import ast
 import inspect
 import json
-from typing import Any, Dict, List, get_type_hints
+import sys
+from typing import Any, Dict, List, get_args, get_origin, get_type_hints
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
+
+# Import Literal based on Python version
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 
 def pretty_print_payload(payload: dict, title: str):
@@ -34,11 +41,28 @@ def type_to_string(type_hint) -> str:
         return "list"
     elif type_hint == dict or type_hint == Dict:
         return "dict"
+    # Check for Literal types
+    elif get_origin(type_hint) is Literal:
+        return "str"  # Literal types are still strings, but we'll handle options separately
     elif hasattr(type_hint, "__name__"):
         return type_hint.__name__
     else:
         # Fallback to string representation
         return str(type_hint).replace("typing.", "").lower()
+
+
+def extract_literal_values(type_hint) -> List[str] | None:
+    """Extract values from a Literal type hint.
+
+    Args:
+        type_hint: A type hint that may be a Literal
+
+    Returns:
+        List of literal values if the type is Literal, None otherwise
+    """
+    if get_origin(type_hint) is Literal:
+        return list(get_args(type_hint))
+    return None
 
 
 def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
@@ -51,8 +75,9 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
         A dictionary representing the node schema in the format:
         {
             "name": str,
-            "params": [{"name": str, "type": str}, ...],
-            "returns": [{"name": str, "type": str}, ...]
+            "params": [{"name": str, "type": str, "options": List[str] (optional)}, ...],
+            "returns": [{"name": str, "type": str}, ...],
+            "docstring": str (optional)
         }
     """
     # Get function name
@@ -64,6 +89,9 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
     # Get function signature
     sig = inspect.signature(func)
 
+    # Get docstring
+    docstring = inspect.getdoc(func)
+
     # Build params list
     params = []
     for param_name, param in sig.parameters.items():
@@ -71,7 +99,14 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
             type_hint = type_hints[param_name]
             # Convert type to string representation
             type_str = type_to_string(type_hint)
-            params.append({"name": param_name, "type": type_str})
+            param_dict = {"name": param_name, "type": type_str}
+
+            # Check if this is a Literal type and extract options
+            literal_values = extract_literal_values(type_hint)
+            if literal_values:
+                param_dict["options"] = literal_values
+
+            params.append(param_dict)
 
     # Build returns list
     returns = []
@@ -80,11 +115,17 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
         type_str = type_to_string(return_type)
         returns.append({"name": "result", "type": type_str})
 
-    return {
+    schema = {
         "name": name,
         "params": params,
         "returns": returns,
     }
+
+    # Add docstring if available
+    if docstring:
+        schema["docstring"] = docstring
+
+    return schema
 
 
 def get_functions_from_file(filepath: str) -> list[callable]:

@@ -30,18 +30,24 @@ class BackendClient:
                 else:
                     raise Exception(f"Failed to fetch node schemas: {response.status}")
 
-    async def execute_graph(self, graph_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_graph(
+        self, graph_data: Dict[str, Any], env_vars: Dict[str, str] = None
+    ) -> Dict[str, Any]:
         """Execute a graph on the backend.
 
         Args:
             graph_data: Serialized graph structure
+            env_vars: Optional environment variables to set during execution
 
         Returns:
             Dictionary with execution results
         """
+        # Include env_vars in the request payload
+        payload = {"graph": graph_data, "env_vars": env_vars or {}}
+
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"{self.base_url}/execute", json=graph_data
+                f"{self.base_url}/execute", json=payload
             ) as response:
                 if response.status == 200:
                     return await response.json()
@@ -66,16 +72,19 @@ class BackendClient:
         except Exception:
             return False
 
-    def execute_graph_sync(self, graph_data: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_graph_sync(
+        self, graph_data: Dict[str, Any], env_vars: Dict[str, str] = None
+    ) -> Dict[str, Any]:
         """Synchronous wrapper for execute_graph.
 
         Args:
             graph_data: Serialized graph structure
+            env_vars: Optional environment variables to set during execution
 
         Returns:
             Dictionary with execution results
         """
-        return asyncio.run(self.execute_graph(graph_data))
+        return asyncio.run(self.execute_graph(graph_data, env_vars))
 
     def get_node_schemas_sync(self) -> Dict[str, Any]:
         """Synchronous wrapper for get_node_schemas.

@@ -28,7 +28,12 @@ class OpNode(Node):
         for param in schema.get("params", []):
             param_name = param["name"].upper()  # e.g., "a" -> "A"
             param_type = self._map_type(param["type"])
-            inputs.append((param_name, param_type))
+
+            # Check if this parameter has options (for Literal types)
+            if "options" in param:
+                inputs.append((param_name, param_type, param["options"]))
+            else:
+                inputs.append((param_name, param_type))
 
         # Convert schema returns to output socket specifications
         outputs = []
@@ -53,9 +58,11 @@ class OpNode(Node):
         type_mapping = {
             "float": SocketDataType.FLOAT,
             "int": SocketDataType.INT,
+            "str": SocketDataType.STRING,
             "string": SocketDataType.STRING,
             "bool": SocketDataType.BOOL,
             "any": SocketDataType.ANY,
+            "dict": SocketDataType.ANY,  # Dict types map to ANY
         }
         return type_mapping.get(type_str.lower(), SocketDataType.ANY)
 

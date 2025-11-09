@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
+from psynapse.nodes.text_node import TextNode
 from psynapse.nodes.view_node import ViewNode
 
 
@@ -35,6 +36,7 @@ def create_op_node_factory(schema: Dict[str, Any]):
 # Default node types that don't come from schemas (client-side only)
 DEFAULT_NODE_TYPES = [
     (ObjectNode, "Object"),
+    (TextNode, "Text"),
     (ViewNode, "View"),
 ]
 
@@ -42,7 +44,7 @@ DEFAULT_NODE_TYPES = [
 class NodeLibraryItem(QLabel):
     """A single node item in the library that can be dragged."""
 
-    def __init__(self, node_class, node_name, parent=None):
+    def __init__(self, node_class, node_name, docstring=None, parent=None):
         super().__init__(parent)
         self.node_class = node_class
         self.node_name = node_name
@@ -53,6 +55,10 @@ class NodeLibraryItem(QLabel):
         self.setMinimumHeight(40)
         self.setMaximumHeight(40)
         self.setCursor(Qt.PointingHandCursor)
+
+        # Set tooltip with docstring if available
+        if docstring:
+            self.setToolTip(docstring)
 
         # Style
         self.setStyleSheet(
@@ -204,20 +210,50 @@ class NodeLibraryPanel(QWidget):
         if not schemas or not self.container_layout:
             return
 
-        # Create operations section
-        ops_section = CollapsibleSection("Operations")
-        for schema in schemas:
-            node_name = schema["name"]
-            node_factory = create_op_node_factory(schema)
-            # Store with a unique class name based on the schema
-            node_factory.__name__ = f"OpNode_{schema['name']}"
-            self.node_types.append((node_factory, node_name))
-            node_item = NodeLibraryItem(node_factory, node_name)
-            ops_section.add_item(node_item)
+        # Group schemas by nodepack
+        from collections import defaultdict
+        from pathlib import Path
 
-        # Insert at the beginning (before default nodes)
-        self.container_layout.insertWidget(0, ops_section)
-        self.container_layout.insertSpacing(1, 8)
+        nodepack_groups = defaultdict(list)
+        for schema in schemas:
+            # Extract nodepack name from filepath
+            # filepath is like: /path/to/nodepacks/basic/ops.py
+            filepath = Path(schema.get("filepath", ""))
+            if filepath.exists() and "nodepacks" in filepath.parts:
+                # Get the nodepack directory name
+                nodepack_idx = filepath.parts.index("nodepacks")
+                if nodepack_idx + 1 < len(filepath.parts):
+                    nodepack_name = filepath.parts[nodepack_idx + 1]
+                    nodepack_groups[nodepack_name].append(schema)
+                else:
+                    # Fallback to "Operations" if can't determine nodepack
+                    nodepack_groups["Operations"].append(schema)
+            else:
+                # Fallback to "Operations" if no valid filepath
+                nodepack_groups["Operations"].append(schema)
+
+        # Create a collapsible section for each nodepack
+        insert_position = 0
+        for nodepack_name, nodepack_schemas in sorted(nodepack_groups.items()):
+            # Capitalize the nodepack name for display
+            section_title = nodepack_name.capitalize()
+            nodepack_section = CollapsibleSection(section_title)
+
+            for schema in nodepack_schemas:
+                node_name = schema["name"]
+                docstring = schema.get("docstring", None)
+                node_factory = create_op_node_factory(schema)
+                # Store with a unique class name based on the schema
+                node_factory.__name__ = f"OpNode_{schema['name']}"
+                self.node_types.append((node_factory, node_name))
+                node_item = NodeLibraryItem(node_factory, node_name, docstring)
+                nodepack_section.add_item(node_item)
+
+            # Insert at the current position (before default nodes)
+            self.container_layout.insertWidget(insert_position, nodepack_section)
+            insert_position += 1
+            self.container_layout.insertSpacing(insert_position, 8)
+            insert_position += 1
 
     def add_default_nodes(self, container_layout):
         """Add the default nodes to the container layout."""

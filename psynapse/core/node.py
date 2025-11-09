@@ -39,13 +39,24 @@ class Node:
         self.output_sockets = []
 
         for i, input_spec in enumerate(self.inputs):
-            # Support both tuple (label, type) and string (label) formats
+            # Support tuple formats: (label,), (label, type), or (label, type, options)
+            options = None
             if isinstance(input_spec, tuple):
-                label, data_type = input_spec
+                if len(input_spec) >= 3:
+                    label, data_type, options = (
+                        input_spec[0],
+                        input_spec[1],
+                        input_spec[2],
+                    )
+                elif len(input_spec) == 2:
+                    label, data_type = input_spec
+                else:
+                    label = input_spec[0]
+                    data_type = SocketDataType.ANY
             else:
                 label = input_spec
                 data_type = SocketDataType.ANY
-            socket = Socket(self, i, SocketType.INPUT, label, data_type)
+            socket = Socket(self, i, SocketType.INPUT, label, data_type, options)
             self.input_sockets.append(socket)
 
         for i, output_spec in enumerate(self.outputs):
@@ -71,20 +82,58 @@ class Node:
             socket.graphics.setParentItem(self.graphics)
             socket.graphics.setPos(x, y)
 
+            # Position label if it exists
+            if socket.label_item:
+                socket.label_item.setParentItem(self.graphics)
+                # Position label to the right of the socket
+                label_x = 15
+                label_y = y - 8
+                socket.label_item.setPos(label_x, label_y)
+
             # Position input widget if it exists
             if socket.input_widget:
                 # Only create proxy widget if it doesn't exist
                 if not hasattr(socket, "input_proxy") or socket.input_proxy is None:
                     socket.input_proxy = QGraphicsProxyWidget(self.graphics)
                     socket.input_proxy.setWidget(socket.input_widget)
-                # Position widget to the right of the socket
-                socket.input_proxy.setPos(20, y - 10)
+                    # Set z-value to ensure input widgets appear above other elements
+                    # Use higher z-value based on socket index to prevent overlap
+                    socket.input_proxy.setZValue(100 + i)
+
+                # Calculate available width for the widget
+                # Start position: after socket and label
+                widget_x = 15
+                if socket.label_item:
+                    widget_x = 15 + socket.label_item.boundingRect().width() + 5
+
+                # End position: leave margin before right edge
+                right_margin = 10
+                available_width = self.graphics.width - widget_x - right_margin
+
+                # Set minimum width to ensure widget is usable
+                min_widget_width = 60
+                widget_width = max(min_widget_width, available_width)
+
+                # Resize the widget to fit available space
+                socket.resize_input_widget(widget_width)
+
+                # Position widget
+                socket.input_proxy.setPos(widget_x, y - 10)
 
         for i, socket in enumerate(self.output_sockets):
             x = self.graphics.width
             y = 40 + i * socket_spacing
             socket.graphics.setParentItem(self.graphics)
             socket.graphics.setPos(x, y)
+
+            # Position label if it exists
+            if socket.label_item:
+                socket.label_item.setParentItem(self.graphics)
+                # Position label to the left of the socket
+                label_width = socket.label_item.boundingRect().width()
+                label_x = x - label_width - 15
+                label_y = y - 8
+                socket.label_item.setPos(label_x, label_y)
 
     def set_position(self, x: float, y: float):
         """Set node position."""

@@ -138,24 +138,10 @@ class NodeView(QGraphicsView):
         return True
 
     def wheelEvent(self, event):
-        """Handle mouse wheel for zooming."""
-        # Calculate zoom factor
-        if event.angleDelta().y() > 0:
-            zoom_factor = self.zoom_step
-        else:
-            zoom_factor = 1 / self.zoom_step
-
-        # Apply zoom limits
-        self.zoom_factor *= zoom_factor
-        if self.zoom_factor < self.zoom_range[0]:
-            self.zoom_factor = self.zoom_range[0]
-            zoom_factor = self.zoom_range[0] / (self.zoom_factor / zoom_factor)
-        elif self.zoom_factor > self.zoom_range[1]:
-            self.zoom_factor = self.zoom_range[1]
-            zoom_factor = self.zoom_range[1] / (self.zoom_factor / zoom_factor)
-
-        # Apply zoom
-        self.scale(zoom_factor, zoom_factor)
+        """Handle mouse wheel events - zoom disabled."""
+        # Zoom functionality has been disabled
+        # Pass the event to parent for default behavior (e.g., scrolling)
+        event.ignore()
 
     def keyPressEvent(self, event):
         """Handle key press."""

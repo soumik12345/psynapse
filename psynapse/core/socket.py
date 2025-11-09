@@ -1,13 +1,15 @@
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor, QPen
+from PySide6.QtGui import QBrush, QColor, QFont, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDoubleSpinBox,
     QGraphicsEllipseItem,
     QGraphicsItem,
+    QGraphicsTextItem,
     QHBoxLayout,
     QLineEdit,
     QSpinBox,
@@ -37,27 +39,56 @@ class Socket:
         socket_type: SocketType,
         label: str = "",
         data_type: SocketDataType = SocketDataType.ANY,
+        options: Optional[List[str]] = None,
     ):
         self.node = node
         self.index = index
         self.socket_type = socket_type
         self.label = label
         self.data_type = data_type
+        self.options = options  # For Literal types with specific allowed values
         self.edges = []
         self.value = data_type.get_default_value()
 
         # Create graphics item
         self.graphics = SocketGraphics(self)
 
+        # Create label text item
+        self.label_item = None
+        self._create_label()
+
         # Create input widget for input sockets with editable types
         self.input_widget = None
         self.input_proxy = None
-        if socket_type == SocketType.INPUT and data_type.needs_input_widget():
-            self._create_input_widget()
+        if socket_type == SocketType.INPUT:
+            # Create dropdown for options (Literal types)
+            if options:
+                self._create_input_widget()
+            # Create standard widgets for editable types
+            elif data_type.needs_input_widget():
+                self._create_input_widget()
 
     def get_position(self) -> tuple[float, float]:
         """Get socket position in scene coordinates."""
         return self.graphics.get_position()
+
+    def _create_label(self):
+        """Create label text item for the socket."""
+        if not self.label:
+            return
+
+        # Only create labels for input sockets
+        if self.socket_type != SocketType.INPUT:
+            return
+
+        self.label_item = QGraphicsTextItem()
+        self.label_item.setDefaultTextColor(Qt.white)
+        self.label_item.setPlainText(self.label)
+
+        # Set font
+        font = QFont()
+        font.setPointSize(9)
+        self.label_item.setFont(font)
 
     def add_edge(self, edge):
         """Add edge connected to this socket."""
@@ -74,7 +105,10 @@ class Socket:
 
     def _create_input_widget(self):
         """Create input widget for editable socket types."""
-        if self.data_type == SocketDataType.INT:
+        # If options are provided (Literal types), create dropdown
+        if self.options:
+            self.input_widget = self._create_dropdown_widget()
+        elif self.data_type == SocketDataType.INT:
             self.input_widget = self._create_int_widget()
         elif self.data_type == SocketDataType.FLOAT:
             self.input_widget = self._create_float_widget()
@@ -222,6 +256,77 @@ class Socket:
         layout.addWidget(widget)
         return container
 
+    def _create_dropdown_widget(self):
+        """Create dropdown widget for Literal types with options."""
+        widget = QComboBox()
+        widget.setFixedWidth(160)
+        widget.setFixedHeight(26)
+
+        # Add options to the dropdown
+        for option in self.options:
+            widget.addItem(str(option))
+
+        # Set default value to first option
+        if self.options:
+            self.value = str(self.options[0])
+
+        widget.currentTextChanged.connect(self._on_dropdown_changed)
+
+        # Store reference to socket for event handling
+        widget.socket_ref = self
+
+        # Override showPopup to ensure dropdown appears on top
+        original_show_popup = widget.showPopup
+
+        def custom_show_popup():
+            # Temporarily increase z-value when showing popup
+            if hasattr(self, "input_proxy") and self.input_proxy:
+                self.input_proxy.setZValue(1000)
+            original_show_popup()
+
+        # Override hidePopup to restore normal z-value
+        original_hide_popup = widget.hidePopup
+
+        def custom_hide_popup():
+            original_hide_popup()
+            # Restore original z-value after popup closes
+            if hasattr(self, "input_proxy") and self.input_proxy:
+                # Restore to original z-value based on socket index
+                self.input_proxy.setZValue(100 + self.index)
+
+        widget.showPopup = custom_show_popup
+        widget.hidePopup = custom_hide_popup
+
+        widget.setStyleSheet("""
+            QComboBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 2px 8px;
+                font-size: 10px;
+            }
+            QComboBox:focus {
+                border: 1px solid #FF7700;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                selection-background-color: #FF7700;
+                border: 1px solid #444444;
+            }
+        """)
+
+        return widget
+
     def _on_int_changed(self, value: int):
         """Handle integer spinbox value change."""
         self.value = value
@@ -238,6 +343,10 @@ class Socket:
         """Handle checkbox state change."""
         self.value = bool(state)
 
+    def _on_dropdown_changed(self, text: str):
+        """Handle dropdown selection change."""
+        self.value = text
+
     def get_value(self):
         """Get the current value from input or connected edge."""
         # If connected, get value from edge
@@ -253,6 +362,22 @@ class Socket:
         """Set visibility of input widget based on connection state."""
         if self.input_proxy:
             self.input_proxy.setVisible(visible)
+
+    def resize_input_widget(self, width: int):
+        """Resize the input widget to the specified width.
+
+        Args:
+            width: The new width for the widget in pixels
+        """
+        if not self.input_widget:
+            return
+
+        # For checkbox widgets (wrapped in a container), resize the container
+        if isinstance(self.input_widget, QWidget) and self.input_widget.layout():
+            self.input_widget.setFixedWidth(width)
+        # For regular widgets (QComboBox, QLineEdit, QSpinBox, etc.)
+        else:
+            self.input_widget.setFixedWidth(width)
 
 
 class SocketGraphics(QGraphicsEllipseItem):

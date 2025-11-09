@@ -27,14 +27,31 @@ async def test_node_schemas():
     schemas_response = await client.get_node_schemas()
     schemas = schemas_response.get("nodes", [])
     # ViewNode and ObjectNode are frontend-only
-    # We now dynamically load all operations from nodepacks/basic.py
-    assert len(schemas) == 9, "Expected 9 node schemas, got " + str(len(schemas))
+    # We dynamically load all operations from nodepacks/basic.py and nodepacks/llm/ops.py
+    assert len(schemas) == 14, "Expected 14 node schemas, got " + str(len(schemas))
 
     # Verify that the core operations are present
     schema_names = [schema["name"] for schema in schemas]
-    core_operations = ["add", "subtract", "multiply", "divide"]
+    core_operations = [
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "modulo",
+        "power",
+        "sqrt",
+        "log",
+        "exp",
+        "at_index",
+        "query_with_index",
+    ]
     for op in core_operations:
         assert op in schema_names, f"Expected operation '{op}' not found in schemas"
+
+    # Verify that LLM operations are present
+    assert "LLM_Message" in schema_names, (
+        "Expected LLM_Message operation not found in schemas"
+    )
 
     # Verify schema structure for one operation
     add_schema = next((s for s in schemas if s["name"] == "add"), None)
@@ -43,6 +60,18 @@ async def test_node_schemas():
     assert "returns" in add_schema, "add schema missing returns"
     assert len(add_schema["params"]) == 2, "add should have 2 parameters"
     assert len(add_schema["returns"]) == 1, "add should have 1 return value"
+
+    # Verify LLM_Message schema structure
+    llm_message_schema = next((s for s in schemas if s["name"] == "LLM_Message"), None)
+    assert llm_message_schema is not None, "LLM_Message schema not found"
+    assert "params" in llm_message_schema, "LLM_Message schema missing params"
+    assert "returns" in llm_message_schema, "LLM_Message schema missing returns"
+    assert len(llm_message_schema["params"]) == 2, (
+        "LLM_Message should have 2 parameters"
+    )
+    assert len(llm_message_schema["returns"]) == 1, (
+        "LLM_Message should have 1 return value"
+    )
 
 
 @pytest.mark.anyio

@@ -40,7 +40,7 @@ class Edge:
         if self.end_socket:
             self.end_socket.remove_edge(self)
             # Show input widget when disconnected
-            from psynapse.socket import SocketType
+            from psynapse.core.socket import SocketType
 
             if self.end_socket.socket_type == SocketType.INPUT:
                 self.end_socket.set_input_widget_visible(True)
@@ -69,6 +69,9 @@ class EdgeGraphics(QGraphicsPathItem):
 
         # Make selectable
         self.setFlag(QGraphicsItem.ItemIsSelectable)
+
+        # Make hover-able for better UX
+        self.setAcceptHoverEvents(True)
 
         self.update_path()
 
@@ -102,11 +105,40 @@ class EdgeGraphics(QGraphicsPathItem):
 
         self.setPath(path)
 
+    def shape(self):
+        """Return a wider shape for easier selection."""
+        # Create a stroker to make the selectable area wider
+        from PySide6.QtGui import QPainterPathStroker
+
+        stroker = QPainterPathStroker()
+        stroker.setWidth(10)  # Wider selection area
+        return stroker.createStroke(self.path())
+
     def paint(self, painter: QPainter, option, widget=None):
         """Custom paint to handle selection."""
         if self.isSelected():
+            # Draw selected edge in white and thicker
             self._pen.setColor(QColor("#FFFFFF"))
+            self._pen.setWidth(4)
         else:
+            # Normal green edge
             self._pen.setColor(self._color)
+            self._pen.setWidth(3)
         self.setPen(self._pen)
         super().paint(painter, option, widget)
+
+    def hoverEnterEvent(self, event):
+        """Handle hover enter - show visual feedback."""
+        if not self.isSelected():
+            self._pen.setWidth(4)
+            self.setPen(self._pen)
+            self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        """Handle hover leave - restore normal appearance."""
+        if not self.isSelected():
+            self._pen.setWidth(3)
+            self.setPen(self._pen)
+            self.update()
+        super().hoverLeaveEvent(event)

@@ -12,7 +12,7 @@ A cross-platform node-based UI editor for Python.
 - **On-Demand Execution**: Execute graphs when you're ready with the Run button
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
 
-https://github.com/user-attachments/assets/864dcdad-00cc-40ec-b146-1084af17951a
+https://github.com/user-attachments/assets/eeffa6ed-3355-47a2-9194-fa612aa3e940
 
 ## Installation
 
@@ -68,7 +68,6 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 
 6. **Navigation**:
    - **Pan**: Right-click and drag
-   - **Zoom**: Mouse wheel
    - **Reset Zoom**: `Ctrl+0`
 
 7. **Deleting**:
@@ -90,22 +89,6 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
       - **Boolean**: Checkbox
     - Widget automatically changes when type is switched
     - Perfect for providing constant values to your node graph
-
-### Math Nodes
-
-- **Add Node**: Adds two numbers (A + B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-- **Subtract Node**: Subtracts two numbers (A - B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-- **Multiply Node**: Multiplies two numbers (A × B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-- **Divide Node**: Divides two numbers (A ÷ B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-  - Demonstrates error handling with division by zero
 
 ### Display Nodes
 
@@ -147,7 +130,6 @@ When you use `INT`, `FLOAT`, or `STRING` types for input sockets:
 - **Left Drag (on node)**: Move node
 - **Left Drag (on socket)**: Create connection
 - **Right Drag**: Pan canvas
-- **Mouse Wheel**: Zoom in/out
 
 ## Acknowledgments
 
