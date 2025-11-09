@@ -90,22 +90,6 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
     - Widget automatically changes when type is switched
     - Perfect for providing constant values to your node graph
 
-### Math Nodes
-
-- **Add Node**: Adds two numbers (A + B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-- **Subtract Node**: Subtracts two numbers (A - B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-- **Multiply Node**: Multiplies two numbers (A × B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-- **Divide Node**: Divides two numbers (A ÷ B)
-  - Input types: Float, Float
-  - Includes input fields for direct value entry
-  - Demonstrates error handling with division by zero
-
 ### Display Nodes
 
 - **View Node**: Displays the input value in the node
