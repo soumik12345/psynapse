@@ -18,7 +18,7 @@ def run_psynapse_editor(
         "--backend-port",
         "-p",
         help="Port of existing backend to connect to (if not specified, spawns new backend)",
-    )
+    ),
 ):
     """Run the node editor application."""
     qt_app = QApplication(sys.argv)
@@ -68,7 +68,14 @@ def run_psynapse_backend(
         f"[green]INFO:[/green]\t  Endpoints documentation will be available at http://{host}:{port}/docs"
     )
 
-    cmd = ["uvicorn", "psynapse.backend.server:app", "--host", host, "--port", str(port)]
+    cmd = [
+        "uvicorn",
+        "psynapse.backend.server:app",
+        "--host",
+        host,
+        "--port",
+        str(port),
+    ]
     if reload:
         cmd.append("--reload")
 
@@ -90,25 +97,27 @@ def psynapse_cli():
     """Entry point for psynapse command - runs the editor by default."""
     # If no command is specified, run the editor command by default
     import sys
-    if len(sys.argv) == 1 or (len(sys.argv) > 1 and not sys.argv[1].startswith('-')):
+
+    if len(sys.argv) == 1 or (len(sys.argv) > 1 and not sys.argv[1].startswith("-")):
         # No command specified or starts with option, run editor
         if len(sys.argv) == 1:
             run_psynapse_editor()
         else:
             # Parse arguments for editor
-            sys.argv.insert(1, 'editor')
+            sys.argv.insert(1, "editor")
             app()
     else:
         # Likely an option, run editor
-        sys.argv.insert(1, 'editor')
+        sys.argv.insert(1, "editor")
         app()
 
 
 def psynapse_backend_cli():
     """Entry point for psynapse-backend command."""
     import sys
+
     # Insert the backend command
-    sys.argv.insert(1, 'backend')
+    sys.argv.insert(1, "backend")
     app()
 
 
