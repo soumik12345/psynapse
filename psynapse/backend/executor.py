@@ -4,12 +4,43 @@ import importlib.util
 import os
 import sys
 from collections import deque
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Generator, List, Optional
+
+import rich
 
 from psynapse.backend.node_schemas import get_node_schema
 
 # Global cache for loaded functions from nodepacks
 _FUNCTION_CACHE: Dict[str, Callable] = {}
+
+# Global variable to track the current node being executed
+_CURRENT_NODE_INFO: Optional[Dict[str, str]] = None
+
+
+def get_current_node() -> Optional[Dict[str, str]]:
+    """Get information about the currently executing node.
+
+    Returns:
+        Dictionary with 'node_id' and 'node_type' or None if no execution in progress
+    """
+    return _CURRENT_NODE_INFO
+
+
+def set_current_node(node_id: str, node_type: str):
+    """Set the currently executing node.
+
+    Args:
+        node_id: ID of the node being executed
+        node_type: Type of the node being executed
+    """
+    global _CURRENT_NODE_INFO
+    _CURRENT_NODE_INFO = {"node_id": node_id, "node_type": node_type}
+
+
+def clear_current_node():
+    """Clear the current node info (execution completed)."""
+    global _CURRENT_NODE_INFO
+    _CURRENT_NODE_INFO = None
 
 
 class GraphExecutor:
@@ -55,7 +86,18 @@ class GraphExecutor:
 
             # Execute nodes in topologically sorted order
             for node_id in sorted_nodes:
+                # Get node info for tracking
+                node = self.node_map.get(node_id)
+                node_type = node.get("type", "unknown") if node else "unknown"
+
+                # Set current node info
+                set_current_node(node_id, node_type)
+
+                rich.print(f"[Executor] Executing node: {node_id}")
                 self._execute_node(node_id)
+
+            # Clear current node info when execution completes
+            clear_current_node()
 
             # Collect results for view nodes
             results = {}
@@ -77,6 +119,9 @@ class GraphExecutor:
             return results
 
         except Exception as e:
+            # Clear current node info on error
+            clear_current_node()
+
             # If there's an error (like a cycle), return error for all view nodes
             view_node_ids = [
                 node["id"] for node in self.nodes if node["type"] == "view"
@@ -85,6 +130,99 @@ class GraphExecutor:
             for view_node_id in view_node_ids:
                 results[view_node_id] = {"value": None, "error": str(e)}
             return results
+
+        finally:
+            # Restore original environment variables
+            for key, original_value in original_env.items():
+                if original_value is None:
+                    # Variable didn't exist before, remove it
+                    os.environ.pop(key, None)
+                else:
+                    # Restore original value
+                    os.environ[key] = original_value
+
+    def execute_with_progress(self) -> Generator[Dict[str, Any], None, None]:
+        """Execute the graph and yield progress updates.
+
+        Yields:
+            Progress dictionaries with:
+                - event: 'progress', 'complete', or 'error'
+                - node_id: ID of current node being executed (for 'progress' events)
+                - node_type: Type of current node (for 'progress' events)
+                - results: Final results (for 'complete' event)
+                - error: Error message (for 'error' event)
+        """
+        # Clear cache for fresh execution
+        self.node_cache = {}
+
+        # Save current environment variables and set new ones
+        original_env = {}
+        for key, value in self.env_vars.items():
+            original_env[key] = os.environ.get(key)
+            os.environ[key] = value
+            print(
+                f"[Executor] Set environment variable: {key} = {'*' * min(len(value), 8)}"
+            )
+
+        try:
+            # Perform topological sort to get execution order
+            sorted_nodes = self._topological_sort()
+
+            # Execute nodes in topologically sorted order
+            for node_id in sorted_nodes:
+                # Get node info for progress update
+                node = self.node_map.get(node_id)
+                node_type = node.get("type", "unknown") if node else "unknown"
+
+                # Set current node info
+                set_current_node(node_id, node_type)
+
+                # Yield progress update
+                yield {
+                    "event": "progress",
+                    "node_id": node_id,
+                    "node_type": node_type,
+                }
+
+                rich.print(f"[Executor] Executing node: {node_id}")
+                self._execute_node(node_id)
+
+            # Collect results for view nodes
+            results = {}
+            view_node_ids = [
+                node["id"] for node in self.nodes if node["type"] == "view"
+            ]
+            for view_node_id in view_node_ids:
+                if view_node_id in self.node_cache:
+                    results[view_node_id] = {
+                        "value": self.node_cache[view_node_id],
+                        "error": None,
+                    }
+                else:
+                    results[view_node_id] = {
+                        "value": None,
+                        "error": "Node not executed",
+                    }
+
+            # Clear current node info when execution completes
+            clear_current_node()
+
+            # Yield completion
+            yield {"event": "complete", "results": results}
+
+        except Exception as e:
+            # Clear current node info on error
+            clear_current_node()
+
+            # If there's an error, yield error event
+            view_node_ids = [
+                node["id"] for node in self.nodes if node["type"] == "view"
+            ]
+            results = {}
+            for view_node_id in view_node_ids:
+                results[view_node_id] = {"value": None, "error": str(e)}
+
+            yield {"event": "error", "error": str(e), "results": results}
 
         finally:
             # Restore original environment variables

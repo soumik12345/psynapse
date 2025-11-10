@@ -1,6 +1,7 @@
 """FastAPI server for Psynapse backend."""
 
 import asyncio
+import json
 import logging
 import queue
 from typing import Any, Dict
@@ -10,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from psynapse.backend.executor import GraphExecutor
+from psynapse.backend.executor import GraphExecutor, get_current_node
 from psynapse.backend.node_schemas import get_node_schemas
 from psynapse.utils import pretty_print_payload
 
@@ -118,11 +119,80 @@ async def execute_graph(request: ExecutionRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.post("/execute-stream")
+async def execute_graph_stream(request: ExecutionRequest):
+    """Execute a node graph and stream progress updates via SSE.
+
+    Args:
+        request: Execution request with graph data and environment variables
+
+    Returns:
+        EventSourceResponse that streams progress updates and final results
+    """
+    logger.info(
+        f"Executing graph with streaming for {len(request.graph.nodes)} nodes and {len(request.graph.edges)} edges"
+    )
+    if request.env_vars:
+        logger.info(f"Using {len(request.env_vars)} environment variables")
+    pretty_print_payload(
+        request.graph.model_dump(), "Received Graph Payload on Backend (Streaming)"
+    )
+
+    async def event_generator():
+        """Generate SSE events from executor progress updates."""
+        try:
+            # Execute in a thread pool to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            executor = GraphExecutor(request.graph.model_dump(), request.env_vars)
+
+            # Run the generator in a separate thread
+            def run_executor():
+                """Run executor and return all progress updates."""
+                updates = []
+                try:
+                    for update in executor.execute_with_progress():
+                        updates.append(update)
+                    return updates
+                except Exception as e:
+                    logger.error(f"Graph execution failed: {str(e)}")
+                    return [{"event": "error", "error": str(e), "results": {}}]
+
+            # Execute in thread pool
+            updates = await loop.run_in_executor(None, run_executor)
+
+            # Yield all updates as SSE events
+            for update in updates:
+                event_type = update.get("event", "progress")
+                yield {"event": event_type, "data": json.dumps(update)}
+
+            logger.info("Graph execution stream completed successfully")
+
+        except asyncio.CancelledError:
+            logger.info("Execution stream client disconnected")
+            raise
+        except Exception as e:
+            logger.error(f"Stream error: {str(e)}")
+            yield {"event": "error", "data": json.dumps({"error": str(e)})}
+
+    return EventSourceResponse(event_generator())
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     logger.debug("Health check requested")
     return {"status": "ok"}
+
+
+@app.get("/current_node")
+async def current_node():
+    """Get the currently executing node.
+
+    Returns:
+        Dictionary with node_id and node_type, or null if no execution in progress
+    """
+    node_info = get_current_node()
+    return {"current_node": node_info}
 
 
 @app.get("/logs")

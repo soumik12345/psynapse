@@ -1,6 +1,7 @@
+import asyncio
 import json
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QAction, QFont, QKeySequence
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -26,6 +27,60 @@ from psynapse.nodes.ops import OpNode
 from psynapse.nodes.text_node import TextNode
 from psynapse.nodes.view_node import ViewNode
 from psynapse.utils import pretty_print_payload
+
+
+class ExecutionWorker(QObject):
+    """Worker object for running graph execution in a separate thread."""
+
+    # Signals
+    progress = Signal(str, str)  # node_id, node_type
+    finished = Signal(dict)  # results
+    error = Signal(str)  # error message
+
+    def __init__(self, backend_client, graph_data, env_vars):
+        """Initialize the worker.
+
+        Args:
+            backend_client: BackendClient instance
+            graph_data: Serialized graph data
+            env_vars: Environment variables dictionary
+        """
+        super().__init__()
+        self.backend_client = backend_client
+        self.graph_data = graph_data
+        self.env_vars = env_vars
+
+    def run(self):
+        """Run the execution in the worker thread."""
+        try:
+            # Create a new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            try:
+                # Run the async execution with progress streaming
+                result = loop.run_until_complete(
+                    self.backend_client.execute_graph_stream(
+                        self.graph_data,
+                        self.env_vars,
+                        progress_callback=self._on_progress,
+                    )
+                )
+                self.finished.emit(result)
+            finally:
+                loop.close()
+
+        except Exception as e:
+            self.error.emit(str(e))
+
+    def _on_progress(self, node_id: str, node_type: str):
+        """Handle progress updates from the backend.
+
+        Args:
+            node_id: ID of the node being executed
+            node_type: Type of the node being executed
+        """
+        self.progress.emit(node_id, node_type)
 
 
 class PsynapseEditor(QMainWindow):
@@ -131,7 +186,16 @@ class PsynapseEditor(QMainWindow):
         base_url = f"http://localhost:{self.backend_port}"
         self.backend_client = BackendClient(base_url=base_url)
 
+        # Execution thread and worker
+        self.execution_thread = None
+        self.execution_worker = None
+
         # NOTE: Removed auto-execution timer - graphs are now executed on-demand via Run button
+
+        # Create timer to poll current node status
+        self.current_node_timer = QTimer(self)
+        self.current_node_timer.timeout.connect(self._update_current_node_status)
+        self.current_node_timer.start(500)  # Poll every 500ms
 
         # Add welcome message
         self._add_welcome_message()
@@ -215,6 +279,28 @@ class PsynapseEditor(QMainWindow):
         toggle_terminal_action.setShortcut("Ctrl+`")
         toggle_terminal_action.triggered.connect(self._toggle_terminal_panel)
         view_menu.addAction(toggle_terminal_action)
+
+    def _update_current_node_status(self):
+        """Poll the backend for current node status and update the status bar."""
+        try:
+            # Query backend for current node
+            response = self.backend_client.get_current_node_sync()
+            current_node = response.get("current_node")
+
+            if current_node:
+                node_id = current_node.get("node_id", "")
+                node_type = current_node.get("node_type", "")
+
+                # Extract node number from node_id (e.g., "node_0" -> "0")
+                node_number = node_id.split("_")[-1] if "_" in node_id else node_id
+
+                # Update status bar
+                self.statusBar().showMessage(
+                    f"⚙️ Executing Node {node_number} ({node_type})..."
+                )
+        except Exception:
+            # Silently ignore errors - the timer will retry on next tick
+            pass
 
     def _load_node_schemas(self):
         """Load node schemas from the backend and populate the node library."""
@@ -352,7 +438,15 @@ class PsynapseEditor(QMainWindow):
             self.terminal_panel.show()
 
     def _run_graph(self):
-        """Execute the graph via the backend."""
+        """Execute the graph via the backend using a worker thread."""
+        # Check if an execution is already running
+        if self.execution_thread and self.execution_thread.isRunning():
+            self.toast_manager.show_error(
+                "Graph execution is already in progress. Please wait for it to complete.",
+                "Execution In Progress",
+            )
+            return
+
         # Check if backend is available
         self.statusBar().showMessage("Checking backend connection...")
         self.run_button.setEnabled(False)
@@ -389,25 +483,83 @@ class PsynapseEditor(QMainWindow):
             else:
                 print("[Editor] No environment variables loaded from settings")
 
-            # Execute on backend
-            self.statusBar().showMessage("Executing on backend...")
-            response = self.backend_client.execute_graph_sync(graph_data, env_vars)
+            # Create worker and thread
+            self.execution_thread = QThread()
+            self.execution_worker = ExecutionWorker(
+                self.backend_client, graph_data, env_vars
+            )
+            self.execution_worker.moveToThread(self.execution_thread)
 
-            # Update ViewNodes with results
-            results = response.get("results", {})
-            self._update_view_nodes_with_results(results)
+            # Connect signals
+            self.execution_thread.started.connect(self.execution_worker.run)
+            self.execution_worker.progress.connect(self._on_execution_progress)
+            self.execution_worker.finished.connect(self._on_execution_finished)
+            self.execution_worker.error.connect(self._on_execution_error)
+            self.execution_worker.finished.connect(self.execution_thread.quit)
+            self.execution_worker.error.connect(self.execution_thread.quit)
+            self.execution_thread.finished.connect(self._on_thread_finished)
 
-            self.statusBar().showMessage("✓ Execution completed successfully")
+            # Start execution
+            self.statusBar().showMessage("Starting execution...")
+            self.execution_thread.start()
 
         except Exception as e:
             self.toast_manager.show_error(
-                f"Failed to execute graph: {str(e)}",
+                f"Failed to start execution: {str(e)}",
                 "Execution Error",
             )
-            self.statusBar().showMessage(f"❌ Execution failed: {str(e)}")
-
-        finally:
+            self.statusBar().showMessage(f"❌ Failed to start execution: {str(e)}")
             self.run_button.setEnabled(True)
+
+    def _on_execution_progress(self, node_id: str, node_type: str):
+        """Handle execution progress updates.
+
+        Args:
+            node_id: ID of the node being executed
+            node_type: Type of the node being executed
+        """
+        # Extract node number from node_id (e.g., "node_0" -> "0")
+        node_number = node_id.split("_")[-1] if "_" in node_id else node_id
+
+        # Update status bar with current node being executed
+        self.statusBar().showMessage(f"Executing Node {node_number}...")
+
+    def _on_execution_finished(self, response: dict):
+        """Handle execution completion.
+
+        Args:
+            response: Response dictionary with results
+        """
+        # Update ViewNodes with results
+        results = response.get("results", {})
+        self._update_view_nodes_with_results(results)
+
+        self.statusBar().showMessage("✓ Execution completed successfully")
+
+    def _on_execution_error(self, error_message: str):
+        """Handle execution errors.
+
+        Args:
+            error_message: Error message from execution
+        """
+        self.toast_manager.show_error(
+            f"Failed to execute graph: {error_message}",
+            "Execution Error",
+        )
+        self.statusBar().showMessage(f"❌ Execution failed: {error_message}")
+
+    def _on_thread_finished(self):
+        """Handle thread cleanup after execution completes."""
+        # Re-enable the run button
+        self.run_button.setEnabled(True)
+
+        # Clean up thread and worker
+        if self.execution_thread:
+            self.execution_thread.deleteLater()
+            self.execution_thread = None
+        if self.execution_worker:
+            self.execution_worker.deleteLater()
+            self.execution_worker = None
 
     def _update_view_nodes_with_results(self, results: dict):
         """Update ViewNodes with results from backend execution.
@@ -691,7 +843,11 @@ class PsynapseEditor(QMainWindow):
             return self._add_node_internal(node_class, position)
 
     def closeEvent(self, event):
-        """Handle close event - stop backend process."""
+        """Handle close event - stop backend process and timer."""
+        # Stop the current node polling timer
+        if hasattr(self, "current_node_timer"):
+            self.current_node_timer.stop()
+
         if hasattr(self, "terminal_panel"):
             self.terminal_panel.stop_backend()
         super().closeEvent(event)
