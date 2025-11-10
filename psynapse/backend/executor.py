@@ -327,6 +327,41 @@ class GraphExecutor:
             self.node_cache[node_id] = result
             return result
 
+        # Special handling for ListNode - it collects all inputs into a list
+        if node["type"] == "list":
+            # For ListNode, we need to collect inputs in order by socket index
+            # since all sockets have the same name "item"
+            result = []
+            for socket in node.get("input_sockets", []):
+                socket_id = socket["id"]
+
+                # Find edge connected to this input socket
+                connected_edge = None
+                for edge in self.edges:
+                    if edge["end_socket"] == socket_id:
+                        connected_edge = edge
+                        break
+
+                if connected_edge:
+                    # Find the source node
+                    source_socket_id = connected_edge["start_socket"]
+                    source_node_id = self._find_node_by_socket(
+                        source_socket_id, "output"
+                    )
+
+                    if source_node_id and source_node_id in self.node_cache:
+                        # Get the cached result from the source node
+                        result.append(self.node_cache[source_node_id])
+                    else:
+                        # No connection or not in cache, use default value from socket
+                        result.append(socket.get("value"))
+                else:
+                    # No connection, use default value from socket
+                    result.append(socket.get("value"))
+
+            self.node_cache[node_id] = result
+            return result
+
         # Get input values from already-executed nodes (thanks to topological sort)
         inputs = self._get_node_inputs(node_id)
 
