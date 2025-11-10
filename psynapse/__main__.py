@@ -19,6 +19,12 @@ def run_psynapse_editor(
         "-p",
         help="Port of existing backend to connect to (if not specified, spawns new backend)",
     ),
+    timeout_keep_alive: int = typer.Option(
+        3600,
+        "--timeout-keep-alive",
+        "-t",
+        help="Timeout for keep-alive connections in spawned backend (seconds)",
+    ),
 ):
     """Run the node editor application."""
     qt_app = QApplication(sys.argv)
@@ -42,8 +48,10 @@ def run_psynapse_editor(
         """
     )
 
-    # Create and show editor with backend port
-    editor = PsynapseEditor(backend_port=backend_port)
+    # Create and show editor with backend port and timeout
+    editor = PsynapseEditor(
+        backend_port=backend_port, timeout_keep_alive=timeout_keep_alive
+    )
     editor.show()
 
     sys.exit(qt_app.exec())
@@ -60,6 +68,9 @@ def run_psynapse_backend(
     reload: bool = typer.Option(
         True, "--reload/--no-reload", help="Enable auto-reload on code changes"
     ),
+    timeout_keep_alive: int = typer.Option(
+        3600, "--timeout-keep-alive", "-t", help="Timeout for keep-alive connections"
+    ),
 ):
     """Start the FastAPI backend server."""
     rprint("[green]INFO:[/green]\t  Starting Psynapse backend server...")
@@ -75,6 +86,8 @@ def run_psynapse_backend(
         host,
         "--port",
         str(port),
+        "--timeout-keep-alive",
+        str(timeout_keep_alive),
     ]
     if reload:
         cmd.append("--reload")

@@ -45,7 +45,11 @@ class BackendClient:
         # Include env_vars in the request payload
         payload = {"graph": graph_data, "env_vars": env_vars or {}}
 
-        async with aiohttp.ClientSession() as session:
+        # Set a very long timeout for graph execution (3600 seconds = 1 hour)
+        # This supports long-running node operations (e.g., 10-15 minutes or more)
+        timeout = aiohttp.ClientTimeout(total=3600)
+
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(
                 f"{self.base_url}/execute", json=payload
             ) as response:

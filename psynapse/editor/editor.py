@@ -24,15 +24,17 @@ from psynapse.utils import pretty_print_payload
 class PsynapseEditor(QMainWindow):
     """Main node editor window."""
 
-    def __init__(self, backend_port=None):
+    def __init__(self, backend_port=None, timeout_keep_alive=3600):
         """Initialize the editor.
 
         Args:
             backend_port: Optional port number of existing backend to connect to.
                          If None, a new backend will be spawned.
+            timeout_keep_alive: Timeout for keep-alive connections in spawned backend (seconds).
         """
         super().__init__()
         self.backend_port = backend_port or 8000
+        self.timeout_keep_alive = timeout_keep_alive
 
         self.setWindowTitle("Psynapse")
         self.setGeometry(100, 100, 1200, 800)
@@ -79,7 +81,9 @@ class PsynapseEditor(QMainWindow):
         view_container.setLayout(view_layout)
 
         # Create terminal panel for backend output
-        self.terminal_panel = TerminalPanel(self, backend_port=backend_port)
+        self.terminal_panel = TerminalPanel(
+            self, backend_port=backend_port, timeout_keep_alive=timeout_keep_alive
+        )
         # Connect signal to load schemas when backend is ready
         self.terminal_panel.backend_ready.connect(self._load_node_schemas)
 
