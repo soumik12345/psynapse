@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 from psynapse.core.node import Node
+from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
 from psynapse.nodes.view_node import ViewNode
@@ -15,6 +16,7 @@ class GraphSerializer:
     NODE_TYPE_MAP = {
         ObjectNode: "object",
         ViewNode: "view",
+        ListNode: "list",
     }
 
     @staticmethod

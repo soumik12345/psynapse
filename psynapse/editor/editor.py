@@ -22,6 +22,7 @@ from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.settings_dialog import SettingsDialog
 from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
+from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
 from psynapse.nodes.text_node import TextNode
@@ -726,6 +727,13 @@ class PsynapseEditor(QMainWindow):
                     node = ViewNode()
                 elif node_type == "text":
                     node = TextNode()
+                elif node_type == "list":
+                    node = ListNode()
+                    # Restore the correct number of input sockets from saved data
+                    input_sockets_data = node_data.get("input_sockets", [])
+                    # Start with 1 socket, so we need to add (len - 1) more
+                    while len(node.input_sockets) < len(input_sockets_data):
+                        node._add_socket()
                 else:
                     # OpNode - need to get schema
                     schema = self._get_node_schema(node_type)

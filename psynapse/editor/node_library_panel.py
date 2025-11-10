@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
 from psynapse.nodes.text_node import TextNode
@@ -38,6 +39,7 @@ DEFAULT_NODE_TYPES = [
     (ObjectNode, "Object"),
     (TextNode, "Text"),
     (ViewNode, "View"),
+    (ListNode, "List"),
 ]
 
 
