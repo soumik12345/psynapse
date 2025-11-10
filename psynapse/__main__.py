@@ -8,7 +8,7 @@ from rich import print as rprint
 
 from psynapse.editor import PsynapseEditor
 
-app = typer.Typer(help="Psynapse Node Editor CLI")
+app = typer.Typer(help="Psynapse")
 
 
 @app.command(name="editor")
@@ -98,18 +98,16 @@ def psynapse_cli():
     # If no command is specified, run the editor command by default
     import sys
 
-    if len(sys.argv) == 1 or (len(sys.argv) > 1 and not sys.argv[1].startswith("-")):
-        # No command specified or starts with option, run editor
-        if len(sys.argv) == 1:
-            run_psynapse_editor()
-        else:
-            # Parse arguments for editor
-            sys.argv.insert(1, "editor")
-            app()
-    else:
-        # Likely an option, run editor
+    # If no command or only options are specified, insert 'editor' command
+    if len(sys.argv) == 1:
+        # No arguments, run editor
         sys.argv.insert(1, "editor")
-        app()
+    elif sys.argv[1] not in ["editor", "backend"]:
+        # Argument is not a subcommand (likely an option), insert editor command
+        if sys.argv[1].startswith("-"):
+            sys.argv.insert(1, "editor")
+
+    app()
 
 
 def psynapse_backend_cli():
