@@ -60,6 +60,24 @@ uvicorn_logger = logging.getLogger("uvicorn")
 uvicorn_logger.addHandler(queue_handler)
 
 
+class AccessLogFilter(logging.Filter):
+    """Filter to suppress access logs for specific endpoints."""
+
+    def filter(self, record):
+        """Filter out access logs for /logs and /current_node endpoints."""
+        # Check if this is an access log message
+        message = record.getMessage()
+        # Suppress logs for /logs and /current_node endpoints
+        if "/logs" in message or "/current_node" in message:
+            return False
+        return True
+
+
+# Apply filter to uvicorn.access logger to suppress access logs for specific endpoints
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.addFilter(AccessLogFilter())
+
+
 class GraphData(BaseModel):
     """Graph data structure for execution."""
 
