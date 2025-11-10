@@ -2,6 +2,8 @@
 
 A cross-platform node-based UI editor for Python.
 
+https://github.com/user-attachments/assets/e75dd546-75d0-4594-a838-def97513d27e
+
 ## Features
 
 - **Visual Node Editor**: Intuitive drag-and-drop interface for creating node graphs
@@ -11,8 +13,6 @@ A cross-platform node-based UI editor for Python.
 - **Error Handling**: Comprehensive error handling with persistent toast notifications
 - **On-Demand Execution**: Execute graphs when you're ready with the Run button
 - **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
-
-https://github.com/user-attachments/assets/e75dd546-75d0-4594-a838-def97513d27e
 
 ## Installation
 
