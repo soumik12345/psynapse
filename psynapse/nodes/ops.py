@@ -48,7 +48,7 @@ class OpNode(Node):
             outputs.append((return_name, return_type))
 
         # Initialize with proper title (capitalize the node type name)
-        title = schema["name"].capitalize()
+        title = schema["name"].replace("_", " ")
         super().__init__(title=title, inputs=inputs, outputs=outputs)
 
     def _map_type(self, type_str: str) -> SocketDataType:
