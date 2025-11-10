@@ -13,6 +13,7 @@ import rich
 from PIL import Image
 
 from psynapse.backend.node_schemas import get_node_schema
+from psynapse.utils import pil_image_to_openai_string
 
 # Global cache for loaded functions from nodepacks
 _FUNCTION_CACHE: Dict[str, Callable] = {}
@@ -335,28 +336,43 @@ class GraphExecutor:
         if node["type"] == "image":
             params = node.get("params", {})
             mode = params.get("mode", "URL")
+            return_as = params.get("return_as", "PIL Image")
 
             try:
+                # Load the image first
+                image = None
                 if mode == "URL":
                     url = params.get("url", "")
-                    if not url:
-                        result = None
-                    else:
+                    if url:
                         # Load image from URL
                         response = requests.get(url, timeout=10)
                         response.raise_for_status()
                         image = Image.open(BytesIO(response.content))
-                        # Serialize image as dict with base64 data
-                        result = self._serialize_image(image)
                 else:  # mode == "Upload"
                     path = params.get("path", "")
-                    if not path or not os.path.exists(path):
-                        result = None
-                    else:
+                    if path and os.path.exists(path):
                         # Load image from file
                         image = Image.open(path)
-                        # Serialize image as dict with base64 data
-                        result = self._serialize_image(image)
+
+                # Return in the selected format
+                if image is None:
+                    # Image loading failed
+                    result = None
+                elif return_as == "PIL Image":
+                    # Serialize image as dict with base64 data (for backend transmission)
+                    result = self._serialize_image(image)
+                elif return_as == "OpenAI string":
+                    # Return as OpenAI-compatible base64 string
+                    result = pil_image_to_openai_string(image)
+                elif return_as == "LLM Content":
+                    # Return as LLM content dictionary
+                    result = {
+                        "type": "input_image",
+                        "image_url": pil_image_to_openai_string(image),
+                    }
+                else:
+                    # Default to serialized image
+                    result = self._serialize_image(image)
             except Exception as e:
                 print(f"Error loading image: {e}")
                 result = None

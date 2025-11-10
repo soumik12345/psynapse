@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 from psynapse.core.node import Node
 from psynapse.core.socket_types import SocketDataType
 from psynapse.nodes.object_node import ObjectNode
+from psynapse.utils import pil_image_to_openai_string
 
 
 class ImageNode(ObjectNode):
@@ -33,6 +34,7 @@ class ImageNode(ObjectNode):
 
         self.current_image = None
         self.current_mode = "URL"  # "URL" or "Upload"
+        self.return_as = "PIL Image"  # "PIL Image", "OpenAI string", or "LLM Content"
         self.image_url = ""
         self.image_path = ""
 
@@ -83,6 +85,46 @@ class ImageNode(ObjectNode):
 
         self.widget_layout.addWidget(self.mode_selector)
 
+        # Create return format selector
+        self.return_as_selector = QComboBox()
+        self.return_as_selector.addItem("PIL Image", "PIL Image")
+        self.return_as_selector.addItem("OpenAI string", "OpenAI string")
+        self.return_as_selector.addItem("LLM Content", "LLM Content")
+        self.return_as_selector.setFixedWidth(160)
+        self.return_as_selector.currentIndexChanged.connect(self._on_return_as_changed)
+
+        # Style the return as selector (same as mode selector)
+        self.return_as_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 5px 8px;
+                padding-right: 25px;
+                font-size: 11px;
+            }
+            QComboBox:hover {
+                border: 1px solid #FF7700;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                selection-background-color: #FF7700;
+                border: 1px solid #444444;
+            }
+        """)
+
+        self.widget_layout.addWidget(self.return_as_selector)
+
         # Placeholder for input widget
         self.input_widget = None
         self._create_input_widget()
@@ -94,7 +136,7 @@ class ImageNode(ObjectNode):
         self.widget_proxy.setZValue(200)
 
         # Update node height to accommodate widgets
-        self.graphics.height = 160
+        self.graphics.height = 190
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
 
         # Update widget sizes and positions
@@ -108,6 +150,13 @@ class ImageNode(ObjectNode):
         """Handle mode selector change."""
         self.current_mode = self.mode_selector.itemData(index)
         self._create_input_widget()
+
+    def _on_return_as_changed(self, index: int):
+        """Handle return format selector change."""
+        self.return_as = self.return_as_selector.itemData(index)
+        # Clear output socket value to force re-execution with new format
+        if self.output_sockets:
+            self.output_sockets[0].value = None
 
     def _create_input_widget(self):
         """Create appropriate input widget based on selected mode."""
@@ -240,8 +289,9 @@ class ImageNode(ObjectNode):
                 self.output_sockets[0].value = None
 
     def execute(self) -> Any:
-        """Load and return the image as PIL.Image.Image."""
+        """Load and return the image in the selected format."""
         try:
+            # Load the image first
             if self.current_mode == "URL":
                 if not self.image_url:
                     return None
@@ -258,7 +308,18 @@ class ImageNode(ObjectNode):
                 # Load image from file
                 self.current_image = Image.open(self.image_path)
 
-            return self.current_image
+            # Return in the selected format
+            if self.return_as == "PIL Image":
+                return self.current_image
+            elif self.return_as == "OpenAI string":
+                return pil_image_to_openai_string(self.current_image)
+            elif self.return_as == "LLM Content":
+                return {
+                    "type": "input_image",
+                    "image_url": pil_image_to_openai_string(self.current_image),
+                }
+            else:
+                return self.current_image
 
         except Exception as e:
             print(f"Error loading image: {e}")
@@ -285,6 +346,9 @@ class ImageNode(ObjectNode):
 
         # Update mode selector width
         self.mode_selector.setFixedWidth(available_width)
+
+        # Update return as selector width
+        self.return_as_selector.setFixedWidth(available_width)
 
         # Update input widget width
         if self.input_widget:

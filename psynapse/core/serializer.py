@@ -92,6 +92,7 @@ class GraphSerializer:
                     "mode": node.current_mode,
                     "url": node.image_url,
                     "path": node.image_path,
+                    "return_as": node.return_as,
                 }
 
             serialized_nodes.append(node_data)

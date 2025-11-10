@@ -1,9 +1,12 @@
 import ast
+import base64
 import inspect
 import json
 import sys
+from io import BytesIO
 from typing import Any, Dict, List, get_args, get_origin, get_type_hints
 
+from PIL import Image
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -171,3 +174,29 @@ def get_functions_from_file(filepath: str) -> list[callable]:
                 functions.append(func)
 
     return functions
+
+
+def pil_image_to_openai_string(image: Image.Image, format: str = "PNG") -> str:
+    buffered = BytesIO()
+    image.save(buffered, format=format)
+    img_bytes = buffered.getvalue()
+    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+    mime_type = f"image/{format.lower()}"
+    return f"data:{mime_type};base64,{img_base64}"
+
+
+def openai_string_to_pil_image(image_str: str) -> Image.Image:
+    """Convert a base64-encoded image string back to PIL Image.
+
+    Args:
+        image_str: Base64 encoded image string in format "data:image/png;base64,..."
+
+    Returns:
+        PIL Image object
+    """
+    # Remove the data URL prefix if present
+    if image_str.startswith("data:"):
+        image_str = image_str.split(",", 1)[1]
+
+    img_bytes = base64.b64decode(image_str)
+    return Image.open(BytesIO(img_bytes))
