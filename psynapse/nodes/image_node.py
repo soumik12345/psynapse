@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QGraphicsProxyWidget,
+    QLabel,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
@@ -45,6 +46,18 @@ class ImageNode(ObjectNode):
         self.widget_layout.setSpacing(8)
         self.widget_layout.setAlignment(Qt.AlignCenter)
         self.widget_container.setLayout(self.widget_layout)
+
+        # Create label for input mode selector
+        self.input_mode_label = QLabel("Input Mode")
+        self.input_mode_label.setStyleSheet("""
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+                padding: 2px 0px;
+            }
+        """)
+        self.input_mode_label.setAlignment(Qt.AlignCenter)
+        self.widget_layout.addWidget(self.input_mode_label)
 
         # Create mode selector
         self.mode_selector = QComboBox()
@@ -84,6 +97,18 @@ class ImageNode(ObjectNode):
         """)
 
         self.widget_layout.addWidget(self.mode_selector)
+
+        # Create label for output mode selector
+        self.output_mode_label = QLabel("Output Mode")
+        self.output_mode_label.setStyleSheet("""
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+                padding: 2px 0px;
+            }
+        """)
+        self.output_mode_label.setAlignment(Qt.AlignCenter)
+        self.widget_layout.addWidget(self.output_mode_label)
 
         # Create return format selector
         self.return_as_selector = QComboBox()
@@ -136,7 +161,18 @@ class ImageNode(ObjectNode):
         self.widget_proxy.setZValue(200)
 
         # Update node height to accommodate widgets
-        self.graphics.height = 190
+        # Height calculation:
+        # - Title bar: ~30px
+        # - Widget container starts at: ~40px
+        # - "Input Mode" label: ~15px
+        # - Mode selector: ~30px
+        # - "Output Mode" label: ~15px
+        # - Return format selector: ~30px
+        # - Input widget (worst case Upload): ~60px
+        # - Spacing between elements: ~40px total
+        # - Bottom padding: ~10px
+        # Total: ~240px
+        self.graphics.height = 240
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
 
         # Update widget sizes and positions
@@ -343,6 +379,10 @@ class ImageNode(ObjectNode):
 
         # Update container width
         self.widget_container.setFixedWidth(available_width)
+
+        # Update label widths
+        self.input_mode_label.setFixedWidth(available_width)
+        self.output_mode_label.setFixedWidth(available_width)
 
         # Update mode selector width
         self.mode_selector.setFixedWidth(available_width)
