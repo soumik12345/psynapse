@@ -499,19 +499,20 @@ class ViewNode(Node):
                 self._show_image_view(value)
             elif isinstance(value, dict) and len(value) > 0:
                 # Show dictionary in tree view
-                self._show_tree_view(value)
+                self._show_tree_view({"result": value})
             elif isinstance(value, (list, tuple)) and any(
                 isinstance(item, dict) for item in value
             ):
                 # Show lists containing dictionaries in tree view
-                self._show_tree_view({"": value})
+                self._show_tree_view({"result": value})
             else:
-                # Show simple values in text view
-                if isinstance(value, float):
-                    display_str = f"{value:.4g}"
-                else:
-                    display_str = str(value)
-                self._show_text_view(display_str)
+                self._show_tree_view({"result": value})
+                # # Show simple values in text view
+                # if isinstance(value, float):
+                #     display_str = f"{value:.4g}"
+                # else:
+                #     display_str = str(value)
+                # self._show_text_view(display_str)
 
     def execute(self) -> Any:
         """Display input value."""
