@@ -64,14 +64,25 @@ class GraphSerializer:
                     socket_data["value"] = socket.value
                 output_sockets.append(socket_data)
 
-            serialized_nodes.append(
-                {
-                    "id": node_id,
-                    "type": node_type,
-                    "input_sockets": input_sockets,
-                    "output_sockets": output_sockets,
-                }
-            )
+            node_data = {
+                "id": node_id,
+                "type": node_type,
+                "input_sockets": input_sockets,
+                "output_sockets": output_sockets,
+            }
+
+            # Include filepath for OpNode instances
+            if isinstance(node, OpNode) and hasattr(node, "filepath") and node.filepath:
+                node_data["filepath"] = node.filepath
+
+            if (
+                isinstance(node, OpNode)
+                and hasattr(node, "source_nodepack")
+                and node.source_nodepack
+            ):
+                node_data["source_nodepack"] = node.source_nodepack
+
+            serialized_nodes.append(node_data)
 
         # Serialize edges
         for node in nodes:

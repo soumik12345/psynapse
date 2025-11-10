@@ -10,11 +10,12 @@ dependencies = [
     "pyside6>=6.10.0",
     "rich>=14.2.0",
     "sse-starlette>=2.1.3",
+    "typer>=0.20.0",
 ]
 
 [project.scripts]
-psynapse = "psynapse.__main__:run_psynapse_editor"
-psynapse-backend = "psynapse.__main__:run_psynapse_backend"
+psynapse = "psynapse.__main__:psynapse_cli"
+psynapse-backend = "psynapse.__main__:psynapse_backend_cli"
 
 [project.optional-dependencies]
 llm = [

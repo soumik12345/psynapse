@@ -1,6 +1,9 @@
+import json
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QFont, QKeySequence
 from PySide6.QtWidgets import (
+    QFileDialog,
     QGraphicsTextItem,
     QMainWindow,
     QPushButton,
@@ -9,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from psynapse.core.edge import Edge
 from psynapse.core.scene import NodeScene
 from psynapse.core.serializer import GraphSerializer
 from psynapse.core.view import NodeView
@@ -17,6 +21,9 @@ from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.settings_dialog import SettingsDialog
 from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
+from psynapse.nodes.object_node import ObjectNode
+from psynapse.nodes.ops import OpNode
+from psynapse.nodes.text_node import TextNode
 from psynapse.nodes.view_node import ViewNode
 from psynapse.utils import pretty_print_payload
 
@@ -24,15 +31,17 @@ from psynapse.utils import pretty_print_payload
 class PsynapseEditor(QMainWindow):
     """Main node editor window."""
 
-    def __init__(self, backend_port=None):
+    def __init__(self, backend_port=None, timeout_keep_alive=3600):
         """Initialize the editor.
 
         Args:
             backend_port: Optional port number of existing backend to connect to.
                          If None, a new backend will be spawned.
+            timeout_keep_alive: Timeout for keep-alive connections in spawned backend (seconds).
         """
         super().__init__()
         self.backend_port = backend_port or 8000
+        self.timeout_keep_alive = timeout_keep_alive
 
         self.setWindowTitle("Psynapse")
         self.setGeometry(100, 100, 1200, 800)
@@ -79,7 +88,9 @@ class PsynapseEditor(QMainWindow):
         view_container.setLayout(view_layout)
 
         # Create terminal panel for backend output
-        self.terminal_panel = TerminalPanel(self, backend_port=backend_port)
+        self.terminal_panel = TerminalPanel(
+            self, backend_port=backend_port, timeout_keep_alive=timeout_keep_alive
+        )
         # Connect signal to load schemas when backend is ready
         self.terminal_panel.backend_ready.connect(self._load_node_schemas)
 
@@ -150,6 +161,16 @@ class PsynapseEditor(QMainWindow):
         new_action.setShortcut(QKeySequence.New)
         new_action.triggered.connect(self._clear_scene)
         file_menu.addAction(new_action)
+
+        open_action = QAction("&Open...", self)
+        open_action.setShortcut(QKeySequence.Open)
+        open_action.triggered.connect(self._open_graph)
+        file_menu.addAction(open_action)
+
+        save_as_action = QAction("Save &As...", self)
+        save_as_action.setShortcut("Ctrl+S")
+        save_as_action.triggered.connect(self._save_as_graph)
+        file_menu.addAction(save_as_action)
 
         file_menu.addSeparator()
 
@@ -230,6 +251,78 @@ class PsynapseEditor(QMainWindow):
         """Open the settings dialog."""
         dialog = SettingsDialog(self)
         dialog.exec()
+
+    def _open_graph(self):
+        """Open a graph from a JSON file."""
+        # Show file dialog for opening
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Graph", "", "JSON Files (*.json);;All Files (*)"
+        )
+
+        # If user canceled the dialog, return
+        if not file_path:
+            return
+
+        try:
+            # Load JSON file
+            with open(file_path, "r") as f:
+                graph_data = json.load(f)
+
+            # Validate structure
+            if not isinstance(graph_data, dict):
+                raise ValueError("Invalid graph format: root must be a dictionary")
+
+            if "nodes" not in graph_data or "edges" not in graph_data:
+                raise ValueError("Invalid graph format: missing 'nodes' or 'edges' key")
+
+            # Clear current scene
+            self._clear_scene()
+
+            # Load the graph
+            self._load_graph_from_data(graph_data)
+
+            # Update status bar
+            self.statusBar().showMessage(f"✓ Graph loaded from {file_path}")
+
+        except json.JSONDecodeError as e:
+            self.toast_manager.show_error(
+                f"Failed to parse JSON: {str(e)}", "Load Error"
+            )
+            self.statusBar().showMessage(f"❌ Invalid JSON file")
+        except Exception as e:
+            self.toast_manager.show_error(
+                f"Failed to load graph: {str(e)}", "Load Error"
+            )
+            self.statusBar().showMessage(f"❌ Failed to load graph: {str(e)}")
+
+    def _save_as_graph(self):
+        """Save the current graph as a JSON file."""
+        # Show file dialog for save location
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Graph As", "", "JSON Files (*.json);;All Files (*)"
+        )
+
+        # If user canceled the dialog, return
+        if not file_path:
+            return
+
+        try:
+            # Serialize the graph
+            graph_data = GraphSerializer.serialize_graph(self.nodes)
+
+            # Save to file
+            with open(file_path, "w") as f:
+                json.dump(graph_data, f, indent=2)
+
+            # Update status bar
+            self.statusBar().showMessage(f"✓ Graph saved to {file_path}")
+
+        except Exception as e:
+            # Show error toast
+            self.toast_manager.show_error(
+                f"Failed to save graph: {str(e)}", "Save Error"
+            )
+            self.statusBar().showMessage(f"❌ Failed to save graph: {str(e)}")
 
     def _zoom_in(self):
         """Zoom in the view."""
@@ -392,6 +485,152 @@ class PsynapseEditor(QMainWindow):
         super().resizeEvent(event)
         if hasattr(self, "toast_manager"):
             self.toast_manager._reposition_toasts()
+
+    def _load_graph_from_data(self, graph_data):
+        """Load a graph from deserialized JSON data.
+
+        Args:
+            graph_data: Dictionary with 'nodes' and 'edges' keys
+        """
+        nodes_data = graph_data.get("nodes", [])
+        edges_data = graph_data.get("edges", [])
+
+        # Map to store node ID -> node instance
+        node_id_map = {}
+        # Map to store socket ID -> socket instance
+        socket_id_map = {}
+
+        # Create nodes
+        for node_data in nodes_data:
+            node_id = node_data["id"]
+            node_type = node_data["type"]
+
+            try:
+                # Create node based on type
+                if node_type == "object":
+                    node = ObjectNode()
+                elif node_type == "view":
+                    node = ViewNode()
+                elif node_type == "text":
+                    node = TextNode()
+                else:
+                    # OpNode - need to get schema
+                    schema = self._get_node_schema(node_type)
+                    if not schema:
+                        self.toast_manager.show_error(
+                            f"Unknown node type: {node_type}. Make sure the backend is running.",
+                            "Load Warning",
+                        )
+                        continue
+                    node = OpNode(schema)
+
+                # Add node to scene at default position (will arrange later)
+                node.set_position(0, 0)
+                self.scene.addItem(node.graphics)
+                self.nodes.append(node)
+
+                if isinstance(node, ViewNode):
+                    self.view_nodes.append(node)
+
+                # Store in map
+                node_id_map[node_id] = node
+
+                # Map socket IDs to socket instances
+                for i, socket in enumerate(node.input_sockets):
+                    socket_id = f"{node_id}_input_{i}"
+                    socket_id_map[socket_id] = socket
+
+                for i, socket in enumerate(node.output_sockets):
+                    socket_id = f"{node_id}_output_{i}"
+                    socket_id_map[socket_id] = socket
+
+                # Set input socket values from the data
+                for socket_data in node_data.get("input_sockets", []):
+                    socket_id = socket_data["id"]
+                    if socket_id in socket_id_map:
+                        socket = socket_id_map[socket_id]
+                        value = socket_data.get("value")
+                        if value is not None:
+                            socket.value = value
+
+            except Exception as e:
+                self.toast_manager.show_error(
+                    f"Failed to create node {node_id} ({node_type}): {str(e)}",
+                    "Load Error",
+                )
+
+        # Create edges
+        for edge_data in edges_data:
+            start_socket_id = edge_data["start_socket"]
+            end_socket_id = edge_data["end_socket"]
+
+            if start_socket_id in socket_id_map and end_socket_id in socket_id_map:
+                start_socket = socket_id_map[start_socket_id]
+                end_socket = socket_id_map[end_socket_id]
+
+                # Create edge
+                edge = Edge(start_socket, end_socket)
+                self.scene.addItem(edge.graphics)
+                edge.update_positions()
+
+                # Hide input widget for connected input sockets
+                end_socket.set_input_widget_visible(False)
+
+        # Arrange nodes in a grid layout
+        self._arrange_loaded_nodes()
+
+        # Remove welcome message if nodes were loaded
+        if self.nodes and hasattr(self, "welcome_text") and self.welcome_text:
+            self.scene.removeItem(self.welcome_text)
+            self.welcome_text = None
+
+    def _get_node_schema(self, node_type):
+        """Get schema for a node type from the backend.
+
+        Args:
+            node_type: Type name of the node (e.g., 'add', 'multiply')
+
+        Returns:
+            Schema dictionary or None if not found
+        """
+        try:
+            # Try to get from backend
+            response = self.backend_client.get_node_schemas_sync()
+            schemas = response.get("nodes", [])
+
+            for schema in schemas:
+                if schema["name"] == node_type:
+                    return schema
+
+        except Exception as e:
+            print(f"Failed to fetch schema for {node_type}: {e}")
+
+        return None
+
+    def _arrange_loaded_nodes(self):
+        """Arrange loaded nodes in a grid layout."""
+        if not self.nodes:
+            return
+
+        # Simple grid layout
+        cols = 3
+        spacing_x = 250
+        spacing_y = 200
+        start_x = -300
+        start_y = -200
+
+        for i, node in enumerate(self.nodes):
+            row = i // cols
+            col = i % cols
+            x = start_x + col * spacing_x
+            y = start_y + row * spacing_y
+            node.set_position(x, y)
+
+        # Update all edges
+        for node in self.nodes:
+            for socket in node.input_sockets + node.output_sockets:
+                for edge in socket.edges:
+                    edge.update_positions()
 
     def _add_welcome_message(self):
         """Add a welcome message to guide users."""

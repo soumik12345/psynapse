@@ -23,13 +23,14 @@ class TerminalPanel(QWidget):
     # Signal emitted when a log message is received from SSE
     log_received = Signal(str)
 
-    def __init__(self, parent=None, backend_port=None):
+    def __init__(self, parent=None, backend_port=None, timeout_keep_alive=3600):
         """Initialize the terminal panel.
 
         Args:
             parent: Parent widget
             backend_port: Optional port number of existing backend to connect to.
                          If None, a new backend will be spawned.
+            timeout_keep_alive: Timeout for keep-alive connections in spawned backend (seconds).
         """
         super().__init__(parent)
         self.parent = parent
@@ -38,6 +39,7 @@ class TerminalPanel(QWidget):
         self.backend_ready_emitted = False
         self.health_check_timer = None
         self.backend_port = backend_port or 8000
+        self.timeout_keep_alive = timeout_keep_alive
         self.use_existing_backend = backend_port is not None
         self.sse_thread = None
         self.sse_stop_event = threading.Event()
@@ -153,6 +155,8 @@ class TerminalPanel(QWidget):
             "--reload",
             "--host",
             "0.0.0.0",
+            "--timeout-keep-alive",
+            str(self.timeout_keep_alive),
         ]
 
         self.backend_process.start(command, args)

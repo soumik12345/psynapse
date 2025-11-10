@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict
 
 from psynapse.core.node import Node
@@ -20,8 +21,12 @@ class OpNode(Node):
                 - name: Node type name (e.g., "add", "subtract")
                 - params: List of input parameter definitions
                 - returns: List of output definitions
+                - filepath: Path to the file containing the node's implementation
+                - source_nodepack: Name of the nodepack that contains the node
         """
         self.node_type = schema["name"]
+        self.filepath = schema.get("filepath")
+        self.source_nodepack = Path(self.filepath).parent.name
 
         # Convert schema params to input socket specifications
         inputs = []
