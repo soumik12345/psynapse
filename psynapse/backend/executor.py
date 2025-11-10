@@ -1,12 +1,16 @@
 """Graph execution engine for the backend."""
 
+import base64
 import importlib.util
 import os
 import sys
 from collections import deque
+from io import BytesIO
 from typing import Any, Callable, Dict, Generator, List, Optional
 
+import requests
 import rich
+from PIL import Image
 
 from psynapse.backend.node_schemas import get_node_schema
 
@@ -327,6 +331,39 @@ class GraphExecutor:
             self.node_cache[node_id] = result
             return result
 
+        # Special handling for ImageNode - loads an image from URL or file
+        if node["type"] == "image":
+            params = node.get("params", {})
+            mode = params.get("mode", "URL")
+
+            try:
+                if mode == "URL":
+                    url = params.get("url", "")
+                    if not url:
+                        result = None
+                    else:
+                        # Load image from URL
+                        response = requests.get(url, timeout=10)
+                        response.raise_for_status()
+                        image = Image.open(BytesIO(response.content))
+                        # Serialize image as dict with base64 data
+                        result = self._serialize_image(image)
+                else:  # mode == "Upload"
+                    path = params.get("path", "")
+                    if not path or not os.path.exists(path):
+                        result = None
+                    else:
+                        # Load image from file
+                        image = Image.open(path)
+                        # Serialize image as dict with base64 data
+                        result = self._serialize_image(image)
+            except Exception as e:
+                print(f"Error loading image: {e}")
+                result = None
+
+            self.node_cache[node_id] = result
+            return result
+
         # Special handling for ListNode - it collects all inputs into a list
         if node["type"] == "list":
             # For ListNode, we need to collect inputs in order by socket index
@@ -483,3 +520,29 @@ class GraphExecutor:
 
         # Call the function with the inputs
         return func(**inputs)
+
+    def _serialize_image(self, image: Image.Image) -> Dict[str, Any]:
+        """Serialize a PIL Image to a dictionary with base64 encoded data.
+
+        Args:
+            image: PIL Image object
+
+        Returns:
+            Dictionary with image metadata and base64 encoded data
+        """
+        # Convert image to bytes
+        buffer = BytesIO()
+        # Save as PNG to preserve quality and support transparency
+        image.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        # Encode as base64
+        image_data = base64.b64encode(buffer.read()).decode("utf-8")
+
+        return {
+            "__type__": "PIL.Image",
+            "format": "PNG",
+            "mode": image.mode,
+            "size": image.size,
+            "data": image_data,
+        }

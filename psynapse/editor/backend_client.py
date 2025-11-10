@@ -96,38 +96,47 @@ class BackendClient:
                         f"Failed to execute graph: {response.status} - {error_text}"
                     )
 
-                # Process SSE stream
-                async for line in response.content:
-                    line = line.decode("utf-8").strip()
-                    if not line or line.startswith(":"):
-                        continue
+                # Process SSE stream with unlimited line size
+                # We need to read chunks and split into lines manually to avoid aiohttp's
+                # default 8KB line size limit, which is too small for base64 encoded images
+                buffer = b""
+                async for chunk in response.content.iter_any():
+                    buffer += chunk
 
-                    # Parse SSE format: "event: type\ndata: json"
-                    if line.startswith("event:"):
-                        event_type = line.split(":", 1)[1].strip()
-                    elif line.startswith("data:"):
-                        data_str = line.split(":", 1)[1].strip()
-                        try:
-                            data = json.loads(data_str)
+                    # Process complete lines from buffer
+                    while b"\n" in buffer:
+                        line_bytes, buffer = buffer.split(b"\n", 1)
+                        line = line_bytes.decode("utf-8").strip()
 
-                            # Handle different event types
-                            if data.get("event") == "progress":
-                                node_id = data.get("node_id")
-                                node_type = data.get("node_type")
-                                if progress_callback:
-                                    progress_callback(node_id, node_type)
-
-                            elif data.get("event") == "complete":
-                                results = data.get("results", {})
-
-                            elif data.get("event") == "error":
-                                error_msg = data.get("error", "Unknown error")
-                                results = data.get("results", {})
-                                # Still return results, they will contain error info
-                                break
-
-                        except json.JSONDecodeError:
+                        if not line or line.startswith(":"):
                             continue
+
+                        # Parse SSE format: "event: type\ndata: json"
+                        if line.startswith("event:"):
+                            event_type = line.split(":", 1)[1].strip()
+                        elif line.startswith("data:"):
+                            data_str = line.split(":", 1)[1].strip()
+                            try:
+                                data = json.loads(data_str)
+
+                                # Handle different event types
+                                if data.get("event") == "progress":
+                                    node_id = data.get("node_id")
+                                    node_type = data.get("node_type")
+                                    if progress_callback:
+                                        progress_callback(node_id, node_type)
+
+                                elif data.get("event") == "complete":
+                                    results = data.get("results", {})
+
+                                elif data.get("event") == "error":
+                                    error_msg = data.get("error", "Unknown error")
+                                    results = data.get("results", {})
+                                    # Still return results, they will contain error info
+                                    break
+
+                            except json.JSONDecodeError:
+                                continue
 
         if results is None:
             raise Exception("No results received from backend")

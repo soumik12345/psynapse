@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
@@ -37,6 +38,7 @@ def create_op_node_factory(schema: Dict[str, Any]):
 # Default node types that don't come from schemas (client-side only)
 DEFAULT_NODE_TYPES = [
     (ObjectNode, "Object"),
+    (ImageNode, "Image"),
     (TextNode, "Text"),
     (ViewNode, "View"),
     (ListNode, "List"),

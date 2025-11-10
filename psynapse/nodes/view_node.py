@@ -1,10 +1,13 @@
+from io import BytesIO
 from typing import Any
 
+from PIL import Image
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsProxyWidget,
     QGraphicsTextItem,
+    QLabel,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -44,8 +47,13 @@ class ViewNode(Node):
         self.tree_widget = None
         self.tree_proxy = None
 
+        # Create image label for displaying images (initially hidden)
+        self.image_label = None
+        self.image_proxy = None
+
         self.cached_value = None
         self.is_showing_tree = False
+        self.is_showing_image = False
 
         # Override the graphics mouseMoveEvent to handle content resizing
         self._original_mouse_move = self.graphics.mouseMoveEvent
@@ -85,6 +93,34 @@ class ViewNode(Node):
                 container = self.tree_proxy.widget()
                 container.setFixedWidth(available_width + 10)
                 container.setFixedHeight(available_height + 10)
+
+        # Update image label sizes
+        if self.image_label and self.image_proxy:
+            # Calculate available space
+            available_width = max(100, self.graphics.width - 30)
+            available_height = max(80, self.graphics.height - 70)
+
+            # Update image label size
+            self.image_label.setMinimumWidth(available_width)
+            self.image_label.setMaximumWidth(available_width)
+            self.image_label.setMinimumHeight(available_height)
+            self.image_label.setMaximumHeight(available_height)
+
+            # Update container widget size
+            if self.image_proxy.widget():
+                container = self.image_proxy.widget()
+                container.setFixedWidth(available_width + 10)
+                container.setFixedHeight(available_height + 10)
+
+            # Re-scale the image to fit new size
+            if hasattr(self, "_current_pixmap") and self._current_pixmap:
+                scaled_pixmap = self._current_pixmap.scaled(
+                    available_width,
+                    available_height,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation,
+                )
+                self.image_label.setPixmap(scaled_pixmap)
 
     def _create_tree_widget(self):
         """Create the tree widget for displaying dictionaries."""
@@ -270,10 +306,120 @@ class ViewNode(Node):
         # Update content sizes to fit current node dimensions
         self._update_content_sizes()
 
-        # Show tree, hide text
+        # Show tree, hide text and image
         self.tree_proxy.setVisible(True)
         self.display_text.setVisible(False)
+        if self.image_proxy is not None:
+            self.image_proxy.setVisible(False)
         self.is_showing_tree = True
+        self.is_showing_image = False
+
+    def _create_image_widget(self):
+        """Create the image label for displaying PIL images."""
+        if self.image_label is not None:
+            return
+
+        # Create a container widget
+        container = QWidget()
+        container.setStyleSheet("""
+            QWidget {
+                background-color: #2b2b2b;
+                border: 1px solid #555;
+                border-radius: 4px;
+            }
+            QLabel {
+                background-color: #2b2b2b;
+                border: none;
+            }
+        """)
+
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setAlignment(Qt.AlignCenter)
+
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setScaledContents(False)
+
+        # Initial sizes - will be updated dynamically on resize
+        initial_width = max(100, self.graphics.width - 30)
+        initial_height = max(80, self.graphics.height - 70)
+        self.image_label.setMinimumWidth(initial_width)
+        self.image_label.setMaximumWidth(initial_width)
+        self.image_label.setMinimumHeight(initial_height)
+        self.image_label.setMaximumHeight(initial_height)
+
+        layout.addWidget(self.image_label)
+
+        # Set container size
+        container.setFixedWidth(initial_width + 10)
+        container.setFixedHeight(initial_height + 10)
+
+        # Add the widget to the graphics scene via proxy
+        self.image_proxy = QGraphicsProxyWidget(self.graphics)
+        self.image_proxy.setWidget(container)
+        self.image_proxy.setPos(10, 50)
+        self.image_proxy.setVisible(False)
+
+        # Ensure the proxy widget is on top
+        self.image_proxy.setZValue(1)
+
+    def _show_image_view(self, image):
+        """Show the image view for PIL.Image.Image objects."""
+        self._create_image_widget()
+
+        # Convert PIL Image to QPixmap
+        if image.mode == "RGB":
+            b, g, r = image.split()
+            image = Image.merge("RGB", (b, g, r))
+        elif image.mode == "RGBA":
+            b, g, r, a = image.split()
+            image = Image.merge("RGBA", (b, g, r, a))
+
+        # Convert to bytes
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        # Create QPixmap
+        pixmap = QPixmap()
+        pixmap.loadFromData(buffer.read())
+
+        # Store the original pixmap for resizing
+        self._current_pixmap = pixmap
+
+        # Scale the image to fit within the label
+        available_width = max(100, self.graphics.width - 30)
+        available_height = max(80, self.graphics.height - 70)
+        scaled_pixmap = pixmap.scaled(
+            available_width,
+            available_height,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+
+        self.image_label.setPixmap(scaled_pixmap)
+
+        # Ensure the node has a reasonable minimum size for image view
+        if self.graphics.height < 250:
+            self.graphics.height = 250
+            self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+        if self.graphics.width < 250:
+            self.graphics.width = 250
+            self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+        # Update content sizes to fit current node dimensions
+        self._update_content_sizes()
+
+        # Show image, hide text and tree
+        self.image_proxy.setVisible(True)
+        self.display_text.setVisible(False)
+        if self.tree_proxy is not None:
+            self.tree_proxy.setVisible(False)
+
+        self.is_showing_image = True
+        self.is_showing_tree = False
 
     def _show_text_view(self, display_str):
         """Show the simple text view."""
@@ -282,6 +428,9 @@ class ViewNode(Node):
 
         if self.tree_proxy is not None:
             self.tree_proxy.setVisible(False)
+
+        if self.image_proxy is not None:
+            self.image_proxy.setVisible(False)
 
         # Ensure node has minimum height for text view
         min_height = 100 + max(len(self.inputs), len(self.outputs)) * 30
@@ -293,6 +442,29 @@ class ViewNode(Node):
         self._update_content_sizes()
 
         self.is_showing_tree = False
+        self.is_showing_image = False
+
+    def _deserialize_image(self, value: dict) -> Image.Image:
+        """Deserialize a base64 encoded image dict back to PIL.Image.
+
+        Args:
+            value: Dictionary with __type__, data, and metadata
+
+        Returns:
+            PIL.Image object or None if deserialization fails
+        """
+        try:
+            import base64
+
+            # Decode base64 data
+            image_data = base64.b64decode(value["data"])
+
+            # Create PIL Image from bytes
+            image = Image.open(BytesIO(image_data))
+            return image
+        except Exception as e:
+            print(f"Error deserializing image: {e}")
+            return None
 
     def set_value(self, value: Any):
         """Set and display a value (used by backend execution results).
@@ -300,11 +472,21 @@ class ViewNode(Node):
         Args:
             value: The value to display
         """
+        # Check if value is a serialized image from backend
+        if isinstance(value, dict) and value.get("__type__") == "PIL.Image":
+            # Deserialize the image
+            value = self._deserialize_image(value)
+
+        # Check if the value is a PIL Image
+        is_pil_image = isinstance(value, Image.Image)
+
         # Update display only if value changed or showing different view type
         should_update = (
             (value != self.cached_value)
             or (isinstance(value, dict) and not self.is_showing_tree)
             or (not isinstance(value, dict) and self.is_showing_tree)
+            or (is_pil_image and not self.is_showing_image)
+            or (not is_pil_image and self.is_showing_image)
         )
 
         if should_update:
@@ -312,6 +494,9 @@ class ViewNode(Node):
 
             if value is None:
                 self._show_text_view("None")
+            elif is_pil_image:
+                # Show PIL Image in image view
+                self._show_image_view(value)
             elif isinstance(value, dict) and len(value) > 0:
                 # Show dictionary in tree view
                 self._show_tree_view(value)

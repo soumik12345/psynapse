@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 from psynapse.core.node import Node
+from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
@@ -14,6 +15,7 @@ class GraphSerializer:
 
     # Map node classes to their backend type names (for non-OpNode nodes)
     NODE_TYPE_MAP = {
+        ImageNode: "image",
         ObjectNode: "object",
         ViewNode: "view",
         ListNode: "list",
@@ -83,6 +85,14 @@ class GraphSerializer:
                 and node.source_nodepack
             ):
                 node_data["source_nodepack"] = node.source_nodepack
+
+            # Include image parameters for ImageNode instances
+            if isinstance(node, ImageNode):
+                node_data["params"] = {
+                    "mode": node.current_mode,
+                    "url": node.image_url,
+                    "path": node.image_path,
+                }
 
             serialized_nodes.append(node_data)
 
