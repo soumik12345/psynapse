@@ -1,6 +1,6 @@
 from typing import Any
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
     QGraphicsItem,
@@ -195,6 +195,7 @@ class NodeGraphics(QGraphicsRectItem):
         self._color_title = QColor("#2d2d2d")
         self._color_selected = QColor("#FFA637")
         self._color_error = QColor("#ff4444")
+        self._color_executing = QColor("#FFD700")  # Yellow color for executing
 
         # Pens and brushes
         self._pen_default = QPen(QColor("#000000"))
@@ -203,12 +204,21 @@ class NodeGraphics(QGraphicsRectItem):
         self._pen_selected.setWidth(3)
         self._pen_error = QPen(self._color_error)
         self._pen_error.setWidth(3)
+        self._pen_executing = QPen(self._color_executing)
+        self._pen_executing.setWidth(3)
 
         self._brush_title = QBrush(self._color_title)
         self._brush_background = QBrush(self._color_background)
 
         # Error state
         self.has_error = False
+
+        # Executing state
+        self.is_executing = False
+        self._blink_visible = True
+        self._blink_timer = QTimer()
+        self._blink_timer.timeout.connect(self._toggle_blink)
+        self._blink_timer.setInterval(500)  # Blink every 500ms
 
         # Resize state
         self.is_resizing = False
@@ -248,6 +258,29 @@ class NodeGraphics(QGraphicsRectItem):
         """Set or clear the error state for this node."""
         self.has_error = has_error
         self.update()  # Trigger a repaint
+
+    def set_executing_state(self, is_executing: bool):
+        """Set or clear the executing state for this node.
+
+        Args:
+            is_executing: True if node is currently executing, False otherwise
+        """
+        self.is_executing = is_executing
+        if is_executing:
+            # Start blinking animation
+            self._blink_visible = True
+            self._blink_timer.start()
+        else:
+            # Stop blinking animation
+            self._blink_timer.stop()
+            self._blink_visible = False
+        self.update()  # Trigger a repaint
+
+    def _toggle_blink(self):
+        """Toggle the blink visibility for the executing border."""
+        if self.is_executing:
+            self._blink_visible = not self._blink_visible
+            self.update()  # Trigger a repaint
 
     def get_resize_handle_rect(self) -> QRectF:
         """Get the rectangle for the resize handle in the bottom-right corner."""
@@ -341,9 +374,11 @@ class NodeGraphics(QGraphicsRectItem):
         )
         painter.drawRect(0, self.title_height, self.width, self.edge_size)
 
-        # Draw outline - error state takes priority over selection
+        # Draw outline - priority: error > executing > selected > default
         if self.has_error:
             painter.setPen(self._pen_error)
+        elif self.is_executing and self._blink_visible:
+            painter.setPen(self._pen_executing)
         elif self.isSelected():
             painter.setPen(self._pen_selected)
         else:

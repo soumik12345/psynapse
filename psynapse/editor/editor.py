@@ -197,6 +197,9 @@ class PsynapseEditor(QMainWindow):
         self.current_node_timer.timeout.connect(self._update_current_node_status)
         self.current_node_timer.start(500)  # Poll every 500ms
 
+        # Track currently executing node for visual feedback
+        self._current_executing_node = None
+
         # Add welcome message
         self._add_welcome_message()
 
@@ -280,12 +283,24 @@ class PsynapseEditor(QMainWindow):
         toggle_terminal_action.triggered.connect(self._toggle_terminal_panel)
         view_menu.addAction(toggle_terminal_action)
 
+    def _clear_all_executing_states(self):
+        """Clear executing state from all nodes as a safeguard."""
+        for node in self.nodes:
+            if hasattr(node, "graphics"):
+                node.graphics.set_executing_state(False)
+        self._current_executing_node = None
+
     def _update_current_node_status(self):
-        """Poll the backend for current node status and update the status bar."""
+        """Poll the backend for current node status and update the status bar and node visuals."""
         try:
             # Query backend for current node
             response = self.backend_client.get_current_node_sync()
             current_node = response.get("current_node")
+
+            # Clear executing state from previously executing node
+            if self._current_executing_node is not None:
+                self._current_executing_node.graphics.set_executing_state(False)
+                self._current_executing_node = None
 
             if current_node:
                 node_id = current_node.get("node_id", "")
@@ -298,6 +313,34 @@ class PsynapseEditor(QMainWindow):
                 self.statusBar().showMessage(
                     f"⚙️ Executing Node {node_number} ({node_type})..."
                 )
+
+                # Find the node by ID and set executing state
+                # First, ensure no other node has executing state (safeguard)
+                for node in self.nodes:
+                    if node != self._current_executing_node and hasattr(
+                        node, "graphics"
+                    ):
+                        if node.graphics.is_executing:
+                            node.graphics.set_executing_state(False)
+
+                # Then set executing state on the current node
+                try:
+                    # Extract index from node_id (e.g., "node_0" -> 0)
+                    if "_" in node_id:
+                        node_index = int(node_id.split("_")[-1])
+                        if 0 <= node_index < len(self.nodes):
+                            executing_node = self.nodes[node_index]
+                            executing_node.graphics.set_executing_state(True)
+                            self._current_executing_node = executing_node
+                except (ValueError, IndexError):
+                    # Invalid node ID format or index out of range
+                    pass
+            else:
+                # No node executing, ensure all nodes are cleared
+                self._clear_all_executing_states()
+                # Clear status bar
+                if not self.execution_thread or not self.execution_thread.isRunning():
+                    self.statusBar().showMessage("Ready")
         except Exception:
             # Silently ignore errors - the timer will retry on next tick
             pass
@@ -327,6 +370,9 @@ class PsynapseEditor(QMainWindow):
 
     def _clear_scene(self):
         """Clear all nodes from the scene."""
+        # Clear executing state from all nodes before clearing
+        self._clear_all_executing_states()
+
         self.scene.clear()
         self.nodes.clear()
         self.view_nodes.clear()
@@ -499,6 +545,11 @@ class PsynapseEditor(QMainWindow):
             self.execution_worker.error.connect(self.execution_thread.quit)
             self.execution_thread.finished.connect(self._on_thread_finished)
 
+            # Clear any previous executing state
+            if self._current_executing_node is not None:
+                self._current_executing_node.graphics.set_executing_state(False)
+                self._current_executing_node = None
+
             # Start execution
             self.statusBar().showMessage("Starting execution...")
             self.execution_thread.start()
@@ -530,6 +581,11 @@ class PsynapseEditor(QMainWindow):
         Args:
             response: Response dictionary with results
         """
+        # Clear executing state from any executing node
+        if self._current_executing_node is not None:
+            self._current_executing_node.graphics.set_executing_state(False)
+            self._current_executing_node = None
+
         # Update ViewNodes with results
         results = response.get("results", {})
         self._update_view_nodes_with_results(results)
@@ -542,6 +598,11 @@ class PsynapseEditor(QMainWindow):
         Args:
             error_message: Error message from execution
         """
+        # Clear executing state from any executing node
+        if self._current_executing_node is not None:
+            self._current_executing_node.graphics.set_executing_state(False)
+            self._current_executing_node = None
+
         self.toast_manager.show_error(
             f"Failed to execute graph: {error_message}",
             "Execution Error",
