@@ -1,6 +1,9 @@
+import json
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QFont, QKeySequence
 from PySide6.QtWidgets import (
+    QFileDialog,
     QGraphicsTextItem,
     QMainWindow,
     QPushButton,
@@ -155,6 +158,11 @@ class PsynapseEditor(QMainWindow):
         new_action.triggered.connect(self._clear_scene)
         file_menu.addAction(new_action)
 
+        save_as_action = QAction("Save &As...", self)
+        save_as_action.setShortcut("Ctrl+S")
+        save_as_action.triggered.connect(self._save_as_graph)
+        file_menu.addAction(save_as_action)
+
         file_menu.addSeparator()
 
         settings_action = QAction("&Settings", self)
@@ -234,6 +242,35 @@ class PsynapseEditor(QMainWindow):
         """Open the settings dialog."""
         dialog = SettingsDialog(self)
         dialog.exec()
+
+    def _save_as_graph(self):
+        """Save the current graph as a JSON file."""
+        # Show file dialog for save location
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Graph As", "", "JSON Files (*.json);;All Files (*)"
+        )
+
+        # If user canceled the dialog, return
+        if not file_path:
+            return
+
+        try:
+            # Serialize the graph
+            graph_data = GraphSerializer.serialize_graph(self.nodes)
+
+            # Save to file
+            with open(file_path, "w") as f:
+                json.dump(graph_data, f, indent=2)
+
+            # Update status bar
+            self.statusBar().showMessage(f"✓ Graph saved to {file_path}")
+
+        except Exception as e:
+            # Show error toast
+            self.toast_manager.show_error(
+                f"Failed to save graph: {str(e)}", "Save Error"
+            )
+            self.statusBar().showMessage(f"❌ Failed to save graph: {str(e)}")
 
     def _zoom_in(self):
         """Zoom in the view."""
