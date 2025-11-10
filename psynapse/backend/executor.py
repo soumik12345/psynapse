@@ -192,8 +192,14 @@ class GraphExecutor:
         # Get input values from already-executed nodes (thanks to topological sort)
         inputs = self._get_node_inputs(node_id)
 
+        # Get filepath from node data if available
+        filepath = node.get("filepath")
+        source_nodepack = node.get("source_nodepack")
+
         # Execute based on node type
-        result = self._execute_node_operation(node["type"], inputs)
+        result = self._execute_node_operation(
+            node["type"], inputs, filepath, source_nodepack
+        )
 
         # Cache result
         self.node_cache[node_id] = result
@@ -243,13 +249,20 @@ class GraphExecutor:
 
         return inputs
 
-    def _execute_node_operation(self, node_type: str, inputs: Dict[str, Any]) -> Any:
+    def _execute_node_operation(
+        self,
+        node_type: str,
+        inputs: Dict[str, Any],
+        filepath: str = None,
+        source_nodepack: str = None,
+    ) -> Any:
         """Execute a node's operation based on its type.
 
         Args:
             node_type: Type of node (e.g., add, subtract, multiply, divide, view)
             inputs: Dictionary of input values
-
+            filepath: Optional filepath to the node's implementation (if not provided, will be looked up)
+            source_nodepack: Optional source nodepack name (if not provided, will be looked up)
         Returns:
             Result of the operation
         """
@@ -263,13 +276,13 @@ class GraphExecutor:
             func = _FUNCTION_CACHE[node_type]
             return func(**inputs)
 
-        # Get the node schema from nodepacks
-        schema = get_node_schema(node_type)
-        if not schema:
-            raise ValueError(f"Unknown node type: {node_type}")
-
-        # Load the function from the nodepack file
-        filepath = schema["filepath"]
+        # Get filepath - use provided filepath or look it up from schema
+        if not filepath:
+            # Get the node schema from nodepacks
+            schema = get_node_schema(node_type)
+            if not schema:
+                raise ValueError(f"Unknown node type: {node_type}")
+            filepath = schema["filepath"]
 
         # Create a unique module name based on the filepath
         module_name = f"nodepack_{filepath.replace('/', '_').replace('.', '_')}"
