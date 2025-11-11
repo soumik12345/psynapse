@@ -151,10 +151,10 @@ class ImageNode(ObjectNode):
 
         self.widget_layout.addWidget(self.return_as_selector)
 
-        # Create image preview label
+        # Create image preview label (will be dynamically sized)
         self.image_preview_label = QLabel()
-        self.image_preview_label.setFixedWidth(160)
-        self.image_preview_label.setFixedHeight(120)
+        self.image_preview_label.setMinimumWidth(80)
+        self.image_preview_label.setMinimumHeight(60)
         self.image_preview_label.setAlignment(Qt.AlignCenter)
         self.image_preview_label.setText("No image")
         self.image_preview_label.setStyleSheet("""
@@ -167,6 +167,9 @@ class ImageNode(ObjectNode):
             }
         """)
         self.widget_layout.addWidget(self.image_preview_label)
+
+        # Store the original full-resolution pixmap for dynamic resizing
+        self._current_pixmap = None
 
         # Placeholder for input widget
         self.input_widget = None
@@ -186,15 +189,15 @@ class ImageNode(ObjectNode):
         # - Mode selector: ~30px
         # - "Output Mode" label: ~15px
         # - Return format selector: ~30px
-        # - Image preview: ~120px
+        # - Image preview: dynamically sized, minimum ~120px
         # - Input widget (worst case Upload): ~60px
         # - Spacing between elements: ~48px total
         # - Bottom padding: ~10px
-        # Total: ~358px, rounded to 360px
+        # Total: ~358px, rounded to 360px (minimum)
         self.graphics.height = 360
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
 
-        # Update widget sizes and positions
+        # Update widget sizes and positions (this will set initial preview size)
         self._update_widget_sizes()
 
         # Override the graphics mouseMoveEvent to handle widget resizing
@@ -405,29 +408,52 @@ class ImageNode(ObjectNode):
             image.save(buffer, format="PNG")
             buffer.seek(0)
 
-            # Create QPixmap
+            # Create QPixmap and store the original full-resolution version
             pixmap = QPixmap()
             pixmap.loadFromData(buffer.read())
+            self._current_pixmap = pixmap
 
             # Scale the image to fit the preview label while maintaining aspect ratio
-            scaled_pixmap = pixmap.scaled(
-                self.image_preview_label.width(),
-                self.image_preview_label.height(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation,
-            )
-
-            self.image_preview_label.setPixmap(scaled_pixmap)
+            self._scale_preview()
 
         except Exception as e:
             print(f"Error updating preview: {e}")
             self._clear_preview()
+
+    def _scale_preview(self):
+        """Scale the stored pixmap to fit the current preview label size."""
+        if self._current_pixmap is None:
+            return
+
+        # Get the current label size (use sizeHint if width/height are 0)
+        label_width = self.image_preview_label.width()
+        label_height = self.image_preview_label.height()
+
+        # If label hasn't been sized yet, use minimum size
+        if label_width <= 0:
+            label_width = self.image_preview_label.minimumWidth()
+        if label_height <= 0:
+            label_height = self.image_preview_label.minimumHeight()
+
+        if label_width <= 0 or label_height <= 0:
+            return
+
+        # Scale the pixmap to fit while maintaining aspect ratio
+        scaled_pixmap = self._current_pixmap.scaled(
+            label_width,
+            label_height,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+
+        self.image_preview_label.setPixmap(scaled_pixmap)
 
     def _clear_preview(self):
         """Clear the image preview."""
         self.image_preview_label.clear()
         self.image_preview_label.setText("No image")
         self.current_image = None
+        self._current_pixmap = None
 
     def execute(self) -> Any:
         """Load and return the image in the selected format."""
@@ -482,6 +508,12 @@ class ImageNode(ObjectNode):
         right_margin = 10
         available_width = max(80, self.graphics.width - left_margin - right_margin)
 
+        # Calculate available height for image preview
+        # Account for: title bar (~30px), container start (~40px), labels (~30px),
+        # selectors (~60px), input widget (~60px), spacing (~48px), bottom padding (~10px)
+        used_height = 40 + 30 + 60 + 60 + 48 + 10  # ~248px for other elements
+        available_height = max(60, self.graphics.height - used_height)
+
         # Update container width
         self.widget_container.setFixedWidth(available_width)
 
@@ -495,8 +527,13 @@ class ImageNode(ObjectNode):
         # Update return as selector width
         self.return_as_selector.setFixedWidth(available_width)
 
-        # Update image preview width
+        # Update image preview size (width and height)
         self.image_preview_label.setFixedWidth(available_width)
+        self.image_preview_label.setFixedHeight(available_height)
+
+        # Rescale the preview if we have an image loaded
+        if self._current_pixmap is not None:
+            self._scale_preview()
 
         # Update input widget width
         if self.input_widget:
