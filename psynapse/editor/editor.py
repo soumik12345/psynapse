@@ -22,6 +22,7 @@ from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.settings_dialog import SettingsDialog
 from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
+from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
@@ -734,6 +735,30 @@ class PsynapseEditor(QMainWindow):
                     # Start with 1 socket, so we need to add (len - 1) more
                     while len(node.input_sockets) < len(input_sockets_data):
                         node._add_socket()
+                elif node_type == "image":
+                    node = ImageNode()
+                    # Restore ImageNode params if they exist
+                    params = node_data.get("params", {})
+                    if params:
+                        # Restore URL and path first (before mode change)
+                        node.image_url = params.get("url", "")
+                        node.image_path = params.get("path", "")
+                        # Restore mode (this will trigger UI update)
+                        mode = params.get("mode", "URL")
+                        if hasattr(node, "mode_selector"):
+                            # Find the index of the mode in the combo box
+                            for i in range(node.mode_selector.count()):
+                                if node.mode_selector.itemData(i) == mode:
+                                    node.mode_selector.setCurrentIndex(i)
+                                    break
+                        # Restore return_as
+                        return_as = params.get("return_as", "PIL Image")
+                        if hasattr(node, "return_as_selector"):
+                            # Find the index of return_as in the combo box
+                            for i in range(node.return_as_selector.count()):
+                                if node.return_as_selector.itemData(i) == return_as:
+                                    node.return_as_selector.setCurrentIndex(i)
+                                    break
                 else:
                     # OpNode - need to get schema
                     schema = self._get_node_schema(node_type)
@@ -745,8 +770,36 @@ class PsynapseEditor(QMainWindow):
                         continue
                     node = OpNode(schema)
 
-                # Add node to scene at default position (will arrange later)
-                node.set_position(0, 0)
+                # Restore position and size from JSON if available
+                position = node_data.get("position")
+                size = node_data.get("size")
+
+                if position and size:
+                    # Position is stored as center coordinates, convert to top-left
+                    center_x, center_y = position[0], position[1]
+                    width, height = size[0], size[1]
+                    top_left_x = center_x - width / 2
+                    top_left_y = center_y - height / 2
+
+                    # Set node size
+                    node.graphics.width = width
+                    node.graphics.height = height
+                    node.graphics.setRect(0, 0, width, height)
+                    # Reposition sockets after size change
+                    node._position_sockets()
+
+                    # Update widget sizes for nodes that have custom resize handlers
+                    if hasattr(node, "_update_widget_sizes"):
+                        node._update_widget_sizes()
+                    elif hasattr(node, "_update_content_sizes"):
+                        node._update_content_sizes()
+
+                    # Set node position
+                    node.set_position(top_left_x, top_left_y)
+                else:
+                    # Default position (will be arranged later if no positions saved)
+                    node.set_position(0, 0)
+
                 self.scene.addItem(node.graphics)
                 self.nodes.append(node)
 
@@ -797,8 +850,20 @@ class PsynapseEditor(QMainWindow):
                 # Hide input widget for connected input sockets
                 end_socket.set_input_widget_visible(False)
 
-        # Arrange nodes in a grid layout
-        self._arrange_loaded_nodes()
+        # Arrange nodes in a grid layout only if they don't have saved positions
+        # Check if any nodes have saved positions
+        has_saved_positions = any(
+            node_data.get("position") and node_data.get("size")
+            for node_data in nodes_data
+        )
+
+        if not has_saved_positions:
+            # No saved positions, arrange in grid layout
+            self._arrange_loaded_nodes()
+        else:
+            # Nodes have saved positions, update edges for all nodes
+            for node in self.nodes:
+                node.update_edges()
 
         # Remove welcome message if nodes were loaded
         if self.nodes and hasattr(self, "welcome_text") and self.welcome_text:

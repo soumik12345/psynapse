@@ -54,7 +54,7 @@ class NodeLibraryItem(QLabel):
         self.node_name = node_name
 
         # Set up the label
-        self.setText(node_name)
+        self.setText(node_name.replace("_", " "))
         self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.setMinimumHeight(40)
         self.setMaximumHeight(40)

@@ -4,10 +4,12 @@ from typing import Any
 import requests
 from PIL import Image
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QGraphicsProxyWidget,
+    QLabel,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
@@ -17,6 +19,7 @@ from PySide6.QtWidgets import (
 from psynapse.core.node import Node
 from psynapse.core.socket_types import SocketDataType
 from psynapse.nodes.object_node import ObjectNode
+from psynapse.utils import pil_image_to_openai_string
 
 
 class ImageNode(ObjectNode):
@@ -33,6 +36,7 @@ class ImageNode(ObjectNode):
 
         self.current_image = None
         self.current_mode = "URL"  # "URL" or "Upload"
+        self.return_as = "PIL Image"  # "PIL Image", "OpenAI string", or "LLM Content"
         self.image_url = ""
         self.image_path = ""
 
@@ -43,6 +47,18 @@ class ImageNode(ObjectNode):
         self.widget_layout.setSpacing(8)
         self.widget_layout.setAlignment(Qt.AlignCenter)
         self.widget_container.setLayout(self.widget_layout)
+
+        # Create label for input mode selector
+        self.input_mode_label = QLabel("Input Mode")
+        self.input_mode_label.setStyleSheet("""
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+                padding: 2px 0px;
+            }
+        """)
+        self.input_mode_label.setAlignment(Qt.AlignCenter)
+        self.widget_layout.addWidget(self.input_mode_label)
 
         # Create mode selector
         self.mode_selector = QComboBox()
@@ -83,6 +99,78 @@ class ImageNode(ObjectNode):
 
         self.widget_layout.addWidget(self.mode_selector)
 
+        # Create label for output mode selector
+        self.output_mode_label = QLabel("Output Mode")
+        self.output_mode_label.setStyleSheet("""
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+                padding: 2px 0px;
+            }
+        """)
+        self.output_mode_label.setAlignment(Qt.AlignCenter)
+        self.widget_layout.addWidget(self.output_mode_label)
+
+        # Create return format selector
+        self.return_as_selector = QComboBox()
+        self.return_as_selector.addItem("PIL Image", "PIL Image")
+        self.return_as_selector.addItem("OpenAI string", "OpenAI string")
+        self.return_as_selector.addItem("LLM Content", "LLM Content")
+        self.return_as_selector.setFixedWidth(160)
+        self.return_as_selector.currentIndexChanged.connect(self._on_return_as_changed)
+
+        # Style the return as selector (same as mode selector)
+        self.return_as_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 5px 8px;
+                padding-right: 25px;
+                font-size: 11px;
+            }
+            QComboBox:hover {
+                border: 1px solid #FF7700;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                selection-background-color: #FF7700;
+                border: 1px solid #444444;
+            }
+        """)
+
+        self.widget_layout.addWidget(self.return_as_selector)
+
+        # Create image preview label (will be dynamically sized)
+        self.image_preview_label = QLabel()
+        self.image_preview_label.setMinimumWidth(80)
+        self.image_preview_label.setMinimumHeight(60)
+        self.image_preview_label.setAlignment(Qt.AlignCenter)
+        self.image_preview_label.setText("No image")
+        self.image_preview_label.setStyleSheet("""
+            QLabel {
+                background-color: #1a1a1a;
+                color: #888888;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                font-size: 10px;
+            }
+        """)
+        self.widget_layout.addWidget(self.image_preview_label)
+
+        # Store the original full-resolution pixmap for dynamic resizing
+        self._current_pixmap = None
+
         # Placeholder for input widget
         self.input_widget = None
         self._create_input_widget()
@@ -94,10 +182,22 @@ class ImageNode(ObjectNode):
         self.widget_proxy.setZValue(200)
 
         # Update node height to accommodate widgets
-        self.graphics.height = 160
+        # Height calculation:
+        # - Title bar: ~30px
+        # - Widget container starts at: ~40px
+        # - "Input Mode" label: ~15px
+        # - Mode selector: ~30px
+        # - "Output Mode" label: ~15px
+        # - Return format selector: ~30px
+        # - Image preview: dynamically sized, minimum ~120px
+        # - Input widget (worst case Upload): ~60px
+        # - Spacing between elements: ~48px total
+        # - Bottom padding: ~10px
+        # Total: ~358px, rounded to 360px (minimum)
+        self.graphics.height = 360
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
 
-        # Update widget sizes and positions
+        # Update widget sizes and positions (this will set initial preview size)
         self._update_widget_sizes()
 
         # Override the graphics mouseMoveEvent to handle widget resizing
@@ -108,6 +208,20 @@ class ImageNode(ObjectNode):
         """Handle mode selector change."""
         self.current_mode = self.mode_selector.itemData(index)
         self._create_input_widget()
+        # Reload preview if we have a URL or path
+        if (self.current_mode == "URL" and self.image_url) or (
+            self.current_mode == "Upload" and self.image_path
+        ):
+            self._load_and_preview_image()
+        else:
+            self._clear_preview()
+
+    def _on_return_as_changed(self, index: int):
+        """Handle return format selector change."""
+        self.return_as = self.return_as_selector.itemData(index)
+        # Clear output socket value to force re-execution with new format
+        if self.output_sockets:
+            self.output_sockets[0].value = None
 
     def _create_input_widget(self):
         """Create appropriate input widget based on selected mode."""
@@ -218,6 +332,9 @@ class ImageNode(ObjectNode):
         self.current_image = None
         if self.output_sockets:
             self.output_sockets[0].value = None
+        # Load and preview the image if URL is provided
+        if text:
+            self._load_and_preview_image()
 
     def _on_upload_clicked(self):
         """Handle file upload button click."""
@@ -238,10 +355,110 @@ class ImageNode(ObjectNode):
             self.current_image = None
             if self.output_sockets:
                 self.output_sockets[0].value = None
+            # Load and preview the image
+            self._load_and_preview_image()
+
+    def _load_and_preview_image(self):
+        """Load image from URL or file and display preview without executing the node."""
+        try:
+            image = None
+
+            if self.current_mode == "URL":
+                if not self.image_url:
+                    self._clear_preview()
+                    return
+
+                # Load image from URL
+                response = requests.get(self.image_url, timeout=10)
+                response.raise_for_status()
+                image = Image.open(BytesIO(response.content))
+
+            elif self.current_mode == "Upload":
+                if not self.image_path:
+                    self._clear_preview()
+                    return
+
+                # Load image from file
+                image = Image.open(self.image_path)
+
+            if image:
+                self.current_image = image
+                self._update_preview(image)
+            else:
+                self._clear_preview()
+
+        except Exception as e:
+            print(f"Error loading image preview: {e}")
+            self._clear_preview()
+
+    def _update_preview(self, image: Image.Image):
+        """Update the preview label with the given PIL Image."""
+        try:
+            # Convert PIL Image to QPixmap
+            # Handle color mode conversion for Qt compatibility (matching ViewNode)
+            if image.mode == "RGB":
+                b, g, r = image.split()
+                image = Image.merge("RGB", (b, g, r))
+            elif image.mode == "RGBA":
+                b, g, r, a = image.split()
+                image = Image.merge("RGBA", (b, g, r, a))
+
+            # Convert to bytes
+            buffer = BytesIO()
+            image.save(buffer, format="PNG")
+            buffer.seek(0)
+
+            # Create QPixmap and store the original full-resolution version
+            pixmap = QPixmap()
+            pixmap.loadFromData(buffer.read())
+            self._current_pixmap = pixmap
+
+            # Scale the image to fit the preview label while maintaining aspect ratio
+            self._scale_preview()
+
+        except Exception as e:
+            print(f"Error updating preview: {e}")
+            self._clear_preview()
+
+    def _scale_preview(self):
+        """Scale the stored pixmap to fit the current preview label size."""
+        if self._current_pixmap is None:
+            return
+
+        # Get the current label size (use sizeHint if width/height are 0)
+        label_width = self.image_preview_label.width()
+        label_height = self.image_preview_label.height()
+
+        # If label hasn't been sized yet, use minimum size
+        if label_width <= 0:
+            label_width = self.image_preview_label.minimumWidth()
+        if label_height <= 0:
+            label_height = self.image_preview_label.minimumHeight()
+
+        if label_width <= 0 or label_height <= 0:
+            return
+
+        # Scale the pixmap to fit while maintaining aspect ratio
+        scaled_pixmap = self._current_pixmap.scaled(
+            label_width,
+            label_height,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+
+        self.image_preview_label.setPixmap(scaled_pixmap)
+
+    def _clear_preview(self):
+        """Clear the image preview."""
+        self.image_preview_label.clear()
+        self.image_preview_label.setText("No image")
+        self.current_image = None
+        self._current_pixmap = None
 
     def execute(self) -> Any:
-        """Load and return the image as PIL.Image.Image."""
+        """Load and return the image in the selected format."""
         try:
+            # Load the image first
             if self.current_mode == "URL":
                 if not self.image_url:
                     return None
@@ -258,7 +475,18 @@ class ImageNode(ObjectNode):
                 # Load image from file
                 self.current_image = Image.open(self.image_path)
 
-            return self.current_image
+            # Return in the selected format
+            if self.return_as == "PIL Image":
+                return self.current_image
+            elif self.return_as == "OpenAI string":
+                return pil_image_to_openai_string(self.current_image)
+            elif self.return_as == "LLM Content":
+                return {
+                    "type": "input_image",
+                    "image_url": pil_image_to_openai_string(self.current_image),
+                }
+            else:
+                return self.current_image
 
         except Exception as e:
             print(f"Error loading image: {e}")
@@ -280,11 +508,32 @@ class ImageNode(ObjectNode):
         right_margin = 10
         available_width = max(80, self.graphics.width - left_margin - right_margin)
 
+        # Calculate available height for image preview
+        # Account for: title bar (~30px), container start (~40px), labels (~30px),
+        # selectors (~60px), input widget (~60px), spacing (~48px), bottom padding (~10px)
+        used_height = 40 + 30 + 60 + 60 + 48 + 10  # ~248px for other elements
+        available_height = max(60, self.graphics.height - used_height)
+
         # Update container width
         self.widget_container.setFixedWidth(available_width)
 
+        # Update label widths
+        self.input_mode_label.setFixedWidth(available_width)
+        self.output_mode_label.setFixedWidth(available_width)
+
         # Update mode selector width
         self.mode_selector.setFixedWidth(available_width)
+
+        # Update return as selector width
+        self.return_as_selector.setFixedWidth(available_width)
+
+        # Update image preview size (width and height)
+        self.image_preview_label.setFixedWidth(available_width)
+        self.image_preview_label.setFixedHeight(available_height)
+
+        # Rescale the preview if we have an image loaded
+        if self._current_pixmap is not None:
+            self._scale_preview()
 
         # Update input widget width
         if self.input_widget:

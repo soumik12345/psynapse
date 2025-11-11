@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QGraphicsView
 from psynapse.core.edge import Edge
 from psynapse.core.scene import NodeScene
 from psynapse.core.socket import Socket, SocketGraphics, SocketType
+from psynapse.nodes.view_node import ViewNode
 
 
 class NodeView(QGraphicsView):
@@ -159,7 +160,17 @@ class NodeView(QGraphicsView):
                     for socket in node.input_sockets + node.output_sockets:
                         for edge in socket.edges[:]:
                             edge.remove()
-                    # Remove node
+                    # Remove node from editor's tracking lists
+                    if self.editor:
+                        if node in self.editor.nodes:
+                            self.editor.nodes.remove(node)
+                        # Also remove from view_nodes if it's a ViewNode
+                        if (
+                            isinstance(node, ViewNode)
+                            and node in self.editor.view_nodes
+                        ):
+                            self.editor.view_nodes.remove(node)
+                    # Remove node from scene
                     self.scene().removeItem(item)
 
         super().keyPressEvent(event)

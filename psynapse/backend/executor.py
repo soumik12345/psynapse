@@ -13,6 +13,7 @@ import rich
 from PIL import Image
 
 from psynapse.backend.node_schemas import get_node_schema
+from psynapse.utils import pil_image_to_openai_string
 
 # Global cache for loaded functions from nodepacks
 _FUNCTION_CACHE: Dict[str, Callable] = {}
@@ -320,6 +321,32 @@ class GraphExecutor:
         if not node:
             raise ValueError(f"Node {node_id} not found")
 
+        # Special handling for TextNode - it has text content and return_as option
+        if node["type"] == "text":
+            params = node.get("params", {})
+            return_as = params.get("return_as", "String")
+
+            # Get the text value from output socket
+            output_sockets = node.get("output_sockets", [])
+            if output_sockets and "value" in output_sockets[0]:
+                text_value = output_sockets[0]["value"]
+            else:
+                text_value = ""
+
+            # Return in the selected format
+            if return_as == "String":
+                result = text_value
+            elif return_as == "LLM Content":
+                result = {
+                    "type": "input_text",
+                    "text": text_value,
+                }
+            else:
+                result = text_value
+
+            self.node_cache[node_id] = result
+            return result
+
         # Special handling for ObjectNode - it has a preset output value
         if node["type"] == "object":
             # ObjectNode has no inputs, just return its output value
@@ -335,28 +362,43 @@ class GraphExecutor:
         if node["type"] == "image":
             params = node.get("params", {})
             mode = params.get("mode", "URL")
+            return_as = params.get("return_as", "PIL Image")
 
             try:
+                # Load the image first
+                image = None
                 if mode == "URL":
                     url = params.get("url", "")
-                    if not url:
-                        result = None
-                    else:
+                    if url:
                         # Load image from URL
                         response = requests.get(url, timeout=10)
                         response.raise_for_status()
                         image = Image.open(BytesIO(response.content))
-                        # Serialize image as dict with base64 data
-                        result = self._serialize_image(image)
                 else:  # mode == "Upload"
                     path = params.get("path", "")
-                    if not path or not os.path.exists(path):
-                        result = None
-                    else:
+                    if path and os.path.exists(path):
                         # Load image from file
                         image = Image.open(path)
-                        # Serialize image as dict with base64 data
-                        result = self._serialize_image(image)
+
+                # Return in the selected format
+                if image is None:
+                    # Image loading failed
+                    result = None
+                elif return_as == "PIL Image":
+                    # Serialize image as dict with base64 data (for backend transmission)
+                    result = self._serialize_image(image)
+                elif return_as == "OpenAI string":
+                    # Return as OpenAI-compatible base64 string
+                    result = pil_image_to_openai_string(image)
+                elif return_as == "LLM Content":
+                    # Return as LLM content dictionary
+                    result = {
+                        "type": "input_image",
+                        "image_url": pil_image_to_openai_string(image),
+                    }
+                else:
+                    # Default to serialized image
+                    result = self._serialize_image(image)
             except Exception as e:
                 print(f"Error loading image: {e}")
                 result = None
