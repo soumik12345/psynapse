@@ -165,7 +165,10 @@ class NodeView(QGraphicsView):
                         if node in self.editor.nodes:
                             self.editor.nodes.remove(node)
                         # Also remove from view_nodes if it's a ViewNode
-                        if isinstance(node, ViewNode) and node in self.editor.view_nodes:
+                        if (
+                            isinstance(node, ViewNode)
+                            and node in self.editor.view_nodes
+                        ):
                             self.editor.view_nodes.remove(node)
                     # Remove node from scene
                     self.scene().removeItem(item)
