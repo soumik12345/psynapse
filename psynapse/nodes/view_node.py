@@ -243,9 +243,18 @@ class ViewNode(Node):
 
     def _add_list_items(self, parent_item, data, key=None):
         """Add list/tuple items to the tree."""
-        item = QTreeWidgetItem(parent_item)
-        item.setText(0, f"▶ {key}: [{len(data)} items]")
-        item.setExpanded(False)
+        type_name = "list" if isinstance(data, list) else "tuple"
+
+        if key is not None:
+            # Nested list/tuple - create a parent node
+            item = QTreeWidgetItem(parent_item)
+            item.setText(0, f"▶ {key}: {type_name}[{len(data)} items]")
+            item.setExpanded(False)
+        else:
+            # Top-level list/tuple - create a parent node with type indicator
+            item = QTreeWidgetItem(parent_item)
+            item.setText(0, f"▶ {type_name}[{len(data)} items]")
+            item.setExpanded(False)
 
         for idx, value in enumerate(data):
             if isinstance(value, dict):
@@ -278,17 +287,26 @@ class ViewNode(Node):
             return s
 
     def _show_tree_view(self, value):
-        """Show the tree view for dictionaries."""
+        """Show the tree view for dictionaries, lists, and tuples."""
         self._create_tree_widget()
 
         # Clear existing items
         self.tree_widget.clear()
 
-        # Populate the tree
-        self._add_dict_items(self.tree_widget.invisibleRootItem(), value)
+        root = self.tree_widget.invisibleRootItem()
+
+        # Populate the tree based on value type
+        if isinstance(value, (list, tuple)):
+            # For lists/tuples, add items directly to root
+            self._add_list_items(root, value)
+        elif isinstance(value, dict):
+            # For dictionaries, use existing dict logic
+            self._add_dict_items(root, value)
+        else:
+            # Fallback: wrap in a dict-like structure
+            self._add_dict_items(root, {"result": value})
 
         # Expand the first level and update indicators
-        root = self.tree_widget.invisibleRootItem()
         for i in range(root.childCount()):
             child = root.child(i)
             if child.childCount() > 0:  # Only expand if it has children
@@ -481,10 +499,14 @@ class ViewNode(Node):
         is_pil_image = isinstance(value, Image.Image)
 
         # Update display only if value changed or showing different view type
+        is_dict = isinstance(value, dict) and len(value) > 0
+        is_list_or_tuple = isinstance(value, (list, tuple)) and len(value) > 0
+        should_show_tree = is_dict or is_list_or_tuple
+
         should_update = (
             (value != self.cached_value)
-            or (isinstance(value, dict) and not self.is_showing_tree)
-            or (not isinstance(value, dict) and self.is_showing_tree)
+            or (should_show_tree and not self.is_showing_tree)
+            or (not should_show_tree and self.is_showing_tree)
             or (is_pil_image and not self.is_showing_image)
             or (not is_pil_image and self.is_showing_image)
         )
@@ -499,14 +521,16 @@ class ViewNode(Node):
                 self._show_image_view(value)
             elif isinstance(value, dict) and len(value) > 0:
                 # Show dictionary in tree view
-                self._show_tree_view({"result": value})
-            elif isinstance(value, (list, tuple)) and any(
-                isinstance(item, dict) for item in value
-            ):
-                # Show lists containing dictionaries in tree view
-                self._show_tree_view({"result": value})
+                self._show_tree_view(value)
+            elif isinstance(value, (list, tuple)) and len(value) > 0:
+                # Show lists and tuples in tree view
+                self._show_tree_view(value)
             else:
-                self._show_tree_view({"result": value})
+                # For empty lists/tuples or other simple values, wrap in dict
+                if isinstance(value, (list, tuple)):
+                    self._show_tree_view(value)
+                else:
+                    self._show_tree_view({"result": value})
                 # # Show simple values in text view
                 # if isinstance(value, float):
                 #     display_str = f"{value:.4g}"
