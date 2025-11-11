@@ -22,6 +22,7 @@ from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.settings_dialog import SettingsDialog
 from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
+from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
@@ -734,6 +735,30 @@ class PsynapseEditor(QMainWindow):
                     # Start with 1 socket, so we need to add (len - 1) more
                     while len(node.input_sockets) < len(input_sockets_data):
                         node._add_socket()
+                elif node_type == "image":
+                    node = ImageNode()
+                    # Restore ImageNode params if they exist
+                    params = node_data.get("params", {})
+                    if params:
+                        # Restore URL and path first (before mode change)
+                        node.image_url = params.get("url", "")
+                        node.image_path = params.get("path", "")
+                        # Restore mode (this will trigger UI update)
+                        mode = params.get("mode", "URL")
+                        if hasattr(node, "mode_selector"):
+                            # Find the index of the mode in the combo box
+                            for i in range(node.mode_selector.count()):
+                                if node.mode_selector.itemData(i) == mode:
+                                    node.mode_selector.setCurrentIndex(i)
+                                    break
+                        # Restore return_as
+                        return_as = params.get("return_as", "PIL Image")
+                        if hasattr(node, "return_as_selector"):
+                            # Find the index of return_as in the combo box
+                            for i in range(node.return_as_selector.count()):
+                                if node.return_as_selector.itemData(i) == return_as:
+                                    node.return_as_selector.setCurrentIndex(i)
+                                    break
                 else:
                     # OpNode - need to get schema
                     schema = self._get_node_schema(node_type)
