@@ -10,6 +10,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QComboBox,
     QGraphicsProxyWidget,
+    QLabel,
     QPlainTextEdit,
     QVBoxLayout,
     QWidget,
@@ -242,6 +243,7 @@ class TextNode(ObjectNode):
         # Set fixed string type (no type selector needed)
         self.current_type = SocketDataType.STRING
         self.current_value = ""
+        self.return_as = "String"  # "String" or "LLM Content"
 
         # Create container widget
         self.widget_container = QWidget()
@@ -250,6 +252,18 @@ class TextNode(ObjectNode):
         self.widget_layout.setSpacing(8)
         self.widget_layout.setAlignment(Qt.AlignCenter)
         self.widget_container.setLayout(self.widget_layout)
+
+        # Create label for editor mode selector
+        self.editor_mode_label = QLabel("Editor Mode")
+        self.editor_mode_label.setStyleSheet("""
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+                padding: 2px 0px;
+            }
+        """)
+        self.editor_mode_label.setAlignment(Qt.AlignCenter)
+        self.widget_layout.addWidget(self.editor_mode_label)
 
         # Create text type selector (for syntax highlighting)
         self.text_type_selector = QComboBox()
@@ -290,6 +304,59 @@ class TextNode(ObjectNode):
         """)
 
         self.widget_layout.addWidget(self.text_type_selector)
+
+        # Create label for output mode selector
+        self.output_mode_label = QLabel("Output Mode")
+        self.output_mode_label.setStyleSheet("""
+            QLabel {
+                color: #aaaaaa;
+                font-size: 10px;
+                padding: 2px 0px;
+            }
+        """)
+        self.output_mode_label.setAlignment(Qt.AlignCenter)
+        self.widget_layout.addWidget(self.output_mode_label)
+
+        # Create output mode selector
+        self.output_mode_selector = QComboBox()
+        self.output_mode_selector.addItem("String", "String")
+        self.output_mode_selector.addItem("LLM Content", "LLM Content")
+        self.output_mode_selector.setFixedWidth(300)
+        self.output_mode_selector.currentIndexChanged.connect(
+            self._on_output_mode_changed
+        )
+
+        # Style the output mode selector (same style as text type selector)
+        self.output_mode_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 5px 8px;
+                padding-right: 25px;
+                font-size: 11px;
+            }
+            QComboBox:hover {
+                border: 1px solid #FF7700;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                selection-background-color: #FF7700;
+                border: 1px solid #444444;
+            }
+        """)
+
+        self.widget_layout.addWidget(self.output_mode_selector)
 
         # Create text editor
         self.text_editor = QPlainTextEdit()
@@ -332,9 +399,23 @@ class TextNode(ObjectNode):
         # Update the graphics width to accommodate the wider text editor
         self.graphics.width = 340
 
-        # Increase node height to accommodate the text editor
-        self.graphics.height = 320
+        # Increase node height to accommodate the text editor and output mode selector
+        # Height calculation:
+        # - Title bar: ~30px
+        # - Widget container starts at: ~40px
+        # - "Editor Mode" label: ~15px
+        # - Text type selector: ~30px
+        # - "Output Mode" label: ~15px
+        # - Output mode selector: ~30px
+        # - Text editor: ~200px
+        # - Spacing between elements: ~40px total
+        # - Bottom padding: ~10px
+        # Total: ~410px
+        self.graphics.height = 410
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
+
+        # Reposition sockets after width/height change to ensure output socket appears correctly
+        self._position_sockets()
 
         # Add these attributes for compatibility with ObjectNode interface
         self.type_selector = None
@@ -368,6 +449,13 @@ class TextNode(ObjectNode):
         if self.highlighter:
             self.highlighter.rehighlight()
 
+    def _on_output_mode_changed(self, index: int):
+        """Handle output mode selector change."""
+        self.return_as = self.output_mode_selector.itemData(index)
+        # Clear output socket value to force re-execution with new format
+        if self.output_sockets:
+            self.output_sockets[0].value = None
+
     def _update_value(self):
         """Update the current value from the text editor."""
         self.current_value = self.text_editor.toPlainText()
@@ -377,8 +465,16 @@ class TextNode(ObjectNode):
             self.output_sockets[0].value = self.current_value
 
     def execute(self) -> Any:
-        """Return the current text value."""
-        return self.current_value
+        """Return the current text value in the selected format."""
+        if self.return_as == "String":
+            return self.current_value
+        elif self.return_as == "LLM Content":
+            return {
+                "type": "input_text",
+                "text": self.current_value,
+            }
+        else:
+            return self.current_value
 
     def _on_graphics_mouse_move(self, event):
         """Handle mouse move on graphics item, updating widget sizes when resizing."""
@@ -396,14 +492,17 @@ class TextNode(ObjectNode):
         right_margin = 10
         available_width = max(120, self.graphics.width - left_margin - right_margin)
 
-        # Calculate available height for text editor (account for type selector and margins)
-        available_height = max(100, self.graphics.height - 120)
+        # Calculate available height for text editor (account for labels, selectors, and margins)
+        available_height = max(100, self.graphics.height - 180)
 
         # Update container width
         self.widget_container.setFixedWidth(available_width)
 
         # Update individual widget widths and heights
+        self.editor_mode_label.setFixedWidth(available_width)
         self.text_type_selector.setFixedWidth(available_width)
+        self.output_mode_label.setFixedWidth(available_width)
+        self.output_mode_selector.setFixedWidth(available_width)
         self.text_editor.setFixedWidth(available_width)
         self.text_editor.setFixedHeight(available_height)
 

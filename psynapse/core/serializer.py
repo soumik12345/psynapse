@@ -7,6 +7,7 @@ from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
+from psynapse.nodes.text_node import TextNode
 from psynapse.nodes.view_node import ViewNode
 
 
@@ -14,8 +15,10 @@ class GraphSerializer:
     """Serializes a node graph to a format suitable for backend execution."""
 
     # Map node classes to their backend type names (for non-OpNode nodes)
+    # Note: TextNode must come before ObjectNode since TextNode inherits from ObjectNode
     NODE_TYPE_MAP = {
         ImageNode: "image",
+        TextNode: "text",
         ObjectNode: "object",
         ViewNode: "view",
         ListNode: "list",
@@ -92,6 +95,12 @@ class GraphSerializer:
                     "mode": node.current_mode,
                     "url": node.image_url,
                     "path": node.image_path,
+                    "return_as": node.return_as,
+                }
+
+            # Include text parameters for TextNode instances
+            if isinstance(node, TextNode):
+                node_data["params"] = {
                     "return_as": node.return_as,
                 }
 

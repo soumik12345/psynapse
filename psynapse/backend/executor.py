@@ -321,6 +321,32 @@ class GraphExecutor:
         if not node:
             raise ValueError(f"Node {node_id} not found")
 
+        # Special handling for TextNode - it has text content and return_as option
+        if node["type"] == "text":
+            params = node.get("params", {})
+            return_as = params.get("return_as", "String")
+
+            # Get the text value from output socket
+            output_sockets = node.get("output_sockets", [])
+            if output_sockets and "value" in output_sockets[0]:
+                text_value = output_sockets[0]["value"]
+            else:
+                text_value = ""
+
+            # Return in the selected format
+            if return_as == "String":
+                result = text_value
+            elif return_as == "LLM Content":
+                result = {
+                    "type": "input_text",
+                    "text": text_value,
+                }
+            else:
+                result = text_value
+
+            self.node_cache[node_id] = result
+            return result
+
         # Special handling for ObjectNode - it has a preset output value
         if node["type"] == "object":
             # ObjectNode has no inputs, just return its output value
