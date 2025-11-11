@@ -71,11 +71,20 @@ class GraphSerializer:
                     socket_data["value"] = socket.value
                 output_sockets.append(socket_data)
 
+            # Get node position (center) and size
+            pos = node.graphics.pos()
+            center_x = pos.x() + node.graphics.width / 2
+            center_y = pos.y() + node.graphics.height / 2
+            width = node.graphics.width
+            height = node.graphics.height
+
             node_data = {
                 "id": node_id,
                 "type": node_type,
                 "input_sockets": input_sockets,
                 "output_sockets": output_sockets,
+                "position": [center_x, center_y],
+                "size": [width, height],
             }
 
             # Include filepath for OpNode instances

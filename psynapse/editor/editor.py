@@ -770,8 +770,36 @@ class PsynapseEditor(QMainWindow):
                         continue
                     node = OpNode(schema)
 
-                # Add node to scene at default position (will arrange later)
-                node.set_position(0, 0)
+                # Restore position and size from JSON if available
+                position = node_data.get("position")
+                size = node_data.get("size")
+
+                if position and size:
+                    # Position is stored as center coordinates, convert to top-left
+                    center_x, center_y = position[0], position[1]
+                    width, height = size[0], size[1]
+                    top_left_x = center_x - width / 2
+                    top_left_y = center_y - height / 2
+
+                    # Set node size
+                    node.graphics.width = width
+                    node.graphics.height = height
+                    node.graphics.setRect(0, 0, width, height)
+                    # Reposition sockets after size change
+                    node._position_sockets()
+
+                    # Update widget sizes for nodes that have custom resize handlers
+                    if hasattr(node, "_update_widget_sizes"):
+                        node._update_widget_sizes()
+                    elif hasattr(node, "_update_content_sizes"):
+                        node._update_content_sizes()
+
+                    # Set node position
+                    node.set_position(top_left_x, top_left_y)
+                else:
+                    # Default position (will be arranged later if no positions saved)
+                    node.set_position(0, 0)
+
                 self.scene.addItem(node.graphics)
                 self.nodes.append(node)
 
@@ -822,8 +850,20 @@ class PsynapseEditor(QMainWindow):
                 # Hide input widget for connected input sockets
                 end_socket.set_input_widget_visible(False)
 
-        # Arrange nodes in a grid layout
-        self._arrange_loaded_nodes()
+        # Arrange nodes in a grid layout only if they don't have saved positions
+        # Check if any nodes have saved positions
+        has_saved_positions = any(
+            node_data.get("position") and node_data.get("size")
+            for node_data in nodes_data
+        )
+
+        if not has_saved_positions:
+            # No saved positions, arrange in grid layout
+            self._arrange_loaded_nodes()
+        else:
+            # Nodes have saved positions, update edges for all nodes
+            for node in self.nodes:
+                node.update_edges()
 
         # Remove welcome message if nodes were loaded
         if self.nodes and hasattr(self, "welcome_text") and self.welcome_text:
