@@ -80,6 +80,7 @@ nav:
   - Home: index.md
   - Sample Workflows:
     - OpenAI LLM Response: sample-workflows/openai-llm-response.md
+    - OpenAI Vision Response: sample-workflows/openai-vision-response.md
   - Implementation Details:
     - Architecture: implementation-details/architecture.md
     - Backend: implementation-details/backend.md
