@@ -472,6 +472,15 @@ class GraphExecutor:
         node = self.node_map.get(node_id)
         inputs = {}
 
+        # Track which parameters appear multiple times (variadic parameters)
+        param_counts = {}
+        for socket in node.get("input_sockets", []):
+            param_name = socket["name"]
+            param_counts[param_name] = param_counts.get(param_name, 0) + 1
+
+        # Track which parameters we've already processed
+        param_lists = {}
+
         # For each input socket of this node
         for socket in node.get("input_sockets", []):
             socket_id = socket["id"]
@@ -484,6 +493,7 @@ class GraphExecutor:
                     connected_edge = edge
                     break
 
+            # Get the value for this socket
             if connected_edge:
                 # Find the source node
                 source_socket_id = connected_edge["start_socket"]
@@ -491,13 +501,25 @@ class GraphExecutor:
 
                 if source_node_id and source_node_id in self.node_cache:
                     # Get the cached result from the source node
-                    inputs[param_name] = self.node_cache[source_node_id]
+                    value = self.node_cache[source_node_id]
                 else:
                     # No connection or not in cache, use default value from socket
-                    inputs[param_name] = socket.get("value")
+                    value = socket.get("value")
             else:
                 # No connection, use default value from socket
-                inputs[param_name] = socket.get("value")
+                value = socket.get("value")
+
+            # If this parameter appears multiple times, collect values into a list
+            if param_counts[param_name] > 1:
+                if param_name not in param_lists:
+                    param_lists[param_name] = []
+                param_lists[param_name].append(value)
+            else:
+                # Single occurrence, just store the value directly
+                inputs[param_name] = value
+
+        # Add collected lists to inputs
+        inputs.update(param_lists)
 
         return inputs
 
