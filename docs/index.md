@@ -1,22 +1,20 @@
 # Psynapse
 
-A python-native node-based UI editor.
-
-## Features
-
-- **Visual Node Editor**: Intuitive drag-and-drop interface for creating node graphs
-- **Decoupled Execution**: FastAPI backend handles graph execution separately from the UI
-- **Built-in Nodes**: Includes Object, Add, Subtract, Multiply, Divide, and View nodes
-- **Typed Input Nodes**: Object node with dynamic widgets for different data types (int, float, string, bool)
-- **Error Handling**: Comprehensive error handling with persistent toast notifications
-- **On-Demand Execution**: Execute graphs when you're ready with the Run button
-- **Interactive Canvas**: Pan, zoom, and navigate your node graph with ease
+A cross-platform node-based UI editor for building AI workflows using Python.
 
 <figure class="video_container">
   <video controls="true" allowfullscreen="true">
     <source src="assets/demo.mp4" type="video/mp4">
   </video>
 </figure>
+
+## Features
+
+Psynapse provides a simple and intuitive interface to build and deploy AI workflows using Python using a an intuitive node-based editor. The biggest strength of Psynapse lies in the following 2 aspects:
+
+1. Its written entirely in Python, making it easy to extend, customize and integrate with other Python libraries.
+2. Developing your own nodepacks for AI libraries in the Python ecosystem is as easy as writing a simple Python function with type hints for parameters and return values.
+3. The decoupled execution runtime allows you to run your workflows on a remote server or GPU clusters, while running the editor on your local machine.
 
 ## Installation
 
@@ -35,7 +33,7 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 1. Start the execution runtime locally or in a remote VM using
 
     ```bash
-    psynapse-backend
+    psynapse-backend --port 8000
     ```
 
     The backend will be available at `http://localhost:8000`.
@@ -43,9 +41,14 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 2. Launch the Psynapse editor using
 
     ```bash
-    psynapse
+    psynapse --backend-port 8000
     ```
+
+## Sample Workflows
+
+- [Creating a simple OpenAI LLM Response](https://geekyrakshit.dev/psynapse/sample-workflows/openai-llm-response/)
+- [Creating a simple OpenAI Vision Response](https://geekyrakshit.dev/psynapse/sample-workflows/openai-vision-response/)
 
 ## Acknowledgments
 
-Inspired by [Nodezator](https://github.com/IndiePython/nodezator), a powerful node editor for Python.
+Psynapse is heavily inspired by [Nodezator](https://github.com/IndiePython/nodezator) and [ComfyUI](https://github.com/comfyanonymous/ComfyUI).
