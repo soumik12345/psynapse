@@ -2,27 +2,24 @@
   "nodes": [
     {
       "id": "node_0",
-      "type": "image",
+      "type": "text",
       "input_sockets": [],
       "output_sockets": [
         {
           "id": "node_0_output_0",
-          "name": "image"
+          "name": "value"
         }
       ],
       "position": [
-        -118.0,
-        -126.5
+        -139.0,
+        -54.0
       ],
       "size": [
-        222.0,
-        367.0
+        208.0,
+        404.0
       ],
       "params": {
-        "mode": "Upload",
-        "url": "",
-        "path": "/Users/geekyrakshit/Desktop/Brown-bear-Finland.webp",
-        "return_as": "OpenAI LLM Content"
+        "return_as": "LiteLLM Content"
       }
     },
     {
@@ -33,19 +30,19 @@
         {
           "id": "node_1_output_0",
           "name": "value",
-          "value": "Analyze the image."
+          "value": "Write a detailed essay on the fall of Rome."
         }
       ],
       "position": [
-        -115.5,
-        301.0
+        -118.0,
+        405.5
       ],
       "size": [
-        215.0,
-        400.0
+        204.0,
+        399.0
       ],
       "params": {
-        "return_as": "OpenAI LLM Content"
+        "return_as": "LiteLLM Content"
       }
     },
     {
@@ -55,16 +52,11 @@
         {
           "id": "node_2_input_0",
           "name": "role",
-          "value": "user"
+          "value": "system"
         },
         {
           "id": "node_2_input_1",
           "name": "content [0]",
-          "value": null
-        },
-        {
-          "id": "node_2_input_2",
-          "name": "content [1]",
           "value": null
         }
       ],
@@ -75,116 +67,153 @@
         }
       ],
       "position": [
-        217.0,
-        2.0
+        172.0,
+        -67.0
       ],
       "size": [
         180,
-        190
+        160
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
       "source_nodepack": "llm"
     },
     {
       "id": "node_3",
-      "type": "view",
+      "type": "LLM_Message",
       "input_sockets": [
         {
           "id": "node_3_input_0",
+          "name": "role",
+          "value": "user"
+        },
+        {
+          "id": "node_3_input_1",
+          "name": "content [0]",
+          "value": null
+        }
+      ],
+      "output_sockets": [
+        {
+          "id": "node_3_output_0",
+          "name": "result"
+        }
+      ],
+      "position": [
+        170.0,
+        162.0
+      ],
+      "size": [
+        180,
+        160
+      ],
+      "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
+      "source_nodepack": "llm"
+    },
+    {
+      "id": "node_4",
+      "type": "view",
+      "input_sockets": [
+        {
+          "id": "node_4_input_0",
           "name": "value",
           "value": null
         }
       ],
       "output_sockets": [],
       "position": [
-        1047.5,
-        -86.5
+        1090.5,
+        -113.5
       ],
       "size": [
-        465.0,
-        427.0
+        581.0,
+        419.0
       ]
     },
     {
-      "id": "node_4",
+      "id": "node_5",
       "type": "query_with_index",
       "input_sockets": [
         {
-          "id": "node_4_input_0",
+          "id": "node_5_input_0",
           "name": "obj",
           "value": null
         },
         {
-          "id": "node_4_input_1",
+          "id": "node_5_input_1",
           "name": "query",
-          "value": "['output'][0]['content'][0]['text']"
+          "value": "['choices'][0]['message']['content']"
         }
       ],
       "output_sockets": [
         {
-          "id": "node_4_output_0",
+          "id": "node_5_output_0",
           "name": "result"
         }
       ],
       "position": [
-        820.0,
-        380.0
+        797.0,
+        330.5
       ],
       "size": [
-        276.0,
-        160.0
+        266.0,
+        167.0
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/basic/ops.py",
       "source_nodepack": "basic"
     },
     {
-      "id": "node_5",
+      "id": "node_6",
       "type": "view",
       "input_sockets": [
         {
-          "id": "node_5_input_0",
+          "id": "node_6_input_0",
           "name": "value",
           "value": null
         }
       ],
       "output_sockets": [],
       "position": [
-        1218.5,
-        318.5
+        1189.0,
+        336.5
       ],
       "size": [
-        327.0,
-        245.0
+        400.0,
+        405.0
       ]
     },
     {
-      "id": "node_6",
-      "type": "create_openai_reponse",
+      "id": "node_7",
+      "type": "create_litellm_response",
       "input_sockets": [
         {
-          "id": "node_6_input_0",
+          "id": "node_7_input_0",
           "name": "model",
-          "value": "gpt-4o-mini"
+          "value": "openai/gpt-4o-mini"
         },
         {
-          "id": "node_6_input_1",
+          "id": "node_7_input_1",
           "name": "messages [0]",
+          "value": null
+        },
+        {
+          "id": "node_7_input_2",
+          "name": "messages [1]",
           "value": null
         }
       ],
       "output_sockets": [
         {
-          "id": "node_6_output_0",
+          "id": "node_7_output_0",
           "name": "result"
         }
       ],
       "position": [
-        483.0,
-        -53.0
+        475.5,
+        5.0
       ],
       "size": [
-        180,
-        160
+        191.0,
+        184.0
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
       "source_nodepack": "llm"
@@ -197,23 +226,27 @@
     },
     {
       "start_socket": "node_1_output_0",
-      "end_socket": "node_2_input_2"
+      "end_socket": "node_3_input_1"
     },
     {
-      "start_socket": "node_6_output_0",
-      "end_socket": "node_3_input_0"
-    },
-    {
-      "start_socket": "node_6_output_0",
+      "start_socket": "node_7_output_0",
       "end_socket": "node_4_input_0"
     },
     {
-      "start_socket": "node_4_output_0",
+      "start_socket": "node_7_output_0",
       "end_socket": "node_5_input_0"
     },
     {
+      "start_socket": "node_5_output_0",
+      "end_socket": "node_6_input_0"
+    },
+    {
       "start_socket": "node_2_output_0",
-      "end_socket": "node_6_input_1"
+      "end_socket": "node_7_input_1"
+    },
+    {
+      "start_socket": "node_3_output_0",
+      "end_socket": "node_7_input_2"
     }
   ]
 }
