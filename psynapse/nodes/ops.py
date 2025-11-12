@@ -110,7 +110,7 @@ class OpNode(Node):
 
             # Create + button
             add_button = QPushButton("+")
-            add_button.setFixedSize(30, 30)
+            add_button.setFixedSize(18, 18)
             add_button.clicked.connect(
                 lambda checked=False, p=param_name: self._add_variadic_socket(p)
             )
@@ -119,8 +119,8 @@ class OpNode(Node):
                     background-color: #4CAF50;
                     color: white;
                     border: none;
-                    border-radius: 15px;
-                    font-size: 18px;
+                    border-radius: 9px;
+                    font-size: 12px;
                     font-weight: bold;
                 }
                 QPushButton:hover {
@@ -133,7 +133,7 @@ class OpNode(Node):
 
             # Create - button
             remove_button = QPushButton("−")
-            remove_button.setFixedSize(30, 30)
+            remove_button.setFixedSize(18, 18)
             remove_button.clicked.connect(
                 lambda checked=False, p=param_name: self._remove_variadic_socket(p)
             )
@@ -142,8 +142,8 @@ class OpNode(Node):
                     background-color: #f44336;
                     color: white;
                     border: none;
-                    border-radius: 15px;
-                    font-size: 18px;
+                    border-radius: 9px;
+                    font-size: 12px;
                     font-weight: bold;
                 }
                 QPushButton:hover {
@@ -202,9 +202,9 @@ class OpNode(Node):
                 middle_y = (first_socket_y + last_socket_y) / 2
 
                 # Position buttons to the right side of the node
-                button_width = 68  # 30 + 8 spacing + 30
+                button_width = 44  # 18 + 8 spacing + 18
                 button_x = self.graphics.width - button_width - 10
-                button_y = middle_y - 15  # Half of button height (30/2)
+                button_y = middle_y - 9  # Half of button height (18/2)
 
                 self.variadic_button_widgets[param_name]["proxy"].setPos(
                     button_x, button_y

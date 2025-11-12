@@ -472,11 +472,44 @@ class GraphExecutor:
         node = self.node_map.get(node_id)
         inputs = {}
 
+        # Get node schema to identify list-type parameters and map socket names to parameter names
+        node_type = node.get("type")
+        schema = None
+        list_type_params = set()
+        socket_to_param_name = {}  # Map socket names (uppercase) to schema parameter names (lowercase)
+
+        # Only check schema for OpNode types (not special nodes like "text", "list", etc.)
+        if node_type not in ["text", "list", "object", "image", "view"]:
+            try:
+                from psynapse.backend.node_schemas import get_node_schema
+
+                schema = get_node_schema(node_type)
+                if schema:
+                    # Identify list-type parameters and create name mapping
+                    for param in schema.get("params", []):
+                        param_name_lower = param["name"].lower()
+                        param_name_upper = param["name"].upper()
+
+                        # Map both lowercase and uppercase socket names to schema parameter name
+                        socket_to_param_name[param_name_lower] = param_name_lower
+                        socket_to_param_name[param_name_upper] = param_name_lower
+
+                        if param.get("type", "").lower() == "list":
+                            list_type_params.add(param_name_lower)
+                            list_type_params.add(param_name_upper)
+            except Exception:
+                # If schema lookup fails, continue without list-type detection
+                pass
+
         # Track which parameters appear multiple times (variadic parameters)
+        # Use schema parameter names for tracking
         param_counts = {}
         for socket in node.get("input_sockets", []):
-            param_name = socket["name"]
-            param_counts[param_name] = param_counts.get(param_name, 0) + 1
+            socket_param_name = socket["name"]
+            schema_param_name = socket_to_param_name.get(
+                socket_param_name, socket_param_name
+            )
+            param_counts[schema_param_name] = param_counts.get(schema_param_name, 0) + 1
 
         # Track which parameters we've already processed
         param_lists = {}
@@ -484,7 +517,7 @@ class GraphExecutor:
         # For each input socket of this node
         for socket in node.get("input_sockets", []):
             socket_id = socket["id"]
-            param_name = socket["name"]
+            socket_param_name = socket["name"]
 
             # Find edge connected to this input socket
             connected_edge = None
@@ -509,14 +542,27 @@ class GraphExecutor:
                 # No connection, use default value from socket
                 value = socket.get("value")
 
-            # If this parameter appears multiple times, collect values into a list
-            if param_counts[param_name] > 1:
-                if param_name not in param_lists:
-                    param_lists[param_name] = []
-                param_lists[param_name].append(value)
+            # Map socket name to schema parameter name (use lowercase from schema)
+            schema_param_name = socket_to_param_name.get(
+                socket_param_name, socket_param_name
+            )
+
+            # Check if this is a list-type parameter (case-insensitive)
+            is_list_type = (
+                socket_param_name.lower() in list_type_params
+                or socket_param_name.upper() in list_type_params
+            )
+
+            # If this parameter appears multiple times OR is a list-type parameter,
+            # collect values into a list
+            if param_counts[schema_param_name] > 1 or is_list_type:
+                # Use schema parameter name for the list
+                if schema_param_name not in param_lists:
+                    param_lists[schema_param_name] = []
+                param_lists[schema_param_name].append(value)
             else:
-                # Single occurrence, just store the value directly
-                inputs[param_name] = value
+                # Single occurrence, use schema parameter name
+                inputs[schema_param_name] = value
 
         # Add collected lists to inputs
         inputs.update(param_lists)
