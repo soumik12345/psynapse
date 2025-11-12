@@ -98,6 +98,10 @@ class GraphSerializer:
             ):
                 node_data["source_nodepack"] = node.source_nodepack
 
+            # Include collapsible state for OpNode instances with default parameters
+            if isinstance(node, OpNode) and hasattr(node, "default_params_collapsed"):
+                node_data["default_params_collapsed"] = node.default_params_collapsed
+
             # Include image parameters for ImageNode instances
             if isinstance(node, ImageNode):
                 node_data["params"] = {

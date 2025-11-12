@@ -770,6 +770,17 @@ class PsynapseEditor(QMainWindow):
                         continue
                     node = OpNode(schema)
 
+                    # Restore collapsible state for OpNode with default parameters
+                    if (
+                        hasattr(node, "default_params_collapsed")
+                        and "default_params_collapsed" in node_data
+                    ):
+                        node.default_params_collapsed = node_data[
+                            "default_params_collapsed"
+                        ]
+                        # Update visibility based on restored state
+                        node._update_default_params_visibility()
+
                 # Restore position and size from JSON if available
                 position = node_data.get("position")
                 size = node_data.get("size")
