@@ -54,12 +54,16 @@ class OpNode(Node):
                     "base_index": len(inputs),
                     "count": 1,  # Start with one socket
                 }
+                # For list-type parameters, use indexed name for the first socket
+                socket_label = f"{param_name} [0]"
+            else:
+                socket_label = param_name
 
             # Check if this parameter has options (for Literal types)
             if "options" in param:
-                inputs.append((param_name, param_type, param["options"]))
+                inputs.append((socket_label, param_type, param["options"]))
             else:
-                inputs.append((param_name, param_type))
+                inputs.append((socket_label, param_type))
 
         # Convert schema returns to output socket specifications
         outputs = []
@@ -229,16 +233,19 @@ class OpNode(Node):
         else:
             socket_type = SocketDataType.ANY
 
+        # Create socket label with index
+        socket_label = f"{param_name} [{current_count}]"
+
         # Create new socket
         socket = Socket(
-            self, insert_index, SocketType.INPUT, param_name, socket_type, None
+            self, insert_index, SocketType.INPUT, socket_label, socket_type, None
         )
 
         # Insert into socket list at the correct position
         self.input_sockets.insert(insert_index, socket)
 
         # Update inputs list for serialization
-        self.inputs.insert(insert_index, (param_name, socket_type))
+        self.inputs.insert(insert_index, (socket_label, socket_type))
 
         # Update indices for all sockets after this one
         for i in range(insert_index + 1, len(self.input_sockets)):

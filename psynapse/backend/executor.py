@@ -3,6 +3,7 @@
 import base64
 import importlib.util
 import os
+import re
 import sys
 from collections import deque
 from io import BytesIO
@@ -472,6 +473,15 @@ class GraphExecutor:
         node = self.node_map.get(node_id)
         inputs = {}
 
+        # Helper function to strip index from socket names (e.g., "NUMBERS [0]" -> "NUMBERS")
+        def strip_socket_index(socket_name: str) -> str:
+            """Strip index suffix from socket name if present."""
+            # Match pattern like " [0]", " [1]", etc.
+            match = re.match(r"^(.+?)\s*\[\d+\]$", socket_name)
+            if match:
+                return match.group(1)
+            return socket_name
+
         # Get node schema to identify list-type parameters and map socket names to parameter names
         node_type = node.get("type")
         schema = None
@@ -494,6 +504,15 @@ class GraphExecutor:
                         socket_to_param_name[param_name_lower] = param_name_lower
                         socket_to_param_name[param_name_upper] = param_name_lower
 
+                        # Also map indexed versions (e.g., "NUMBERS [0]", "NUMBERS [1]")
+                        # These will be handled by strip_socket_index, but we can pre-populate
+                        # the mapping for common cases
+                        for i in range(10):  # Support up to 10 indexed sockets
+                            indexed_upper = f"{param_name_upper} [{i}]"
+                            indexed_lower = f"{param_name_lower} [{i}]"
+                            socket_to_param_name[indexed_upper] = param_name_lower
+                            socket_to_param_name[indexed_lower] = param_name_lower
+
                         if param.get("type", "").lower() == "list":
                             list_type_params.add(param_name_lower)
                             list_type_params.add(param_name_upper)
@@ -506,8 +525,10 @@ class GraphExecutor:
         param_counts = {}
         for socket in node.get("input_sockets", []):
             socket_param_name = socket["name"]
+            # Strip index from socket name if present
+            base_socket_name = strip_socket_index(socket_param_name)
             schema_param_name = socket_to_param_name.get(
-                socket_param_name, socket_param_name
+                base_socket_name, base_socket_name
             )
             param_counts[schema_param_name] = param_counts.get(schema_param_name, 0) + 1
 
@@ -518,6 +539,9 @@ class GraphExecutor:
         for socket in node.get("input_sockets", []):
             socket_id = socket["id"]
             socket_param_name = socket["name"]
+
+            # Strip index from socket name to get base parameter name
+            base_socket_name = strip_socket_index(socket_param_name)
 
             # Find edge connected to this input socket
             connected_edge = None
@@ -544,13 +568,13 @@ class GraphExecutor:
 
             # Map socket name to schema parameter name (use lowercase from schema)
             schema_param_name = socket_to_param_name.get(
-                socket_param_name, socket_param_name
+                base_socket_name, base_socket_name
             )
 
             # Check if this is a list-type parameter (case-insensitive)
             is_list_type = (
-                socket_param_name.lower() in list_type_params
-                or socket_param_name.upper() in list_type_params
+                base_socket_name.lower() in list_type_params
+                or base_socket_name.upper() in list_type_params
             )
 
             # If this parameter appears multiple times OR is a list-type parameter,
