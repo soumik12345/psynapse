@@ -8,7 +8,7 @@
         {
           "id": "node_0_output_0",
           "name": "value",
-          "value": "Write a detailed essay on the neolithic age."
+          "value": "Write a detailed essay on the fall of Rome."
         }
       ],
       "position": [
@@ -20,46 +20,53 @@
         404.0
       ],
       "params": {
-        "return_as": "LLM Content"
+        "return_as": "String"
       }
     },
     {
       "id": "node_1",
-      "type": "list",
+      "type": "LLM_Message",
       "input_sockets": [
         {
           "id": "node_1_input_0",
-          "name": "item",
+          "name": "role",
+          "value": "user"
+        },
+        {
+          "id": "node_1_input_1",
+          "name": "content",
           "value": null
         }
       ],
       "output_sockets": [
         {
           "id": "node_1_output_0",
-          "name": "list"
+          "name": "result"
         }
       ],
       "position": [
-        97.0,
-        -80.0
+        181.0,
+        -48.0
       ],
       "size": [
         180,
-        130
-      ]
+        160
+      ],
+      "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
+      "source_nodepack": "llm"
     },
     {
       "id": "node_2",
-      "type": "LLM_Message",
+      "type": "create_openai_reponse",
       "input_sockets": [
         {
           "id": "node_2_input_0",
-          "name": "role",
-          "value": "user"
+          "name": "model",
+          "value": "gpt-4o-mini"
         },
         {
           "id": "node_2_input_1",
-          "name": "content",
+          "name": "messages",
           "value": null
         }
       ],
@@ -70,8 +77,8 @@
         }
       ],
       "position": [
-        324.0,
-        -44.0
+        468.0,
+        -91.0
       ],
       "size": [
         180,
@@ -82,42 +89,10 @@
     },
     {
       "id": "node_3",
-      "type": "create_openai_reponse",
-      "input_sockets": [
-        {
-          "id": "node_3_input_0",
-          "name": "model",
-          "value": "gpt-4o-mini"
-        },
-        {
-          "id": "node_3_input_1",
-          "name": "messages",
-          "value": null
-        }
-      ],
-      "output_sockets": [
-        {
-          "id": "node_3_output_0",
-          "name": "result"
-        }
-      ],
-      "position": [
-        558.0,
-        -92.0
-      ],
-      "size": [
-        180,
-        160
-      ],
-      "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
-      "source_nodepack": "llm"
-    },
-    {
-      "id": "node_4",
       "type": "view",
       "input_sockets": [
         {
-          "id": "node_4_input_0",
+          "id": "node_3_input_0",
           "name": "value",
           "value": null
         }
@@ -133,29 +108,29 @@
       ]
     },
     {
-      "id": "node_5",
+      "id": "node_4",
       "type": "query_with_index",
       "input_sockets": [
         {
-          "id": "node_5_input_0",
+          "id": "node_4_input_0",
           "name": "obj",
           "value": null
         },
         {
-          "id": "node_5_input_1",
+          "id": "node_4_input_1",
           "name": "query",
           "value": "['output'][0]['content'][0]['text']"
         }
       ],
       "output_sockets": [
         {
-          "id": "node_5_output_0",
+          "id": "node_4_output_0",
           "name": "result"
         }
       ],
       "position": [
-        859.5,
-        297.5
+        789.5,
+        301.5
       ],
       "size": [
         253.0,
@@ -165,11 +140,11 @@
       "source_nodepack": "basic"
     },
     {
-      "id": "node_6",
+      "id": "node_5",
       "type": "view",
       "input_sockets": [
         {
-          "id": "node_6_input_0",
+          "id": "node_5_input_0",
           "name": "value",
           "value": null
         }
@@ -188,7 +163,7 @@
   "edges": [
     {
       "start_socket": "node_0_output_0",
-      "end_socket": "node_1_input_0"
+      "end_socket": "node_1_input_1"
     },
     {
       "start_socket": "node_1_output_0",
@@ -196,19 +171,15 @@
     },
     {
       "start_socket": "node_2_output_0",
-      "end_socket": "node_3_input_1"
+      "end_socket": "node_3_input_0"
     },
     {
-      "start_socket": "node_3_output_0",
+      "start_socket": "node_2_output_0",
       "end_socket": "node_4_input_0"
     },
     {
-      "start_socket": "node_3_output_0",
+      "start_socket": "node_4_output_0",
       "end_socket": "node_5_input_0"
-    },
-    {
-      "start_socket": "node_5_output_0",
-      "end_socket": "node_6_input_0"
     }
   ]
 }
