@@ -396,11 +396,17 @@ class GraphExecutor:
                 elif return_as == "OpenAI string":
                     # Return as OpenAI-compatible base64 string
                     result = pil_image_to_openai_string(image)
-                elif return_as == "LLM Content":
+                elif return_as == "OpenAI LLM Content":
                     # Return as LLM content dictionary
                     result = {
                         "type": "input_image",
                         "image_url": pil_image_to_openai_string(image),
+                    }
+                elif return_as == "LiteLLM Content":
+                    # Return as LiteLLM content dictionary
+                    result = {
+                        "type": "image_url",
+                        "image_url": {"url": pil_image_to_openai_string(image)},
                     }
                 else:
                     # Default to serialized image

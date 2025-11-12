@@ -36,7 +36,7 @@ class ImageNode(ObjectNode):
 
         self.current_image = None
         self.current_mode = "URL"  # "URL" or "Upload"
-        self.return_as = "PIL Image"  # "PIL Image", "OpenAI string", or "LLM Content"
+        self.return_as = "PIL Image"  # "PIL Image", "OpenAI string", "OpenAI LLM Content", or "LiteLLM Content"
         self.image_url = ""
         self.image_path = ""
 
@@ -115,7 +115,8 @@ class ImageNode(ObjectNode):
         self.return_as_selector = QComboBox()
         self.return_as_selector.addItem("PIL Image", "PIL Image")
         self.return_as_selector.addItem("OpenAI string", "OpenAI string")
-        self.return_as_selector.addItem("LLM Content", "LLM Content")
+        self.return_as_selector.addItem("OpenAI LLM Content", "OpenAI LLM Content")
+        self.return_as_selector.addItem("LiteLLM Content", "LiteLLM Content")
         self.return_as_selector.setFixedWidth(160)
         self.return_as_selector.currentIndexChanged.connect(self._on_return_as_changed)
 
@@ -480,10 +481,17 @@ class ImageNode(ObjectNode):
                 return self.current_image
             elif self.return_as == "OpenAI string":
                 return pil_image_to_openai_string(self.current_image)
-            elif self.return_as == "LLM Content":
+            elif self.return_as == "OpenAI LLM Content":
                 return {
                     "type": "input_image",
                     "image_url": pil_image_to_openai_string(self.current_image),
+                }
+            elif self.return_as == "LiteLLM Content":
+                return {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": pil_image_to_openai_string(self.current_image)
+                    },
                 }
             else:
                 return self.current_image
