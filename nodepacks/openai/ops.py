@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
 
-def LLM_Message(
+def OpenAI_LLLM_Message(
     role: Literal["user", "assistant", "system", "developer"],
     content: list[dict[str, Any]],
 ) -> dict[str, Any | dict[str, Any]]:
@@ -37,28 +37,4 @@ def create_openai_reponse(
     response = client.responses.create(
         model=model, input=messages, stream=False
     ).model_dump()
-    return response
-
-
-def create_litellm_response(
-    model: str, messages: list[dict[str, Any | dict[str, Any]]]
-) -> dict[str, Any | dict[str, Any]]:
-    """
-    Create a LiteLLM response.
-
-    Args:
-        model: The model to use
-        messages: The messages to send to the model
-
-    Returns:
-        The response from the model
-    """
-    from litellm import completion
-
-    response = completion(
-        model=model,
-        messages=messages,
-        stream=False,
-    )
-    response = response.model_dump()
     return response
