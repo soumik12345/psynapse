@@ -158,3 +158,30 @@ def query_with_index(obj: list | dict, query: str) -> Any:
             result = result[int(index)]
 
     return result
+
+
+def sum_numbers(numbers: list) -> float:
+    """
+    Sum a list of numbers.
+
+    Args:
+        numbers: A list of numbers to sum
+
+    Returns:
+        The sum of all numbers in the list
+    """
+    # Ensure we received a list
+    if not isinstance(numbers, list):
+        raise TypeError(f"Expected list, got {type(numbers)}: {numbers}")
+
+    # Convert to floats if needed
+    numeric_values = []
+    for num in numbers:
+        if isinstance(num, str):
+            try:
+                numeric_values.append(float(num))
+            except (ValueError, TypeError):
+                numeric_values.append(0)
+        else:
+            numeric_values.append(float(num) if num is not None else 0)
+    return sum(numeric_values)

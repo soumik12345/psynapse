@@ -3,6 +3,7 @@
 import base64
 import importlib.util
 import os
+import re
 import sys
 from collections import deque
 from io import BytesIO
@@ -472,10 +473,75 @@ class GraphExecutor:
         node = self.node_map.get(node_id)
         inputs = {}
 
+        # Helper function to strip index from socket names (e.g., "NUMBERS [0]" -> "NUMBERS")
+        def strip_socket_index(socket_name: str) -> str:
+            """Strip index suffix from socket name if present."""
+            # Match pattern like " [0]", " [1]", etc.
+            match = re.match(r"^(.+?)\s*\[\d+\]$", socket_name)
+            if match:
+                return match.group(1)
+            return socket_name
+
+        # Get node schema to identify list-type parameters and map socket names to parameter names
+        node_type = node.get("type")
+        schema = None
+        list_type_params = set()
+        socket_to_param_name = {}  # Map socket names (uppercase) to schema parameter names (lowercase)
+
+        # Only check schema for OpNode types (not special nodes like "text", "list", etc.)
+        if node_type not in ["text", "list", "object", "image", "view"]:
+            try:
+                from psynapse.backend.node_schemas import get_node_schema
+
+                schema = get_node_schema(node_type)
+                if schema:
+                    # Identify list-type parameters and create name mapping
+                    for param in schema.get("params", []):
+                        param_name_lower = param["name"].lower()
+                        param_name_upper = param["name"].upper()
+
+                        # Map both lowercase and uppercase socket names to schema parameter name
+                        socket_to_param_name[param_name_lower] = param_name_lower
+                        socket_to_param_name[param_name_upper] = param_name_lower
+
+                        # Also map indexed versions (e.g., "NUMBERS [0]", "NUMBERS [1]")
+                        # These will be handled by strip_socket_index, but we can pre-populate
+                        # the mapping for common cases
+                        for i in range(10):  # Support up to 10 indexed sockets
+                            indexed_upper = f"{param_name_upper} [{i}]"
+                            indexed_lower = f"{param_name_lower} [{i}]"
+                            socket_to_param_name[indexed_upper] = param_name_lower
+                            socket_to_param_name[indexed_lower] = param_name_lower
+
+                        if param.get("type", "").lower() == "list":
+                            list_type_params.add(param_name_lower)
+                            list_type_params.add(param_name_upper)
+            except Exception:
+                # If schema lookup fails, continue without list-type detection
+                pass
+
+        # Track which parameters appear multiple times (variadic parameters)
+        # Use schema parameter names for tracking
+        param_counts = {}
+        for socket in node.get("input_sockets", []):
+            socket_param_name = socket["name"]
+            # Strip index from socket name if present
+            base_socket_name = strip_socket_index(socket_param_name)
+            schema_param_name = socket_to_param_name.get(
+                base_socket_name, base_socket_name
+            )
+            param_counts[schema_param_name] = param_counts.get(schema_param_name, 0) + 1
+
+        # Track which parameters we've already processed
+        param_lists = {}
+
         # For each input socket of this node
         for socket in node.get("input_sockets", []):
             socket_id = socket["id"]
-            param_name = socket["name"]
+            socket_param_name = socket["name"]
+
+            # Strip index from socket name to get base parameter name
+            base_socket_name = strip_socket_index(socket_param_name)
 
             # Find edge connected to this input socket
             connected_edge = None
@@ -484,6 +550,7 @@ class GraphExecutor:
                     connected_edge = edge
                     break
 
+            # Get the value for this socket
             if connected_edge:
                 # Find the source node
                 source_socket_id = connected_edge["start_socket"]
@@ -491,13 +558,38 @@ class GraphExecutor:
 
                 if source_node_id and source_node_id in self.node_cache:
                     # Get the cached result from the source node
-                    inputs[param_name] = self.node_cache[source_node_id]
+                    value = self.node_cache[source_node_id]
                 else:
                     # No connection or not in cache, use default value from socket
-                    inputs[param_name] = socket.get("value")
+                    value = socket.get("value")
             else:
                 # No connection, use default value from socket
-                inputs[param_name] = socket.get("value")
+                value = socket.get("value")
+
+            # Map socket name to schema parameter name (use lowercase from schema)
+            schema_param_name = socket_to_param_name.get(
+                base_socket_name, base_socket_name
+            )
+
+            # Check if this is a list-type parameter (case-insensitive)
+            is_list_type = (
+                base_socket_name.lower() in list_type_params
+                or base_socket_name.upper() in list_type_params
+            )
+
+            # If this parameter appears multiple times OR is a list-type parameter,
+            # collect values into a list
+            if param_counts[schema_param_name] > 1 or is_list_type:
+                # Use schema parameter name for the list
+                if schema_param_name not in param_lists:
+                    param_lists[schema_param_name] = []
+                param_lists[schema_param_name].append(value)
+            else:
+                # Single occurrence, use schema parameter name
+                inputs[schema_param_name] = value
+
+        # Add collected lists to inputs
+        inputs.update(param_lists)
 
         return inputs
 

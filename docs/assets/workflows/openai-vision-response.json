@@ -7,16 +7,17 @@
       "output_sockets": [
         {
           "id": "node_0_output_0",
-          "name": "value"
+          "name": "value",
+          "value": "Analyze the image."
         }
       ],
       "position": [
-        -73.5,
-        422.0
+        -105.0,
+        415.5
       ],
       "size": [
-        199.0,
-        404.0
+        288.0,
+        389.0
       ],
       "params": {
         "return_as": "LLM Content"
@@ -24,73 +25,48 @@
     },
     {
       "id": "node_1",
-      "type": "list",
+      "type": "LLM_Message",
       "input_sockets": [
         {
           "id": "node_1_input_0",
-          "name": "item",
-          "value": null
+          "name": "role",
+          "value": "user"
         },
         {
           "id": "node_1_input_1",
-          "name": "item",
+          "name": "content [0]",
+          "value": null
+        },
+        {
+          "id": "node_1_input_2",
+          "name": "content [1]",
           "value": null
         }
       ],
       "output_sockets": [
         {
           "id": "node_1_output_0",
-          "name": "list"
-        }
-      ],
-      "position": [
-        181.0,
-        119.0
-      ],
-      "size": [
-        180,
-        160
-      ]
-    },
-    {
-      "id": "node_2",
-      "type": "LLM_Message",
-      "input_sockets": [
-        {
-          "id": "node_2_input_0",
-          "name": "role",
-          "value": "user"
-        },
-        {
-          "id": "node_2_input_1",
-          "name": "content",
-          "value": null
-        }
-      ],
-      "output_sockets": [
-        {
-          "id": "node_2_output_0",
           "name": "result"
         }
       ],
       "position": [
-        393.0,
-        -68.0
+        281.0,
+        -9.0
       ],
       "size": [
         180,
-        160
+        190
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
       "source_nodepack": "llm"
     },
     {
-      "id": "node_3",
+      "id": "node_2",
       "type": "image",
       "input_sockets": [],
       "output_sockets": [
         {
-          "id": "node_3_output_0",
+          "id": "node_2_output_0",
           "name": "image"
         }
       ],
@@ -110,29 +86,29 @@
       }
     },
     {
-      "id": "node_4",
+      "id": "node_3",
       "type": "create_openai_reponse",
       "input_sockets": [
         {
-          "id": "node_4_input_0",
+          "id": "node_3_input_0",
           "name": "model",
           "value": "gpt-4o-mini"
         },
         {
-          "id": "node_4_input_1",
+          "id": "node_3_input_1",
           "name": "messages",
           "value": null
         }
       ],
       "output_sockets": [
         {
-          "id": "node_4_output_0",
+          "id": "node_3_output_0",
           "name": "result"
         }
       ],
       "position": [
-        616.0,
-        -116.0
+        547.0,
+        -9.0
       ],
       "size": [
         180,
@@ -142,106 +118,102 @@
       "source_nodepack": "llm"
     },
     {
-      "id": "node_5",
+      "id": "node_4",
       "type": "view",
       "input_sockets": [
         {
-          "id": "node_5_input_0",
+          "id": "node_4_input_0",
           "name": "value",
           "value": null
         }
       ],
       "output_sockets": [],
       "position": [
-        1084.0,
-        -20.5
+        1050.5,
+        -25.0
       ],
       "size": [
-        654.0,
-        573.0
+        611.0,
+        490.0
       ]
     },
     {
-      "id": "node_6",
+      "id": "node_5",
       "type": "query_with_index",
       "input_sockets": [
         {
-          "id": "node_6_input_0",
+          "id": "node_5_input_0",
           "name": "obj",
           "value": null
         },
         {
-          "id": "node_6_input_1",
+          "id": "node_5_input_1",
           "name": "query",
           "value": "['output'][0]['content'][0]['text']"
         }
       ],
       "output_sockets": [
         {
-          "id": "node_6_output_0",
+          "id": "node_5_output_0",
           "name": "result"
         }
       ],
       "position": [
-        893.0,
-        422.5
+        834.0,
+        442.0
       ],
       "size": [
-        260.0,
-        153.0
+        254.0,
+        162.0
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/basic/ops.py",
       "source_nodepack": "basic"
     },
     {
-      "id": "node_7",
+      "id": "node_6",
       "type": "view",
       "input_sockets": [
         {
-          "id": "node_7_input_0",
+          "id": "node_6_input_0",
           "name": "value",
           "value": null
         }
       ],
       "output_sockets": [],
       "position": [
-        1236.0,
-        457.5
+        1193.0,
+        433.0
       ],
       "size": [
-        334.0,
-        203.0
+        354.0,
+        366.0
       ]
     }
   ],
   "edges": [
     {
-      "start_socket": "node_3_output_0",
-      "end_socket": "node_1_input_0"
-    },
-    {
-      "start_socket": "node_0_output_0",
+      "start_socket": "node_2_output_0",
       "end_socket": "node_1_input_1"
     },
     {
+      "start_socket": "node_0_output_0",
+      "end_socket": "node_1_input_2"
+    },
+    {
       "start_socket": "node_1_output_0",
-      "end_socket": "node_2_input_1"
+      "end_socket": "node_3_input_1"
     },
     {
-      "start_socket": "node_2_output_0",
-      "end_socket": "node_4_input_1"
+      "start_socket": "node_3_output_0",
+      "end_socket": "node_4_input_0"
     },
     {
-      "start_socket": "node_4_output_0",
+      "start_socket": "node_3_output_0",
       "end_socket": "node_5_input_0"
     },
     {
-      "start_socket": "node_4_output_0",
+      "start_socket": "node_5_output_0",
       "end_socket": "node_6_input_0"
-    },
-    {
-      "start_socket": "node_6_output_0",
-      "end_socket": "node_7_input_0"
     }
   ]
 }
