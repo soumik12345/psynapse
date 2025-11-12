@@ -1,10 +1,13 @@
 from typing import Any, Literal
 
+import rich
 
-def OpenAI_LLLM_Message(
+
+def LLM_Message(
     role: Literal["user", "assistant", "system", "developer"],
     content: list[dict[str, Any]],
 ) -> dict[str, Any | dict[str, Any]]:
+    rich.print(content)
     return {
         "role": role,
         "content": content,
@@ -36,5 +39,27 @@ def create_openai_reponse(
     messages = [messages] if isinstance(messages, dict) else messages
     response = client.responses.create(
         model=model, input=messages, stream=False
+    ).model_dump()
+    return response
+
+
+def create_litellm_response(
+    model: str, messages: list[dict[str, Any]]
+) -> dict[str, Any | dict[str, Any]]:
+    """
+    Create a LiteLLM response.
+
+    Args:
+        model: The model to use
+        messages: The messages to send to the model
+    """
+    import rich
+    from litellm import completion
+
+    rich.print(messages)
+    response = completion(
+        model=model,
+        messages=messages,
+        stream=False,
     ).model_dump()
     return response

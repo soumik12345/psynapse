@@ -337,9 +337,14 @@ class GraphExecutor:
             # Return in the selected format
             if return_as == "String":
                 result = text_value
-            elif return_as == "LLM Content":
+            elif return_as == "OpenAI LLM Content":
                 result = {
                     "type": "input_text",
+                    "text": text_value,
+                }
+            elif return_as == "LiteLLM Content":
+                result = {
+                    "type": "text",
                     "text": text_value,
                 }
             else:

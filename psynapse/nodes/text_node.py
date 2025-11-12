@@ -243,7 +243,9 @@ class TextNode(ObjectNode):
         # Set fixed string type (no type selector needed)
         self.current_type = SocketDataType.STRING
         self.current_value = ""
-        self.return_as = "String"  # "String" or "LLM Content"
+        self.return_as = (
+            "String"  # "String", "OpenAI LLM Content", or "LiteLLM Content"
+        )
 
         # Create container widget
         self.widget_container = QWidget()
@@ -320,7 +322,8 @@ class TextNode(ObjectNode):
         # Create output mode selector
         self.output_mode_selector = QComboBox()
         self.output_mode_selector.addItem("String", "String")
-        self.output_mode_selector.addItem("LLM Content", "LLM Content")
+        self.output_mode_selector.addItem("OpenAI LLM Content", "OpenAI LLM Content")
+        self.output_mode_selector.addItem("LiteLLM Content", "LiteLLM Content")
         self.output_mode_selector.setFixedWidth(300)
         self.output_mode_selector.currentIndexChanged.connect(
             self._on_output_mode_changed
@@ -468,9 +471,14 @@ class TextNode(ObjectNode):
         """Return the current text value in the selected format."""
         if self.return_as == "String":
             return self.current_value
-        elif self.return_as == "LLM Content":
+        elif self.return_as == "OpenAI LLM Content":
             return {
-                "type": "input_text",
+                "type": "text",
+                "text": self.current_value,
+            }
+        elif self.return_as == "LiteLLM Content":
+            return {
+                "type": "text",
                 "text": self.current_value,
             }
         else:
