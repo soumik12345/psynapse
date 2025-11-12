@@ -104,6 +104,18 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
             type_str = type_to_string(type_hint)
             param_dict = {"name": param_name, "type": type_str}
 
+            # Check if this parameter has a default value
+            if param.default != inspect.Parameter.empty:
+                param_dict["has_default"] = True
+                # Store the default value as a string representation
+                try:
+                    default_repr = repr(param.default)
+                    param_dict["default"] = default_repr
+                except Exception:
+                    param_dict["default"] = str(param.default)
+            else:
+                param_dict["has_default"] = False
+
             # Check if this is a Literal type and extract options
             literal_values = extract_literal_values(type_hint)
             if literal_values:

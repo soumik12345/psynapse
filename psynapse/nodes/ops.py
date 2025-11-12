@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QGraphicsProxyWidget,
     QHBoxLayout,
+    QLabel,
     QPushButton,
     QWidget,
 )
@@ -40,6 +41,11 @@ class OpNode(Node):
         # Track which parameters are list-type (variadic)
         self.variadic_params = {}  # param_name -> {"original_name": str, "base_index": int, "count": int}
 
+        # Track which parameters have default values
+        self.default_params_indices = []  # List of socket indices that have default values
+        self.default_params_values = {}  # Map socket index to default value string from schema
+        self.default_params_collapsed = True  # Initially collapsed
+
         # Convert schema params to input socket specifications
         inputs = []
         for idx, param in enumerate(schema.get("params", [])):
@@ -65,6 +71,14 @@ class OpNode(Node):
             else:
                 inputs.append((socket_label, param_type))
 
+            # Track if this parameter has a default value
+            if param.get("has_default", False):
+                socket_index = len(inputs) - 1
+                self.default_params_indices.append(socket_index)
+                # Store the default value string from schema
+                if "default" in param:
+                    self.default_params_values[socket_index] = param["default"]
+
         # Convert schema returns to output socket specifications
         outputs = []
         for return_spec in schema.get("returns", []):
@@ -76,10 +90,18 @@ class OpNode(Node):
         title = schema["name"].replace("_", " ")
         super().__init__(title=title, inputs=inputs, outputs=outputs)
 
+        # Initialize default params widget early (before variadic controls which may call _update_node_size)
+        self.default_params_widget = None
+
         # Create UI controls for variadic parameters
         self.variadic_button_widgets = {}
         if self.variadic_params:
             self._create_variadic_controls()
+
+        # Create collapsible UI for default parameters
+        if self.default_params_indices:
+            self._create_default_params_controls()
+            self._update_default_params_visibility()
 
     def _map_type(self, type_str: str) -> SocketDataType:
         """Map schema type string to SocketDataType.
@@ -179,16 +201,306 @@ class OpNode(Node):
         self._update_node_size()
         self._update_variadic_button_positions()
 
+    def _create_default_params_controls(self):
+        """Create collapsible button for default parameters section."""
+        # Create container widget
+        widget_container = QWidget()
+        widget_layout = QHBoxLayout()
+        widget_layout.setContentsMargins(0, 0, 0, 0)
+        widget_layout.setSpacing(5)
+        widget_layout.setAlignment(Qt.AlignLeft)
+        widget_container.setLayout(widget_layout)
+
+        # Create toggle button
+        toggle_button = QPushButton("▶")
+        toggle_button.setFixedSize(16, 16)
+        toggle_button.clicked.connect(self._toggle_default_params)
+        toggle_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #888888;
+                border: none;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #ffffff;
+            }
+        """)
+
+        # Create label
+        label = QLabel("Default Parameters")
+        label.setStyleSheet("""
+            QLabel {
+                color: #888888;
+                font-size: 9px;
+            }
+        """)
+
+        # Add to layout
+        widget_layout.addWidget(toggle_button)
+        widget_layout.addWidget(label)
+
+        # Add widget to graphics
+        widget_proxy = QGraphicsProxyWidget(self.graphics)
+        widget_proxy.setWidget(widget_container)
+        widget_proxy.setZValue(200)
+
+        # Store references
+        self.default_params_widget = {
+            "container": widget_container,
+            "proxy": widget_proxy,
+            "toggle_button": toggle_button,
+            "label": label,
+        }
+
+        # Position the widget
+        self._update_default_params_button_position()
+
+    def _toggle_default_params(self):
+        """Toggle visibility of default parameters."""
+        self.default_params_collapsed = not self.default_params_collapsed
+        self._update_default_params_visibility()
+        self._update_default_params_button_position()
+
+    def _parse_default_value(self, default_str: str, data_type: SocketDataType) -> Any:
+        """Parse default value string from schema and convert to appropriate type.
+
+        Args:
+            default_str: String representation of default value (from repr())
+            data_type: The socket data type
+
+        Returns:
+            Parsed value of appropriate type
+        """
+        if not default_str:
+            return data_type.get_default_value()
+
+        try:
+            # Try to evaluate the repr string (handles strings, numbers, booleans, None)
+            # Use ast.literal_eval for safe evaluation
+            import ast
+
+            parsed_value = ast.literal_eval(default_str)
+
+            # Convert to appropriate type based on socket data type
+            if data_type == SocketDataType.INT:
+                return int(parsed_value)
+            elif data_type == SocketDataType.FLOAT:
+                return float(parsed_value)
+            elif data_type == SocketDataType.STRING:
+                return str(parsed_value)
+            elif data_type == SocketDataType.BOOL:
+                return bool(parsed_value)
+            else:
+                return parsed_value
+        except (ValueError, SyntaxError):
+            # If parsing fails, try to convert based on type
+            if data_type == SocketDataType.STRING:
+                # Remove quotes if present
+                return default_str.strip("'\"")
+            return data_type.get_default_value()
+
+    def _populate_default_value(self, socket: Socket, default_value: Any):
+        """Populate socket input widget with default value.
+
+        Args:
+            socket: The socket to populate
+            default_value: The parsed default value
+        """
+        if not socket.input_widget:
+            return
+
+        # Temporarily disconnect signals to avoid triggering value change handlers
+        # during initialization
+        from PySide6.QtWidgets import (
+            QCheckBox,
+            QComboBox,
+            QDoubleSpinBox,
+            QLineEdit,
+            QSpinBox,
+        )
+
+        if isinstance(socket.input_widget, QSpinBox):
+            socket.input_widget.blockSignals(True)
+            socket.input_widget.setValue(int(default_value))
+            socket.value = int(default_value)
+            socket.input_widget.blockSignals(False)
+        elif isinstance(socket.input_widget, QDoubleSpinBox):
+            socket.input_widget.blockSignals(True)
+            socket.input_widget.setValue(float(default_value))
+            socket.value = float(default_value)
+            socket.input_widget.blockSignals(False)
+        elif isinstance(socket.input_widget, QLineEdit):
+            socket.input_widget.blockSignals(True)
+            socket.input_widget.setText(str(default_value))
+            socket.value = str(default_value)
+            socket.input_widget.blockSignals(False)
+        elif isinstance(socket.input_widget, QWidget) and socket.input_widget.layout():
+            # Checkbox wrapped in container
+            checkbox = socket.input_widget.findChild(QCheckBox)
+            if checkbox:
+                checkbox.blockSignals(True)
+                checkbox.setChecked(bool(default_value))
+                socket.value = bool(default_value)
+                checkbox.blockSignals(False)
+        elif isinstance(socket.input_widget, QComboBox):
+            socket.input_widget.blockSignals(True)
+            # Try to find matching option
+            default_str = str(default_value)
+            index = socket.input_widget.findText(default_str)
+            if index >= 0:
+                socket.input_widget.setCurrentIndex(index)
+                socket.value = default_str
+            socket.input_widget.blockSignals(False)
+
+    def _update_default_params_visibility(self):
+        """Update visibility of default parameter sockets."""
+        for idx in self.default_params_indices:
+            if idx < len(self.input_sockets):
+                socket = self.input_sockets[idx]
+                # Hide/show socket graphics
+                socket.graphics.setVisible(not self.default_params_collapsed)
+                # Hide/show label
+                if socket.label_item:
+                    socket.label_item.setVisible(not self.default_params_collapsed)
+                # Hide/show input widget
+                if socket.input_proxy:
+                    socket.input_proxy.setVisible(not self.default_params_collapsed)
+
+                # If uncollapsing and this is a primitive type, populate with default value
+                if (
+                    not self.default_params_collapsed
+                    and idx in self.default_params_values
+                ):
+                    # Only populate for primitive types (not list, dict, etc.)
+                    if socket.data_type in (
+                        SocketDataType.INT,
+                        SocketDataType.FLOAT,
+                        SocketDataType.STRING,
+                        SocketDataType.BOOL,
+                    ):
+                        default_str = self.default_params_values[idx]
+                        parsed_value = self._parse_default_value(
+                            default_str, socket.data_type
+                        )
+                        self._populate_default_value(socket, parsed_value)
+
+        # Update node size and reposition sockets
+        self._update_node_size()
+        self._position_sockets()
+
+    def _position_sockets(self):
+        """Position sockets on the node, skipping hidden default parameter sockets."""
+        socket_spacing = 30
+        visible_index = 0
+
+        for i, socket in enumerate(self.input_sockets):
+            # Skip hidden sockets when positioning
+            if i in self.default_params_indices and self.default_params_collapsed:
+                continue
+
+            x = 0
+            y = 40 + visible_index * socket_spacing
+            socket.graphics.setParentItem(self.graphics)
+            socket.graphics.setPos(x, y)
+
+            # Position label if it exists
+            if socket.label_item:
+                socket.label_item.setParentItem(self.graphics)
+                label_x = 15
+                label_y = y - 8
+                socket.label_item.setPos(label_x, label_y)
+
+            # Position input widget if it exists
+            if socket.input_widget:
+                if not hasattr(socket, "input_proxy") or socket.input_proxy is None:
+                    socket.input_proxy = QGraphicsProxyWidget(self.graphics)
+                    socket.input_proxy.setWidget(socket.input_widget)
+                    socket.input_proxy.setZValue(100 + visible_index)
+
+                widget_x = 15
+                if socket.label_item:
+                    widget_x = 15 + socket.label_item.boundingRect().width() + 5
+
+                right_margin = 10
+                available_width = self.graphics.width - widget_x - right_margin
+                min_widget_width = 60
+                widget_width = max(min_widget_width, available_width)
+
+                socket.resize_input_widget(widget_width)
+                socket.input_proxy.setPos(widget_x, y - 10)
+
+            visible_index += 1
+
+        # Position output sockets normally
+        for i, socket in enumerate(self.output_sockets):
+            x = self.graphics.width
+            y = 40 + i * socket_spacing
+            socket.graphics.setParentItem(self.graphics)
+            socket.graphics.setPos(x, y)
+
+            if socket.label_item:
+                socket.label_item.setParentItem(self.graphics)
+                label_width = socket.label_item.boundingRect().width()
+                label_x = x - label_width - 15
+                label_y = y - 8
+                socket.label_item.setPos(label_x, label_y)
+
+    def _update_default_params_button_position(self):
+        """Position the default parameters toggle button."""
+        if not self.default_params_widget:
+            return
+
+        # Count visible sockets (required parameters)
+        visible_socket_count = len(self.input_sockets) - len(
+            self.default_params_indices
+        )
+        if not self.default_params_collapsed:
+            visible_socket_count = len(self.input_sockets)
+
+        # Position button after the required parameters (or at the start if all are visible)
+        socket_spacing = 30
+        if self.default_params_collapsed:
+            # Position after last required socket
+            button_y = 40 + visible_socket_count * socket_spacing + 5
+        else:
+            # Position at the start of default parameters section
+            button_y = 40 + visible_socket_count * socket_spacing + 5
+
+        button_x = 10
+
+        self.default_params_widget["proxy"].setPos(button_x, button_y)
+
+        # Update button icon
+        icon = "▼" if not self.default_params_collapsed else "▶"
+        self.default_params_widget["toggle_button"].setText(icon)
+
     def _update_node_size(self):
-        """Update node size based on number of sockets."""
+        """Update node size based on number of visible sockets."""
         socket_spacing = 30
         min_height = 100
-        calculated_height = 40 + len(self.input_sockets) * socket_spacing + 60
+
+        # Count visible sockets
+        visible_socket_count = len(self.input_sockets)
+        if self.default_params_collapsed:
+            visible_socket_count -= len(self.default_params_indices)
+
+        # Add extra space for default params button if there are default params
+        extra_height = 0
+        if self.default_params_indices:
+            extra_height = 25  # Space for the collapsible button
+
+        calculated_height = (
+            40 + visible_socket_count * socket_spacing + extra_height + 60
+        )
         self.graphics.height = max(min_height, calculated_height)
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
         self._position_sockets()
         if self.variadic_params:
             self._update_variadic_button_positions()
+        if self.default_params_indices:
+            self._update_default_params_button_position()
 
     def _update_variadic_button_positions(self):
         """Position buttons next to their corresponding variadic parameter sockets."""
@@ -259,6 +571,24 @@ class OpNode(Node):
             if other_param_info["base_index"] > base_index:
                 other_param_info["base_index"] += 1
 
+        # Update default parameter indices and values mapping that come after this insertion
+        new_default_params_values = {}
+        for i, default_idx in enumerate(self.default_params_indices):
+            if default_idx >= insert_index:
+                self.default_params_indices[i] += 1
+                # Update the values mapping with new index
+                if default_idx in self.default_params_values:
+                    new_default_params_values[self.default_params_indices[i]] = (
+                        self.default_params_values[default_idx]
+                    )
+            else:
+                # Keep old mapping for indices before insertion
+                if default_idx in self.default_params_values:
+                    new_default_params_values[default_idx] = self.default_params_values[
+                        default_idx
+                    ]
+        self.default_params_values = new_default_params_values
+
         # Update node size and positions
         self._update_node_size()
 
@@ -322,6 +652,27 @@ class OpNode(Node):
         for other_param_name, other_param_info in self.variadic_params.items():
             if other_param_info["base_index"] > base_index:
                 other_param_info["base_index"] -= 1
+
+        # Update default parameter indices and values mapping that come after this removal
+        new_default_params_values = {}
+        for i, default_idx in enumerate(self.default_params_indices):
+            if default_idx > remove_index:
+                self.default_params_indices[i] -= 1
+                # Update the values mapping with new index
+                if default_idx in self.default_params_values:
+                    new_default_params_values[self.default_params_indices[i]] = (
+                        self.default_params_values[default_idx]
+                    )
+            elif default_idx != remove_index:
+                # Keep old mapping for indices before removal (skip the removed one)
+                if default_idx in self.default_params_values:
+                    new_default_params_values[default_idx] = self.default_params_values[
+                        default_idx
+                    ]
+        # Remove the value for the removed index if it was a default param
+        if remove_index in self.default_params_values:
+            del self.default_params_values[remove_index]
+        self.default_params_values = new_default_params_values
 
         # Update node size and positions
         self._update_node_size()
