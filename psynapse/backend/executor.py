@@ -453,6 +453,17 @@ class GraphExecutor:
             self.node_cache[node_id] = result
             return result
 
+        # Special handling for DictionaryNode - it has a preset output value
+        if node["type"] == "dictionary":
+            # DictionaryNode has no inputs, just return its output value
+            output_sockets = node.get("output_sockets", [])
+            if output_sockets and "value" in output_sockets[0]:
+                result = output_sockets[0]["value"]
+            else:
+                result = {}
+            self.node_cache[node_id] = result
+            return result
+
         # Get input values from already-executed nodes (thanks to topological sort)
         inputs = self._get_node_inputs(node_id)
 
@@ -500,7 +511,7 @@ class GraphExecutor:
         socket_to_param_name = {}  # Map socket names (uppercase) to schema parameter names (lowercase)
 
         # Only check schema for OpNode types (not special nodes like "text", "list", etc.)
-        if node_type not in ["text", "list", "object", "image", "view"]:
+        if node_type not in ["text", "list", "object", "image", "view", "dictionary"]:
             try:
                 from psynapse.backend.node_schemas import get_node_schema
 

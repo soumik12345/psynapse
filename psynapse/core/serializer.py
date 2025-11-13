@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 from psynapse.core.node import Node
+from psynapse.nodes.dictionary_node import DictionaryNode
 from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
@@ -22,6 +23,7 @@ class GraphSerializer:
         ObjectNode: "object",
         ViewNode: "view",
         ListNode: "list",
+        DictionaryNode: "dictionary",
     }
 
     @staticmethod
