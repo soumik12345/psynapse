@@ -731,6 +731,34 @@ class PsynapseEditor(QMainWindow):
                     node = ViewNode()
                 elif node_type == "text":
                     node = TextNode()
+                    # Restore TextNode params and value if they exist
+                    params = node_data.get("params", {})
+                    # Restore text value from output socket first (before return_as change)
+                    output_sockets = node_data.get("output_sockets", [])
+                    if output_sockets and "value" in output_sockets[0]:
+                        text_value = output_sockets[0]["value"]
+                        if text_value:
+                            # Set the text in the editor
+                            node.text_editor.setPlainText(text_value)
+                            # Update current_value and output socket value
+                            node.current_value = text_value
+                            if node.output_sockets:
+                                node.output_sockets[0].value = text_value
+                    # Restore return_as after text is set (since changing return_as clears output socket)
+                    if params:
+                        return_as = params.get("return_as", "String")
+                        if hasattr(node, "output_mode_selector"):
+                            # Find the index of return_as in the combo box
+                            for i in range(node.output_mode_selector.count()):
+                                if node.output_mode_selector.itemData(i) == return_as:
+                                    node.output_mode_selector.setCurrentIndex(i)
+                                    break
+                        # After setting return_as, restore the output socket value again
+                        # (since _on_output_mode_changed clears it)
+                        if output_sockets and "value" in output_sockets[0]:
+                            text_value = output_sockets[0]["value"]
+                            if text_value and node.output_sockets:
+                                node.output_sockets[0].value = text_value
                 elif node_type == "list":
                     node = ListNode()
                     # Restore the correct number of input sockets from saved data
