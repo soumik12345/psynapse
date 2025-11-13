@@ -15,7 +15,7 @@ def LLM_Message(
 
 
 def create_openai_reponse(
-    model: str, messages: list[dict[str, Any]]
+    model: str, messages: str | list[dict[str, Any]]
 ) -> dict[str, Any | dict[str, Any]]:
     """
     Create an OpenAI response.

@@ -7,7 +7,8 @@
       "output_sockets": [
         {
           "id": "node_0_output_0",
-          "name": "value"
+          "name": "value",
+          "value": "You are a historian."
         }
       ],
       "position": [
@@ -29,7 +30,8 @@
       "output_sockets": [
         {
           "id": "node_1_output_0",
-          "name": "value"
+          "name": "value",
+          "value": "Write a detailed essay on the rise and fall of Rome."
         }
       ],
       "position": [
@@ -66,8 +68,8 @@
         }
       ],
       "position": [
-        172.0,
-        -67.0
+        112.0,
+        -113.0
       ],
       "size": [
         180,
@@ -98,8 +100,8 @@
         }
       ],
       "position": [
-        170.0,
-        162.0
+        130.0,
+        161.0
       ],
       "size": [
         180,
@@ -140,7 +142,7 @@
         {
           "id": "node_5_input_1",
           "name": "query",
-          "value": "['choices'][0]['message']['content']"
+          "value": "['output'][0]['content'][0]['text']"
         }
       ],
       "output_sockets": [
@@ -150,12 +152,12 @@
         }
       ],
       "position": [
-        773.0,
-        341.5
+        863.5,
+        324.0
       ],
       "size": [
-        266.0,
-        167.0
+        247.0,
+        174.0
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/basic/ops.py",
       "source_nodepack": "basic"
@@ -172,8 +174,8 @@
       ],
       "output_sockets": [],
       "position": [
-        1189.0,
-        336.5
+        1230.0,
+        338.5
       ],
       "size": [
         400.0,
@@ -191,12 +193,7 @@
         },
         {
           "id": "node_7_input_1",
-          "name": "messages [0]",
-          "value": null
-        },
-        {
-          "id": "node_7_input_2",
-          "name": "messages [1]",
+          "name": "messages",
           "value": null
         }
       ],
@@ -207,8 +204,8 @@
         }
       ],
       "position": [
-        447.0,
-        11.0
+        566.0,
+        -32.0
       ],
       "size": [
         180,
@@ -216,6 +213,36 @@
       ],
       "filepath": "/Users/geekyrakshit/Workspace/psynapse/nodepacks/llm/ops.py",
       "source_nodepack": "llm"
+    },
+    {
+      "id": "node_8",
+      "type": "list",
+      "input_sockets": [
+        {
+          "id": "node_8_input_0",
+          "name": "item",
+          "value": null
+        },
+        {
+          "id": "node_8_input_1",
+          "name": "item",
+          "value": null
+        }
+      ],
+      "output_sockets": [
+        {
+          "id": "node_8_output_0",
+          "name": "list"
+        }
+      ],
+      "position": [
+        351.0,
+        27.0
+      ],
+      "size": [
+        180,
+        160
+      ]
     }
   ],
   "edges": [
@@ -240,12 +267,16 @@
       "end_socket": "node_6_input_0"
     },
     {
-      "start_socket": "node_2_output_0",
+      "start_socket": "node_8_output_0",
       "end_socket": "node_7_input_1"
     },
     {
+      "start_socket": "node_2_output_0",
+      "end_socket": "node_8_input_0"
+    },
+    {
       "start_socket": "node_3_output_0",
-      "end_socket": "node_7_input_2"
+      "end_socket": "node_8_input_1"
     }
   ]
 }
