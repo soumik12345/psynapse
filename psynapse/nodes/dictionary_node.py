@@ -56,13 +56,15 @@ class DictionaryNode(Node):
             1, QHeaderView.Stretch
         )  # Key column
         self.table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeToContents
-        )  # Type column
+            2, QHeaderView.Fixed
+        )  # Type column - fixed width for dropdown
         self.table.horizontalHeader().setSectionResizeMode(
             3, QHeaderView.Stretch
         )  # Value column
         # Set delete button column width (smaller than row height)
         self.table.setColumnWidth(0, 22)
+        # Set Type column width to accommodate dropdown properly
+        self.table.setColumnWidth(2, 90)
         self.table.verticalHeader().setVisible(False)
         self.table.setShowGrid(True)
         self.table.setAlternatingRowColors(True)
@@ -190,22 +192,40 @@ class DictionaryNode(Node):
                     border: 1px solid #444444;
                     border-radius: 3px;
                     padding: 3px 5px;
+                    padding-right: 20px;
                     font-size: 10px;
+                    min-width: 50px;
                 }
                 QComboBox:hover {
                     border: 1px solid #FF7700;
                 }
                 QComboBox::drop-down {
                     border: none;
-                    width: 15px;
+                    width: 20px;
+                }
+                QComboBox::down-arrow {
+                    width: 10px;
+                    height: 10px;
                 }
                 QComboBox QAbstractItemView {
                     background-color: #2d2d2d;
                     color: #ffffff;
                     selection-background-color: #FF7700;
+                    selection-color: #ffffff;
                     border: 1px solid #444444;
+                    padding: 2px;
+                    min-width: 60px;
+                }
+                QComboBox QAbstractItemView::item {
+                    padding: 4px 8px;
+                    min-height: 20px;
+                }
+                QComboBox QAbstractItemView::item:hover {
+                    background-color: #3a3a3a;
                 }
             """)
+            # Set minimum width to ensure dropdown items display fully
+            type_combo.setMinimumWidth(60)
             self.table.setCellWidget(row, 2, type_combo)
 
             # Value column (column 3)
@@ -432,10 +452,12 @@ class DictionaryNode(Node):
         # Update delete button column width to accommodate button with padding
         button_size = 16
         self.table.setColumnWidth(0, 22)  # Slightly wider than button for padding
+        # Ensure Type column maintains proper width for dropdown
+        self.table.setColumnWidth(2, 90)
 
         # Center the widget container horizontally in the node
         widget_x = max(0, (self.graphics.width - container_width) / 2)
-        widget_y = 30  # Start right below title bar
+        widget_y = 50  # Start below output socket to give it space on the left
         self.widget_proxy.setPos(widget_x, widget_y)
 
         # Force update to ensure sizes are applied
