@@ -5,6 +5,7 @@ import importlib.util
 import os
 import re
 import sys
+import typing
 from collections import deque
 from io import BytesIO
 from typing import Any, Callable, Dict, Generator, List, Optional
@@ -471,23 +472,47 @@ class GraphExecutor:
                 params = node.get("params", {})
                 entries = params.get("entries", [])
 
-                # Map type strings to Python types
-                type_map = {
+                # Create a safe namespace with typing module contents and builtins
+                # for parsing type strings
+                safe_globals = {
+                    "Any": Any,
+                    "List": typing.List,
+                    "Dict": typing.Dict,
+                    "Optional": typing.Optional,
+                    "Union": typing.Union,
+                    "Tuple": typing.Tuple,
+                    "Set": typing.Set,
                     "str": str,
                     "int": int,
                     "float": float,
                     "bool": bool,
                     "list": list,
                     "dict": dict,
-                    "any": Any,
+                    "tuple": tuple,
+                    "set": set,
                 }
+
+                def parse_type_string(type_str: str) -> type:
+                    """Parse a type string into a Python type."""
+                    if not type_str or not type_str.strip():
+                        return str
+
+                    type_str = type_str.strip()
+
+                    try:
+                        # Try to evaluate the type string
+                        parsed_type = eval(type_str, safe_globals, {})
+                        return parsed_type
+                    except Exception:
+                        # If parsing fails, default to str
+                        return str
 
                 schema_dict = {}
                 for entry in entries:
                     field_name = entry.get("field", "").strip()
                     if field_name:
                         type_str = entry.get("type", "str")
-                        python_type = type_map.get(type_str, str)
+                        python_type = parse_type_string(type_str)
                         default_value = entry.get("default_value")
 
                         # Format: { field_name: type } or { field_name: (type, default_value) }
@@ -496,12 +521,17 @@ class GraphExecutor:
                         else:
                             schema_dict[field_name] = python_type
 
-                # Create Pydantic model
+                # Get schema name from params, default to "DynamicSchema"
+                schema_name = params.get("schema_name", "DynamicSchema")
+                if not schema_name or not schema_name.strip():
+                    schema_name = "DynamicSchema"
+
+                # Create Pydantic model with the custom schema name
                 if schema_dict:
-                    model_type = pydantic.create_model("DefaultSchema", **schema_dict)
+                    model_type = pydantic.create_model(schema_name, **schema_dict)
                 else:
                     # Empty schema - create a model with no fields
-                    model_type = pydantic.create_model("DefaultSchema")
+                    model_type = pydantic.create_model(schema_name)
 
                 # Serialize the model type as a special dict so frontend can identify it
                 # We'll include the JSON schema so frontend can display it

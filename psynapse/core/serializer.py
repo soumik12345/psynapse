@@ -129,12 +129,13 @@ class GraphSerializer:
                     entries.append(
                         {
                             "field": entry["field"],
-                            "type": entry["type"].value,  # Convert enum to string
+                            "type": entry["type"],  # Type is already a string
                             "default_value": entry["default_value"],
                         }
                     )
                 node_data["params"] = {
                     "entries": entries,
+                    "schema_name": node.schema_name,
                 }
 
             serialized_nodes.append(node_data)

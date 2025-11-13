@@ -1,12 +1,15 @@
 import json
+import typing
 from typing import Any
 
 import pydantic
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox,
     QGraphicsProxyWidget,
+    QHBoxLayout,
     QHeaderView,
+    QLabel,
+    QLineEdit,
     QPushButton,
     QSizePolicy,
     QTableWidget,
@@ -29,10 +32,11 @@ class PydanticSchemaNode(Node):
             outputs=[("Schema", SocketDataType.ANY)],
         )
 
-        # Store schema entries as list of dicts: [{"field": str, "type": SocketDataType, "default_value": Any}, ...]
-        self.entries = [
-            {"field": "", "type": SocketDataType.STRING, "default_value": None}
-        ]
+        # Store schema entries as list of dicts: [{"field": str, "type": str, "default_value": Any}, ...]
+        self.entries = [{"field": "", "type": "str", "default_value": None}]
+
+        # Store schema name (default to "DynamicSchema")
+        self.schema_name = "DynamicSchema"
 
         # Create container widget
         self.widget_container = QWidget()
@@ -42,6 +46,51 @@ class PydanticSchemaNode(Node):
         self.widget_layout.setSpacing(8)
         self.widget_layout.setAlignment(Qt.AlignCenter)
         self.widget_container.setLayout(self.widget_layout)
+
+        # Create schema name input row
+        schema_name_row = QWidget()
+        schema_name_layout = QHBoxLayout()
+        schema_name_layout.setContentsMargins(0, 0, 0, 0)
+        schema_name_layout.setSpacing(8)
+        schema_name_row.setLayout(schema_name_layout)
+
+        # Schema name label
+        schema_name_label = QLabel("Schema name:")
+        schema_name_label.setStyleSheet("""
+            QLabel {
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: bold;
+            }
+        """)
+        schema_name_layout.addWidget(schema_name_label)
+
+        # Schema name input
+        self.schema_name_input = QLineEdit()
+        self.schema_name_input.setText(self.schema_name)
+        self.schema_name_input.setPlaceholderText("e.g. UserSchema, ProductModel")
+        self.schema_name_input.textChanged.connect(self._on_schema_name_changed)
+        self.schema_name_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 10px;
+            }
+            QLineEdit:hover {
+                border: 1px solid #FF7700;
+            }
+            QLineEdit:focus {
+                border: 1px solid #FF7700;
+                background-color: #333333;
+            }
+        """)
+        schema_name_layout.addWidget(self.schema_name_input)
+
+        # Add schema name row to main layout
+        self.widget_layout.addWidget(schema_name_row)
 
         # Create table widget
         self.table = QTableWidget()
@@ -60,15 +109,13 @@ class PydanticSchemaNode(Node):
             1, QHeaderView.Stretch
         )  # Field column
         self.table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.Fixed
-        )  # Type column - fixed width for dropdown
+            2, QHeaderView.Stretch
+        )  # Type column - stretchable for compound types
         self.table.horizontalHeader().setSectionResizeMode(
             3, QHeaderView.Stretch
         )  # Default Value column
         # Set delete button column width (smaller than row height)
         self.table.setColumnWidth(0, 22)
-        # Set Type column width to accommodate dropdown properly
-        self.table.setColumnWidth(2, 90)
         self.table.verticalHeader().setVisible(False)
         self.table.setShowGrid(True)
         self.table.setAlternatingRowColors(True)
@@ -126,18 +173,43 @@ class PydanticSchemaNode(Node):
         self._original_mouse_move = self.graphics.mouseMoveEvent
         self.graphics.mouseMoveEvent = self._on_graphics_mouse_move
 
-    def _socket_type_to_python_type(self, socket_type: SocketDataType) -> type:
-        """Convert SocketDataType to Python type for Pydantic."""
-        type_map = {
-            SocketDataType.STRING: str,
-            SocketDataType.INT: int,
-            SocketDataType.FLOAT: float,
-            SocketDataType.BOOL: bool,
-            SocketDataType.LIST: list,
-            SocketDataType.DICT: dict,
-            SocketDataType.ANY: Any,
+    def _parse_type_string(self, type_str: str) -> type:
+        """Parse a type string into a Python type.
+
+        Supports simple types (str, int, bool, etc.) and compound types from typing
+        (List[str], Dict[str, Any], Optional[int], etc.)
+        """
+        if not type_str or not type_str.strip():
+            return str
+
+        type_str = type_str.strip()
+
+        # Create a safe namespace with typing module contents and builtins
+        safe_globals = {
+            "Any": Any,
+            "List": typing.List,
+            "Dict": typing.Dict,
+            "Optional": typing.Optional,
+            "Union": typing.Union,
+            "Tuple": typing.Tuple,
+            "Set": typing.Set,
+            "str": str,
+            "int": int,
+            "float": float,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+            "tuple": tuple,
+            "set": set,
         }
-        return type_map.get(socket_type, str)
+
+        try:
+            # Try to evaluate the type string
+            parsed_type = eval(type_str, safe_globals, {})
+            return parsed_type
+        except Exception:
+            # If parsing fails, default to str
+            return str
 
     def _populate_table(self):
         """Populate the table with current entries."""
@@ -191,69 +263,34 @@ class PydanticSchemaNode(Node):
             field_item = QTableWidgetItem(entry["field"])
             self.table.setItem(row, 1, field_item)
 
-            # Type column (column 2) - use QComboBox
-            type_combo = QComboBox()
-            type_combo.addItem("str", SocketDataType.STRING)
-            type_combo.addItem("int", SocketDataType.INT)
-            type_combo.addItem("float", SocketDataType.FLOAT)
-            type_combo.addItem("bool", SocketDataType.BOOL)
-            type_combo.addItem("list", SocketDataType.LIST)
-            type_combo.addItem("dict", SocketDataType.DICT)
-            # Find the index matching the entry's type
-            current_index = 0
-            for i in range(type_combo.count()):
-                if type_combo.itemData(i) == entry["type"]:
-                    current_index = i
-                    break
-            type_combo.setCurrentIndex(current_index)
+            # Type column (column 2) - use QLineEdit for text input
+            type_input = QLineEdit()
+            type_input.setText(entry["type"])
+            type_input.setPlaceholderText("e.g. str, List[int], Dict[str, Any]")
 
             # Use a closure to capture the row value correctly
             def make_type_changed_handler(r):
-                return lambda index: self._on_type_changed(r, index)
+                return lambda: self._on_type_text_changed(r)
 
-            type_combo.currentIndexChanged.connect(make_type_changed_handler(row))
-            type_combo.setStyleSheet("""
-                QComboBox {
+            type_input.textChanged.connect(make_type_changed_handler(row))
+            type_input.setStyleSheet("""
+                QLineEdit {
                     background-color: #2d2d2d;
                     color: #ffffff;
                     border: 1px solid #444444;
                     border-radius: 3px;
                     padding: 3px 5px;
-                    padding-right: 20px;
                     font-size: 10px;
-                    min-width: 50px;
                 }
-                QComboBox:hover {
+                QLineEdit:hover {
                     border: 1px solid #FF7700;
                 }
-                QComboBox::drop-down {
-                    border: none;
-                    width: 20px;
-                }
-                QComboBox::down-arrow {
-                    width: 10px;
-                    height: 10px;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: #2d2d2d;
-                    color: #ffffff;
-                    selection-background-color: #FF7700;
-                    selection-color: #ffffff;
-                    border: 1px solid #444444;
-                    padding: 2px;
-                    min-width: 60px;
-                }
-                QComboBox QAbstractItemView::item {
-                    padding: 4px 8px;
-                    min-height: 20px;
-                }
-                QComboBox QAbstractItemView::item:hover {
-                    background-color: #3a3a3a;
+                QLineEdit:focus {
+                    border: 1px solid #FF7700;
+                    background-color: #333333;
                 }
             """)
-            # Set minimum width to ensure dropdown items display fully
-            type_combo.setMinimumWidth(60)
-            self.table.setCellWidget(row, 2, type_combo)
+            self.table.setCellWidget(row, 2, type_input)
 
             # Default Value column (column 3)
             default_value_str = self._value_to_string(
@@ -295,30 +332,39 @@ class PydanticSchemaNode(Node):
         # Reconnect cellChanged signal
         self.table.cellChanged.connect(self._on_cell_changed)
 
-    def _value_to_string(self, value: Any, data_type: SocketDataType) -> str:
+    def _value_to_string(self, value: Any, type_str: str) -> str:
         """Convert a value to string representation for display."""
         if value is None:
             return ""
-        if data_type == SocketDataType.BOOL:
+
+        # Determine if it's a bool type
+        if type_str.strip().lower() in ["bool", "boolean"]:
             return "True" if value else "False"
-        if data_type == SocketDataType.LIST:
+
+        # Determine if it's a list/List type
+        if type_str.strip().lower().startswith("list"):
             if isinstance(value, list):
                 return json.dumps(value)
             return json.dumps([])
-        if data_type == SocketDataType.DICT:
+
+        # Determine if it's a dict/Dict type
+        if type_str.strip().lower().startswith("dict"):
             if isinstance(value, dict):
                 return json.dumps(value)
             return json.dumps({})
+
         return str(value)
 
-    def _string_to_value(self, value_str: str, data_type: SocketDataType) -> Any:
+    def _string_to_value(self, value_str: str, type_str: str) -> Any:
         """Convert a string to the appropriate type."""
         if not value_str.strip():
             return None  # Empty default value means optional field
 
         try:
-            # For list and dict, try JSON parsing first
-            if data_type == SocketDataType.LIST:
+            type_lower = type_str.strip().lower()
+
+            # For list/List types, try JSON parsing
+            if type_lower.startswith("list"):
                 if value_str.strip():
                     try:
                         parsed = json.loads(value_str)
@@ -327,7 +373,9 @@ class PydanticSchemaNode(Node):
                     except json.JSONDecodeError:
                         pass
                 return []
-            elif data_type == SocketDataType.DICT:
+
+            # For dict/Dict types, try JSON parsing
+            elif type_lower.startswith("dict"):
                 if value_str.strip():
                     try:
                         parsed = json.loads(value_str)
@@ -336,8 +384,22 @@ class PydanticSchemaNode(Node):
                     except json.JSONDecodeError:
                         pass
                 return {}
+
+            # For bool type
+            elif type_lower in ["bool", "boolean"]:
+                return value_str.strip().lower() in ["true", "1", "yes"]
+
+            # For int type
+            elif type_lower == "int":
+                return int(value_str)
+
+            # For float type
+            elif type_lower == "float":
+                return float(value_str)
+
+            # For str type or anything else
             else:
-                return data_type.validate(value_str)
+                return value_str
         except Exception:
             return None
 
@@ -354,48 +416,53 @@ class PydanticSchemaNode(Node):
         elif column == 3:  # Default Value column
             default_value_item = self.table.item(row, 3)
             if default_value_item:
-                type_combo = self.table.cellWidget(row, 2)
-                if type_combo:
-                    data_type = type_combo.itemData(type_combo.currentIndex())
+                type_input = self.table.cellWidget(row, 2)
+                if type_input:
+                    type_str = type_input.text()
                     value_str = default_value_item.text()
                     self.entries[row]["default_value"] = self._string_to_value(
-                        value_str, data_type
+                        value_str, type_str
                     )
 
         self._update_output()
 
-    def _on_type_changed(self, row: int, index: int):
-        """Handle type selection changes."""
+    def _on_type_text_changed(self, row: int):
+        """Handle type text changes."""
         # Ignore changes if row is out of bounds
         if row >= len(self.entries):
             return
 
-        type_combo = self.table.cellWidget(row, 2)
-        if type_combo:
-            new_type = type_combo.itemData(index)
-            old_type = self.entries[row]["type"]
-            self.entries[row]["type"] = new_type
+        type_input = self.table.cellWidget(row, 2)
+        if type_input:
+            new_type_str = type_input.text()
+            self.entries[row]["type"] = new_type_str
 
             # Convert default value to new type
             default_value_item = self.table.item(row, 3)
             if default_value_item:
                 value_str = default_value_item.text()
                 self.entries[row]["default_value"] = self._string_to_value(
-                    value_str, new_type
+                    value_str, new_type_str
                 )
                 # Update display
                 new_value_str = self._value_to_string(
-                    self.entries[row]["default_value"], new_type
+                    self.entries[row]["default_value"], new_type_str
                 )
+                # Temporarily block signals to avoid recursion
+                self.table.blockSignals(True)
                 default_value_item.setText(new_value_str)
+                self.table.blockSignals(False)
 
+        self._update_output()
+
+    def _on_schema_name_changed(self, text: str):
+        """Handle schema name changes."""
+        self.schema_name = text.strip() if text.strip() else "DynamicSchema"
         self._update_output()
 
     def _add_row(self):
         """Add a new row to the table."""
-        self.entries.append(
-            {"field": "", "type": SocketDataType.STRING, "default_value": None}
-        )
+        self.entries.append({"field": "", "type": "str", "default_value": None})
         self._populate_table()
         self._update_node_size()
         self._update_widget_sizes()
@@ -426,7 +493,7 @@ class PydanticSchemaNode(Node):
             for entry in self.entries:
                 field_name = entry["field"].strip()
                 if field_name:  # Only add non-empty fields
-                    python_type = self._socket_type_to_python_type(entry["type"])
+                    python_type = self._parse_type_string(entry["type"])
                     default_value = entry["default_value"]
 
                     # Format: { field_name: type } or { field_name: (type, default_value) }
@@ -435,12 +502,13 @@ class PydanticSchemaNode(Node):
                     else:
                         schema_dict[field_name] = python_type
 
-            # Create Pydantic model
+            # Create Pydantic model with the custom schema name
+            schema_name = self.schema_name if self.schema_name else "DynamicSchema"
             if schema_dict:
-                model_type = pydantic.create_model("DefaultSchema", **schema_dict)
+                model_type = pydantic.create_model(schema_name, **schema_dict)
             else:
                 # Empty schema - create a model with no fields
-                model_type = pydantic.create_model("DefaultSchema")
+                model_type = pydantic.create_model(schema_name)
 
             return model_type
         except Exception as e:
@@ -461,6 +529,8 @@ class PydanticSchemaNode(Node):
         # - Title bar: ~30px
         # - Top margin: ~10px
         # - Layout top margin: ~4px
+        # - Schema name input row: ~30px
+        # - Layout spacing: ~8px
         # - Table header: ~30px
         # - Table rows: ~25px per row (entries + 1 for add button row)
         # - Layout bottom margin: ~4px
@@ -469,11 +539,14 @@ class PydanticSchemaNode(Node):
         min_row_height = 25
         num_rows = max(1, len(self.entries) + 1)  # +1 for add button row
         table_content_height = 30 + (num_rows * min_row_height)  # header + rows
+        schema_name_row_height = 30 + 8  # schema name input + spacing
 
-        min_height = 30 + 10 + 4 + table_content_height + 4 + 10 + 10
+        min_height = (
+            30 + 10 + 4 + schema_name_row_height + table_content_height + 4 + 10 + 10
+        )
         min_height = max(
-            180, min_height
-        )  # Ensure minimum node height (increased for better containment)
+            210, min_height
+        )  # Ensure minimum node height (increased for schema name input)
 
         # Update node height if needed
         if self.graphics.height < min_height:
@@ -497,10 +570,13 @@ class PydanticSchemaNode(Node):
         # - Title bar: ~30px
         # - Top margin: ~8px
         # - Layout top margin: ~4px
+        # - Schema name input row: ~30px
+        # - Layout spacing: ~8px
         # - Layout bottom margin: ~4px
         # - Bottom margin: ~8px
         # - Output socket space: ~10px
-        header_and_margins = 30 + 8 + 4 + 4 + 8 + 10
+        schema_name_row_height = 30 + 8  # schema name input + spacing
+        header_and_margins = 30 + 8 + 4 + schema_name_row_height + 4 + 8 + 10
         max_available_height = self.graphics.height - header_and_margins
         available_height = max(60, max_available_height)
 
@@ -528,8 +604,6 @@ class PydanticSchemaNode(Node):
         # Update delete button column width to accommodate button with padding
         button_size = 16
         self.table.setColumnWidth(0, 22)  # Slightly wider than button for padding
-        # Ensure Type column maintains proper width for dropdown
-        self.table.setColumnWidth(2, 90)
 
         # Center the widget container horizontally in the node
         widget_x = max(0, (self.graphics.width - container_width) / 2)
