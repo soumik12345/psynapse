@@ -1,10 +1,12 @@
 from io import BytesIO
 from typing import Any
 
+import pydantic
 from PIL import Image
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import (
+    QComboBox,
     QGraphicsProxyWidget,
     QGraphicsTextItem,
     QLabel,
@@ -47,6 +49,9 @@ class ViewNode(Node):
         # Create scrollable text widget for long texts (initially hidden)
         self.text_widget = None
         self.text_proxy = None
+        self.render_mode_combo = None
+        self.raw_text_content = None  # Store raw text for mode switching
+        self.render_mode = "Raw"  # Default render mode
 
         # Create tree widget for dictionaries (initially hidden)
         self.tree_widget = None
@@ -83,9 +88,10 @@ class ViewNode(Node):
 
         # Update scrollable text widget sizes
         if self.text_widget and self.text_proxy:
-            # Calculate available space (accounting for margins, title bar, etc.)
+            # Calculate available space (accounting for margins, title bar, dropdown, etc.)
             available_width = max(100, self.graphics.width - 30)
-            available_height = max(80, self.graphics.height - 70)
+            # Reserve space for dropdown (approximately 35 pixels)
+            available_height = max(80, self.graphics.height - 105)
 
             # Update text widget size constraints for both width AND height
             self.text_widget.setMinimumWidth(available_width)
@@ -97,7 +103,9 @@ class ViewNode(Node):
             if self.text_proxy.widget():
                 container = self.text_proxy.widget()
                 container.setFixedWidth(available_width + 10)
-                container.setFixedHeight(available_height + 10)
+                container.setFixedHeight(
+                    available_height + 50
+                )  # Extra space for dropdown
 
         # Update tree widget sizes
         if self.tree_widget and self.tree_proxy:
@@ -517,6 +525,49 @@ class ViewNode(Node):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(5, 5, 5, 5)
 
+        # Create render mode dropdown
+        self.render_mode_combo = QComboBox()
+        self.render_mode_combo.addItems(["Raw", "Markdown"])
+        self.render_mode_combo.setCurrentText(self.render_mode)
+        self.render_mode_combo.currentTextChanged.connect(self._on_render_mode_changed)
+
+        # Style the dropdown
+        self.render_mode_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #3a3a3a;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 10px;
+                min-height: 20px;
+            }
+            QComboBox:hover {
+                background-color: #4a4a4a;
+                border: 1px solid #666;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 5px solid white;
+                margin-right: 5px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #3a3a3a;
+                color: white;
+                border: 1px solid #555;
+                selection-background-color: #4a4a4a;
+                selection-color: white;
+            }
+        """)
+
+        layout.addWidget(self.render_mode_combo)
+
         self.text_widget = QTextEdit()
         self.text_widget.setReadOnly(True)
         self.text_widget.setLineWrapMode(QTextEdit.WidgetWidth)
@@ -528,8 +579,9 @@ class ViewNode(Node):
         self.text_widget.setFont(font)
 
         # Initial sizes - will be updated dynamically on resize
+        # Reserve space for dropdown (approximately 35 pixels)
         initial_width = max(100, self.graphics.width - 30)
-        initial_height = max(80, self.graphics.height - 70)
+        initial_height = max(80, self.graphics.height - 105)
         self.text_widget.setMinimumWidth(initial_width)
         self.text_widget.setMaximumWidth(initial_width)
         self.text_widget.setMinimumHeight(initial_height)
@@ -537,9 +589,9 @@ class ViewNode(Node):
 
         layout.addWidget(self.text_widget)
 
-        # Set container size for both width and height
+        # Set container size for both width and height (extra space for dropdown)
         container.setFixedWidth(initial_width + 10)
-        container.setFixedHeight(initial_height + 10)
+        container.setFixedHeight(initial_height + 50)
 
         # Add the widget to the graphics scene via proxy
         self.text_proxy = QGraphicsProxyWidget(self.graphics)
@@ -550,33 +602,41 @@ class ViewNode(Node):
         # Ensure the proxy widget is on top
         self.text_proxy.setZValue(1)
 
+    def _on_render_mode_changed(self, mode: str):
+        """Handle render mode dropdown change."""
+        self.render_mode = mode
+        if self.raw_text_content is not None:
+            self._update_text_display()
+
+    def _update_text_display(self):
+        """Update text display based on current render mode."""
+        if self.text_widget is None or self.raw_text_content is None:
+            return
+
+        if self.render_mode == "Markdown":
+            self.text_widget.setMarkdown(self.raw_text_content)
+        else:  # Raw mode
+            self.text_widget.setPlainText(self.raw_text_content)
+
+        # Scroll to top
+        cursor = self.text_widget.textCursor()
+        cursor.movePosition(cursor.MoveOperation.Start)
+        self.text_widget.setTextCursor(cursor)
+
     def _show_text_view(self, display_str):
-        """Show the text view, using scrollable widget for long texts."""
-        # Determine if we should use scrollable widget or simple text display
-        # Use scrollable widget if text is long or contains newlines
-        use_scrollable = len(display_str) > 200 or "\n" in display_str
+        """Show the text view, using scrollable widget with render mode dropdown."""
+        # Always use scrollable widget to enable render mode switching (Raw/Markdown)
+        self._create_text_widget()
 
-        if use_scrollable:
-            # Use scrollable text widget for long texts
-            self._create_text_widget()
+        # Store raw text content for mode switching
+        self.raw_text_content = display_str
 
-            # Set the text content
-            self.text_widget.setPlainText(display_str)
+        # Update display based on current render mode
+        self._update_text_display()
 
-            # Scroll to top
-            cursor = self.text_widget.textCursor()
-            cursor.movePosition(cursor.MoveOperation.Start)
-            self.text_widget.setTextCursor(cursor)
-
-            # Hide simple text display
-            self.display_text.setVisible(False)
-            self.text_proxy.setVisible(True)
-        else:
-            # Use simple text display for short texts
-            self.display_text.setPlainText(display_str)
-            self.display_text.setVisible(True)
-            if self.text_proxy is not None:
-                self.text_proxy.setVisible(False)
+        # Hide simple text display
+        self.display_text.setVisible(False)
+        self.text_proxy.setVisible(True)
 
         # Hide other views
         if self.tree_proxy is not None:
@@ -619,6 +679,13 @@ class ViewNode(Node):
             print(f"Error deserializing image: {e}")
             return None
 
+    def _is_pydantic_model_type(self, value: Any) -> bool:
+        """Check if value is a Pydantic model type (class)."""
+        try:
+            return isinstance(value, type) and issubclass(value, pydantic.BaseModel)
+        except TypeError:
+            return False
+
     def set_value(self, value: Any):
         """Set and display a value (used by backend execution results).
 
@@ -630,13 +697,27 @@ class ViewNode(Node):
             # Deserialize the image
             value = self._deserialize_image(value)
 
+        # Check if value is a serialized Pydantic model type from backend
+        is_serialized_pydantic = (
+            isinstance(value, dict) and value.get("__type__") == "PydanticModelType"
+        )
+        if is_serialized_pydantic:
+            # Extract JSON schema from serialized model
+            schema = value.get("json_schema", {})
+            value = schema  # Use schema dict for display
+
         # Check if the value is a PIL Image
         is_pil_image = isinstance(value, Image.Image)
+
+        # Check if the value is a Pydantic model type (frontend execution)
+        is_pydantic_model = self._is_pydantic_model_type(value)
 
         # Update display only if value changed or showing different view type
         is_dict = isinstance(value, dict) and len(value) > 0
         is_list_or_tuple = isinstance(value, (list, tuple)) and len(value) > 0
-        should_show_tree = is_dict or is_list_or_tuple
+        should_show_tree = (
+            is_dict or is_list_or_tuple or is_pydantic_model or is_serialized_pydantic
+        )
 
         should_update = (
             (value != self.cached_value)
@@ -654,8 +735,17 @@ class ViewNode(Node):
             elif is_pil_image:
                 # Show PIL Image in image view
                 self._show_image_view(value)
+            elif is_pydantic_model:
+                # Show Pydantic model JSON schema in tree view
+                try:
+                    schema = value.model_json_schema()
+                    self._show_tree_view(schema)
+                except Exception:
+                    # Fallback to text view if schema generation fails
+                    display_str = f"Pydantic Model: {value.__name__}"
+                    self._show_text_view(display_str)
             elif isinstance(value, dict) and len(value) > 0:
-                # Show dictionary in tree view
+                # Show dictionary in tree view (including JSON schema from backend)
                 self._show_tree_view(value)
             elif isinstance(value, (list, tuple)) and len(value) > 0:
                 # Show lists and tuples in tree view

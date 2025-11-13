@@ -5,10 +5,12 @@ import importlib.util
 import os
 import re
 import sys
+import typing
 from collections import deque
 from io import BytesIO
 from typing import Any, Callable, Dict, Generator, List, Optional
 
+import pydantic
 import requests
 import rich
 from PIL import Image
@@ -453,6 +455,99 @@ class GraphExecutor:
             self.node_cache[node_id] = result
             return result
 
+        # Special handling for DictionaryNode - it has a preset output value
+        if node["type"] == "dictionary":
+            # DictionaryNode has no inputs, just return its output value
+            output_sockets = node.get("output_sockets", [])
+            if output_sockets and "value" in output_sockets[0]:
+                result = output_sockets[0]["value"]
+            else:
+                result = {}
+            self.node_cache[node_id] = result
+            return result
+
+        # Special handling for PydanticSchemaNode - recreate model from entries
+        if node["type"] == "pydantic_schema":
+            try:
+                params = node.get("params", {})
+                entries = params.get("entries", [])
+
+                # Create a safe namespace with typing module contents and builtins
+                # for parsing type strings
+                safe_globals = {
+                    "Any": Any,
+                    "List": typing.List,
+                    "Dict": typing.Dict,
+                    "Optional": typing.Optional,
+                    "Union": typing.Union,
+                    "Tuple": typing.Tuple,
+                    "Set": typing.Set,
+                    "str": str,
+                    "int": int,
+                    "float": float,
+                    "bool": bool,
+                    "list": list,
+                    "dict": dict,
+                    "tuple": tuple,
+                    "set": set,
+                }
+
+                def parse_type_string(type_str: str) -> type:
+                    """Parse a type string into a Python type."""
+                    if not type_str or not type_str.strip():
+                        return str
+
+                    type_str = type_str.strip()
+
+                    try:
+                        # Try to evaluate the type string
+                        parsed_type = eval(type_str, safe_globals, {})
+                        return parsed_type
+                    except Exception:
+                        # If parsing fails, default to str
+                        return str
+
+                schema_dict = {}
+                for entry in entries:
+                    field_name = entry.get("field", "").strip()
+                    if field_name:
+                        type_str = entry.get("type", "str")
+                        python_type = parse_type_string(type_str)
+                        default_value = entry.get("default_value")
+
+                        # Format: { field_name: type } or { field_name: (type, default_value) }
+                        if default_value is not None:
+                            schema_dict[field_name] = (python_type, default_value)
+                        else:
+                            schema_dict[field_name] = python_type
+
+                # Get schema name from params, default to "DynamicSchema"
+                schema_name = params.get("schema_name", "DynamicSchema")
+                if not schema_name or not schema_name.strip():
+                    schema_name = "DynamicSchema"
+
+                # Create Pydantic model with the custom schema name
+                if schema_dict:
+                    model_type = pydantic.create_model(schema_name, **schema_dict)
+                else:
+                    # Empty schema - create a model with no fields
+                    model_type = pydantic.create_model(schema_name)
+
+                # Serialize the model type as a special dict so frontend can identify it
+                # We'll include the JSON schema so frontend can display it
+                result = {
+                    "__type__": "PydanticModelType",
+                    "model_name": model_type.__name__,
+                    "json_schema": model_type.model_json_schema(),
+                }
+                self.node_cache[node_id] = result
+                return result
+            except Exception as e:
+                # If model creation fails, return None
+                result = None
+                self.node_cache[node_id] = result
+                return result
+
         # Get input values from already-executed nodes (thanks to topological sort)
         inputs = self._get_node_inputs(node_id)
 
@@ -500,7 +595,7 @@ class GraphExecutor:
         socket_to_param_name = {}  # Map socket names (uppercase) to schema parameter names (lowercase)
 
         # Only check schema for OpNode types (not special nodes like "text", "list", etc.)
-        if node_type not in ["text", "list", "object", "image", "view"]:
+        if node_type not in ["text", "list", "object", "image", "view", "dictionary"]:
             try:
                 from psynapse.backend.node_schemas import get_node_schema
 

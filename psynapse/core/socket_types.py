@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 
 
@@ -9,6 +10,8 @@ class SocketDataType(Enum):
     FLOAT = "float"
     STRING = "str"
     BOOL = "bool"
+    LIST = "list"
+    DICT = "dict"
 
     def __str__(self):
         return self.value
@@ -23,6 +26,8 @@ class SocketDataType(Enum):
             "str": cls.STRING,
             "string": cls.STRING,
             "bool": cls.BOOL,
+            "list": cls.LIST,
+            "dict": cls.DICT,
         }
         return type_map.get(type_str.lower(), cls.ANY)
 
@@ -34,6 +39,8 @@ class SocketDataType(Enum):
             SocketDataType.FLOAT: 0.0,
             SocketDataType.STRING: "",
             SocketDataType.BOOL: False,
+            SocketDataType.LIST: [],
+            SocketDataType.DICT: {},
         }
         return defaults.get(self, None)
 
@@ -55,7 +62,30 @@ class SocketDataType(Enum):
                 if isinstance(value, str):
                     return value.lower() in ("true", "1", "yes")
                 return bool(value)
-        except (TypeError, ValueError):
+            elif self == SocketDataType.LIST:
+                if isinstance(value, list):
+                    return value
+                if isinstance(value, str):
+                    # Try to parse as JSON list
+                    parsed = json.loads(value)
+                    if isinstance(parsed, list):
+                        return parsed
+                # Try to convert tuple or other iterable to list
+                try:
+                    return list(value)
+                except (TypeError, ValueError):
+                    pass
+                return self.get_default_value()
+            elif self == SocketDataType.DICT:
+                if isinstance(value, dict):
+                    return value
+                if isinstance(value, str):
+                    # Try to parse as JSON object
+                    parsed = json.loads(value)
+                    if isinstance(parsed, dict):
+                        return parsed
+                return self.get_default_value()
+        except (TypeError, ValueError, json.JSONDecodeError):
             return self.get_default_value()
 
         return value
@@ -67,4 +97,6 @@ class SocketDataType(Enum):
             SocketDataType.FLOAT,
             SocketDataType.STRING,
             SocketDataType.BOOL,
+            SocketDataType.LIST,
+            SocketDataType.DICT,
         )
