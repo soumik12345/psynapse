@@ -16,16 +16,19 @@ from PySide6.QtWidgets import (
 from psynapse.core.edge import Edge
 from psynapse.core.scene import NodeScene
 from psynapse.core.serializer import GraphSerializer
+from psynapse.core.socket_types import SocketDataType
 from psynapse.core.view import NodeView
 from psynapse.editor.backend_client import BackendClient
 from psynapse.editor.node_library_panel import NodeLibraryPanel
 from psynapse.editor.settings_dialog import SettingsDialog
 from psynapse.editor.terminal_panel import TerminalPanel
 from psynapse.editor.toast_notification import ToastManager
+from psynapse.nodes.dictionary_node import DictionaryNode
 from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
+from psynapse.nodes.pydantic_schema_node import PydanticSchemaNode
 from psynapse.nodes.text_node import TextNode
 from psynapse.nodes.view_node import ViewNode
 from psynapse.utils import pretty_print_payload
@@ -759,6 +762,76 @@ class PsynapseEditor(QMainWindow):
                                 if node.return_as_selector.itemData(i) == return_as:
                                     node.return_as_selector.setCurrentIndex(i)
                                     break
+                elif node_type == "dictionary":
+                    node = DictionaryNode()
+                    # Restore DictionaryNode entries from output socket value if available
+                    output_sockets = node_data.get("output_sockets", [])
+                    if output_sockets and "value" in output_sockets[0]:
+                        dict_value = output_sockets[0]["value"]
+                        if isinstance(dict_value, dict):
+                            # Restore entries from dictionary value
+                            node.entries = []
+                            for key, value in dict_value.items():
+                                # Infer type from value
+                                if isinstance(value, bool):
+                                    data_type = SocketDataType.BOOL
+                                elif isinstance(value, int):
+                                    data_type = SocketDataType.INT
+                                elif isinstance(value, float):
+                                    data_type = SocketDataType.FLOAT
+                                elif isinstance(value, list):
+                                    data_type = SocketDataType.LIST
+                                elif isinstance(value, dict):
+                                    data_type = SocketDataType.DICT
+                                else:
+                                    data_type = SocketDataType.STRING
+                                node.entries.append(
+                                    {"key": key, "type": data_type, "value": value}
+                                )
+                            if not node.entries:
+                                # Ensure at least one empty entry
+                                node.entries = [
+                                    {
+                                        "key": "",
+                                        "type": SocketDataType.STRING,
+                                        "value": "",
+                                    }
+                                ]
+                            node._populate_table()
+                            node._update_output()
+                elif node_type == "pydantic_schema":
+                    node = PydanticSchemaNode()
+                    # Restore PydanticSchemaNode entries from params
+                    params = node_data.get("params", {})
+                    entries_data = params.get("entries", [])
+                    if entries_data:
+                        node.entries = []
+                        for entry_data in entries_data:
+                            field = entry_data.get("field", "")
+                            type_str = entry_data.get("type", "str")
+                            default_value = entry_data.get("default_value")
+
+                            # Convert type string back to SocketDataType enum
+                            data_type = SocketDataType.from_string(type_str)
+                            node.entries.append(
+                                {
+                                    "field": field,
+                                    "type": data_type,
+                                    "default_value": default_value,
+                                }
+                            )
+                        if not node.entries:
+                            # Ensure at least one empty entry
+                            node.entries = [
+                                {
+                                    "field": "",
+                                    "type": SocketDataType.STRING,
+                                    "default_value": None,
+                                }
+                            ]
+                        node._populate_table()
+                        node._update_node_size()
+                        node._update_output()
                 else:
                     # OpNode - need to get schema
                     schema = self._get_node_schema(node_type)
