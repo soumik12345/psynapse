@@ -4,7 +4,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QGraphicsProxyWidget,
-    QHBoxLayout,
     QHeaderView,
     QPushButton,
     QSizePolicy,
@@ -42,19 +41,28 @@ class DictionaryNode(Node):
 
         # Create table widget
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Key", "Type", "Value"])
+        self.table.setColumnCount(4)  # Delete button, Key, Type, Value
+        self.table.setHorizontalHeaderLabels(["", "Key", "Type", "Value"])
         # Set size policy to prevent expansion beyond container
         self.table.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         # Use minimum sizes instead of fixed sizes to allow dynamic resizing
         self.table.setMinimumWidth(200)
         self.table.setMinimumHeight(80)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        # Set column resize modes
         self.table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeToContents
-        )
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+            0, QHeaderView.Fixed
+        )  # Delete button column
+        self.table.horizontalHeader().setSectionResizeMode(
+            1, QHeaderView.Stretch
+        )  # Key column
+        self.table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeToContents
+        )  # Type column
+        self.table.horizontalHeader().setSectionResizeMode(
+            3, QHeaderView.Stretch
+        )  # Value column
+        # Set delete button column width (smaller than row height)
+        self.table.setColumnWidth(0, 22)
         self.table.verticalHeader().setVisible(False)
         self.table.setShowGrid(True)
         self.table.setAlternatingRowColors(True)
@@ -89,60 +97,6 @@ class DictionaryNode(Node):
 
         self.widget_layout.addWidget(self.table)
 
-        # Create button container
-        self.button_container = QWidget()
-        self.button_layout = QHBoxLayout()
-        self.button_layout.setContentsMargins(0, 0, 0, 0)
-        self.button_layout.setSpacing(8)
-        self.button_layout.setAlignment(Qt.AlignCenter)
-        self.button_container.setLayout(self.button_layout)
-
-        # Create + button
-        self.add_button = QPushButton("+")
-        self.add_button.setFixedSize(30, 30)
-        self.add_button.clicked.connect(self._add_row)
-        self.add_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 15px;
-                font-size: 18px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:pressed {
-                background-color: #3d8b40;
-            }
-        """)
-
-        # Create - button
-        self.remove_button = QPushButton("−")
-        self.remove_button.setFixedSize(30, 30)
-        self.remove_button.clicked.connect(self._remove_row)
-        self.remove_button.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                border: none;
-                border-radius: 15px;
-                font-size: 18px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #da190b;
-            }
-            QPushButton:pressed {
-                background-color: #c62828;
-            }
-        """)
-
-        self.button_layout.addWidget(self.add_button)
-        self.button_layout.addWidget(self.remove_button)
-        self.widget_layout.addWidget(self.button_container)
-
         # Populate table with initial entry
         self._populate_table()
 
@@ -171,13 +125,46 @@ class DictionaryNode(Node):
         # Disconnect cellChanged signal temporarily to avoid recursive updates
         self.table.cellChanged.disconnect(self._on_cell_changed)
 
-        self.table.setRowCount(len(self.entries))
-        for row, entry in enumerate(self.entries):
-            # Key column
-            key_item = QTableWidgetItem(entry["key"])
-            self.table.setItem(row, 0, key_item)
+        # Set row count: entries + 1 for the add button row
+        self.table.setRowCount(len(self.entries) + 1)
 
-            # Type column - use QComboBox
+        # Set row height for all rows
+        row_height = 25
+        button_size = 16  # Smaller button size for better containment
+        for row in range(self.table.rowCount()):
+            self.table.setRowHeight(row, row_height)
+
+        for row, entry in enumerate(self.entries):
+            # Delete button column (column 0)
+            remove_button = QPushButton("−")
+            remove_button.setFixedSize(button_size, button_size)
+            remove_button.clicked.connect(
+                lambda checked=False, r=row: self._remove_row(r)
+            )
+            remove_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #3a3a3a;
+                    color: #ffffff;
+                    border: 1px solid #555555;
+                    border-radius: 3px;
+                    font-size: 12px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #4a4a4a;
+                    border: 1px solid #666666;
+                }
+                QPushButton:pressed {
+                    background-color: #2a2a2a;
+                }
+            """)
+            self.table.setCellWidget(row, 0, remove_button)
+
+            # Key column (column 1)
+            key_item = QTableWidgetItem(entry["key"])
+            self.table.setItem(row, 1, key_item)
+
+            # Type column (column 2) - use QComboBox
             type_combo = QComboBox()
             type_combo.addItem("str", SocketDataType.STRING)
             type_combo.addItem("int", SocketDataType.INT)
@@ -219,12 +206,42 @@ class DictionaryNode(Node):
                     border: 1px solid #444444;
                 }
             """)
-            self.table.setCellWidget(row, 1, type_combo)
+            self.table.setCellWidget(row, 2, type_combo)
 
-            # Value column
+            # Value column (column 3)
             value_str = self._value_to_string(entry["value"], entry["type"])
             value_item = QTableWidgetItem(value_str)
-            self.table.setItem(row, 2, value_item)
+            self.table.setItem(row, 3, value_item)
+
+        # Add "+" button row at the bottom
+        add_row_index = len(self.entries)
+        add_button = QPushButton("+")
+        add_button.setFixedSize(button_size, button_size)
+        add_button.clicked.connect(self._add_row)
+        add_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3a3a3a;
+                color: #ffffff;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #4a4a4a;
+                border: 1px solid #666666;
+            }
+            QPushButton:pressed {
+                background-color: #2a2a2a;
+            }
+        """)
+        self.table.setCellWidget(add_row_index, 0, add_button)
+
+        # Make the add button row cells non-editable (except the button)
+        for col in range(1, 4):
+            empty_item = QTableWidgetItem("")
+            empty_item.setFlags(empty_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(add_row_index, col, empty_item)
 
         # Reconnect cellChanged signal
         self.table.cellChanged.connect(self._on_cell_changed)
@@ -249,14 +266,18 @@ class DictionaryNode(Node):
 
     def _on_cell_changed(self, row: int, column: int):
         """Handle cell value changes."""
-        if column == 0:  # Key column
-            key_item = self.table.item(row, 0)
+        # Ignore changes to the add button row
+        if row >= len(self.entries):
+            return
+
+        if column == 1:  # Key column
+            key_item = self.table.item(row, 1)
             if key_item:
                 self.entries[row]["key"] = key_item.text()
-        elif column == 2:  # Value column
-            value_item = self.table.item(row, 2)
+        elif column == 3:  # Value column
+            value_item = self.table.item(row, 3)
             if value_item:
-                type_combo = self.table.cellWidget(row, 1)
+                type_combo = self.table.cellWidget(row, 2)
                 if type_combo:
                     data_type = type_combo.itemData(type_combo.currentIndex())
                     value_str = value_item.text()
@@ -268,14 +289,18 @@ class DictionaryNode(Node):
 
     def _on_type_changed(self, row: int, index: int):
         """Handle type selection changes."""
-        type_combo = self.table.cellWidget(row, 1)
+        # Ignore changes if row is out of bounds
+        if row >= len(self.entries):
+            return
+
+        type_combo = self.table.cellWidget(row, 2)
         if type_combo:
             new_type = type_combo.itemData(index)
             old_type = self.entries[row]["type"]
             self.entries[row]["type"] = new_type
 
             # Convert value to new type
-            value_item = self.table.item(row, 2)
+            value_item = self.table.item(row, 3)
             if value_item:
                 value_str = value_item.text()
                 self.entries[row]["value"] = self._string_to_value(value_str, new_type)
@@ -295,10 +320,10 @@ class DictionaryNode(Node):
         self._update_widget_sizes()
         self._update_output()
 
-    def _remove_row(self):
-        """Remove the last row from the table."""
-        if len(self.entries) > 1:
-            self.entries.pop()
+    def _remove_row(self, row: int):
+        """Remove a specific row from the table."""
+        if len(self.entries) > 1 and 0 <= row < len(self.entries):
+            self.entries.pop(row)
             self._populate_table()
             self._update_node_size()
             self._update_widget_sizes()
@@ -341,17 +366,15 @@ class DictionaryNode(Node):
         # - Top margin: ~10px
         # - Layout top margin: ~4px
         # - Table header: ~30px
-        # - Table rows: ~25px per row (minimum 1 row)
-        # - Layout spacing: ~8px (between table and buttons)
-        # - Button container: ~38px (30px button + 8px spacing)
+        # - Table rows: ~25px per row (entries + 1 for add button row)
         # - Layout bottom margin: ~4px
         # - Bottom margin: ~10px
         # - Output socket space: ~10px
         min_row_height = 25
-        num_rows = max(1, len(self.entries))
+        num_rows = max(1, len(self.entries) + 1)  # +1 for add button row
         table_content_height = 30 + (num_rows * min_row_height)  # header + rows
 
-        min_height = 30 + 10 + 4 + table_content_height + 8 + 38 + 4 + 10 + 10
+        min_height = 30 + 10 + 4 + table_content_height + 4 + 10 + 10
         min_height = max(
             180, min_height
         )  # Ensure minimum node height (increased for better containment)
@@ -378,11 +401,10 @@ class DictionaryNode(Node):
         # - Title bar: ~30px
         # - Top margin: ~8px
         # - Layout top margin: ~4px
-        # - Button container: ~38px (30px button + 8px spacing)
         # - Layout bottom margin: ~4px
         # - Bottom margin: ~8px
         # - Output socket space: ~10px
-        header_and_margins = 30 + 8 + 4 + 38 + 4 + 8 + 10
+        header_and_margins = 30 + 8 + 4 + 4 + 8 + 10
         max_available_height = self.graphics.height - header_and_margins
         available_height = max(60, max_available_height)
 
@@ -390,9 +412,9 @@ class DictionaryNode(Node):
         container_width = min(
             available_width, self.graphics.width - total_horizontal_margin
         )
-        # Container height = table height + button container + layout spacing
+        # Container height = table height
         container_height = min(
-            available_height + 38 + 8,  # table + buttons + spacing
+            available_height,
             self.graphics.height - 30 - 10,  # node height - title - bottom margin
         )
 
@@ -401,11 +423,15 @@ class DictionaryNode(Node):
         self.widget_container.setMaximumSize(container_width, container_height)
 
         # Update table size - ensure it fits within container
-        # Account for layout margins (4px top/bottom) and spacing (8px to buttons)
+        # Account for layout margins (4px top/bottom)
         table_width = container_width - 8  # Account for layout margins
         table_height = available_height
         self.table.setFixedSize(table_width, table_height)
         self.table.setMaximumSize(table_width, table_height)
+
+        # Update delete button column width to accommodate button with padding
+        button_size = 16
+        self.table.setColumnWidth(0, 22)  # Slightly wider than button for padding
 
         # Center the widget container horizontally in the node
         widget_x = max(0, (self.graphics.width - container_width) / 2)
