@@ -9,6 +9,7 @@ from collections import deque
 from io import BytesIO
 from typing import Any, Callable, Dict, Generator, List, Optional
 
+import pydantic
 import requests
 import rich
 from PIL import Image
@@ -463,6 +464,59 @@ class GraphExecutor:
                 result = {}
             self.node_cache[node_id] = result
             return result
+
+        # Special handling for PydanticSchemaNode - recreate model from entries
+        if node["type"] == "pydantic_schema":
+            try:
+                params = node.get("params", {})
+                entries = params.get("entries", [])
+
+                # Map type strings to Python types
+                type_map = {
+                    "str": str,
+                    "int": int,
+                    "float": float,
+                    "bool": bool,
+                    "list": list,
+                    "dict": dict,
+                    "any": Any,
+                }
+
+                schema_dict = {}
+                for entry in entries:
+                    field_name = entry.get("field", "").strip()
+                    if field_name:
+                        type_str = entry.get("type", "str")
+                        python_type = type_map.get(type_str, str)
+                        default_value = entry.get("default_value")
+
+                        # Format: { field_name: type } or { field_name: (type, default_value) }
+                        if default_value is not None:
+                            schema_dict[field_name] = (python_type, default_value)
+                        else:
+                            schema_dict[field_name] = python_type
+
+                # Create Pydantic model
+                if schema_dict:
+                    model_type = pydantic.create_model("DefaultSchema", **schema_dict)
+                else:
+                    # Empty schema - create a model with no fields
+                    model_type = pydantic.create_model("DefaultSchema")
+
+                # Serialize the model type as a special dict so frontend can identify it
+                # We'll include the JSON schema so frontend can display it
+                result = {
+                    "__type__": "PydanticModelType",
+                    "model_name": model_type.__name__,
+                    "json_schema": model_type.model_json_schema(),
+                }
+                self.node_cache[node_id] = result
+                return result
+            except Exception as e:
+                # If model creation fails, return None
+                result = None
+                self.node_cache[node_id] = result
+                return result
 
         # Get input values from already-executed nodes (thanks to topological sort)
         inputs = self._get_node_inputs(node_id)

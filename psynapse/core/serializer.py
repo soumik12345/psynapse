@@ -8,6 +8,7 @@ from psynapse.nodes.image_node import ImageNode
 from psynapse.nodes.list_node import ListNode
 from psynapse.nodes.object_node import ObjectNode
 from psynapse.nodes.ops import OpNode
+from psynapse.nodes.pydantic_schema_node import PydanticSchemaNode
 from psynapse.nodes.text_node import TextNode
 from psynapse.nodes.view_node import ViewNode
 
@@ -24,6 +25,7 @@ class GraphSerializer:
         ViewNode: "view",
         ListNode: "list",
         DictionaryNode: "dictionary",
+        PydanticSchemaNode: "pydantic_schema",
     }
 
     @staticmethod
@@ -69,7 +71,11 @@ class GraphSerializer:
                     "name": socket.label.lower(),
                 }
                 # Include value for output sockets that have a preset value (e.g., ObjectNode)
-                if socket.value is not None:
+                # Skip PydanticSchemaNode - its value is a type object that can't be serialized
+                # The backend will recreate the model from params
+                if socket.value is not None and not isinstance(
+                    node, PydanticSchemaNode
+                ):
                     socket_data["value"] = socket.value
                 output_sockets.append(socket_data)
 
@@ -113,6 +119,22 @@ class GraphSerializer:
             if isinstance(node, TextNode):
                 node_data["params"] = {
                     "return_as": node.return_as,
+                }
+
+            # Include schema entries for PydanticSchemaNode instances
+            if isinstance(node, PydanticSchemaNode):
+                # Serialize entries so backend can recreate the model
+                entries = []
+                for entry in node.entries:
+                    entries.append(
+                        {
+                            "field": entry["field"],
+                            "type": entry["type"].value,  # Convert enum to string
+                            "default_value": entry["default_value"],
+                        }
+                    )
+                node_data["params"] = {
+                    "entries": entries,
                 }
 
             serialized_nodes.append(node_data)

@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Any
 
+import pydantic
 from PIL import Image
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap
@@ -678,6 +679,13 @@ class ViewNode(Node):
             print(f"Error deserializing image: {e}")
             return None
 
+    def _is_pydantic_model_type(self, value: Any) -> bool:
+        """Check if value is a Pydantic model type (class)."""
+        try:
+            return isinstance(value, type) and issubclass(value, pydantic.BaseModel)
+        except TypeError:
+            return False
+
     def set_value(self, value: Any):
         """Set and display a value (used by backend execution results).
 
@@ -689,13 +697,27 @@ class ViewNode(Node):
             # Deserialize the image
             value = self._deserialize_image(value)
 
+        # Check if value is a serialized Pydantic model type from backend
+        is_serialized_pydantic = (
+            isinstance(value, dict) and value.get("__type__") == "PydanticModelType"
+        )
+        if is_serialized_pydantic:
+            # Extract JSON schema from serialized model
+            schema = value.get("json_schema", {})
+            value = schema  # Use schema dict for display
+
         # Check if the value is a PIL Image
         is_pil_image = isinstance(value, Image.Image)
+
+        # Check if the value is a Pydantic model type (frontend execution)
+        is_pydantic_model = self._is_pydantic_model_type(value)
 
         # Update display only if value changed or showing different view type
         is_dict = isinstance(value, dict) and len(value) > 0
         is_list_or_tuple = isinstance(value, (list, tuple)) and len(value) > 0
-        should_show_tree = is_dict or is_list_or_tuple
+        should_show_tree = (
+            is_dict or is_list_or_tuple or is_pydantic_model or is_serialized_pydantic
+        )
 
         should_update = (
             (value != self.cached_value)
@@ -713,8 +735,17 @@ class ViewNode(Node):
             elif is_pil_image:
                 # Show PIL Image in image view
                 self._show_image_view(value)
+            elif is_pydantic_model:
+                # Show Pydantic model JSON schema in tree view
+                try:
+                    schema = value.model_json_schema()
+                    self._show_tree_view(schema)
+                except Exception:
+                    # Fallback to text view if schema generation fails
+                    display_str = f"Pydantic Model: {value.__name__}"
+                    self._show_text_view(display_str)
             elif isinstance(value, dict) and len(value) > 0:
-                # Show dictionary in tree view
+                # Show dictionary in tree view (including JSON schema from backend)
                 self._show_tree_view(value)
             elif isinstance(value, (list, tuple)) and len(value) > 0:
                 # Show lists and tuples in tree view
