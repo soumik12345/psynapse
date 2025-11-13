@@ -43,8 +43,8 @@ Simply run the command `psynapse` in the terminal, this would launch the Psynaps
 
 ## Sample Workflows
 
-- [Creating a simple OpenAI LLM Response](https://geekyrakshit.dev/psynapse/sample-workflows/openai-llm-response/)
-- [Creating a simple OpenAI Vision Response](https://geekyrakshit.dev/psynapse/sample-workflows/openai-vision-response/)
+- [OpenAI Workflows](https://geekyrakshit.dev/psynapse/sample-workflows/openai-workflows/)
+- [LiteLLM Workflows](https://geekyrakshit.dev/psynapse/sample-workflows/litellm-workflows/)
 
 ## Acknowledgments
 
