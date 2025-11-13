@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPen
@@ -40,6 +40,7 @@ class Socket:
         label: str = "",
         data_type: SocketDataType = SocketDataType.ANY,
         options: Optional[List[str]] = None,
+        default_value: Optional[Any] = None,
     ):
         self.node = node
         self.index = index
@@ -48,7 +49,11 @@ class Socket:
         self.data_type = data_type
         self.options = options  # For Literal types with specific allowed values
         self.edges = []
-        self.value = data_type.get_default_value()
+        # Use provided default_value if available, otherwise use type-level default
+        if default_value is not None:
+            self.value = default_value
+        else:
+            self.value = data_type.get_default_value()
 
         # Create graphics item
         self.graphics = SocketGraphics(self)
@@ -229,7 +234,11 @@ class Socket:
         layout.setAlignment(Qt.AlignCenter)
 
         widget = QCheckBox()
-        widget.setChecked(bool(self.value) if self.value else False)
+        # Handle bool values correctly: if self.value is explicitly False, use False; otherwise convert to bool
+        if isinstance(self.value, bool):
+            widget.setChecked(self.value)
+        else:
+            widget.setChecked(bool(self.value) if self.value else False)
         widget.stateChanged.connect(self._on_bool_changed)
 
         widget.setStyleSheet("""
@@ -266,9 +275,13 @@ class Socket:
         for option in self.options:
             widget.addItem(str(option))
 
-        # Set default value to first option
-        if self.options:
-            self.value = str(self.options[0])
+        # Set default value: use self.value if set, otherwise first option
+        if self.value and str(self.value) in [str(opt) for opt in self.options]:
+            widget.setCurrentText(str(self.value))
+        elif self.options:
+            default_val = str(self.options[0])
+            widget.setCurrentText(default_val)
+            self.value = default_val
 
         widget.currentTextChanged.connect(self._on_dropdown_changed)
 

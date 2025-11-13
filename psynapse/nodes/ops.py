@@ -59,9 +59,22 @@ class OpNode(Node):
             else:
                 socket_label = param_name
 
-            # Check if this parameter has options (for Literal types)
+            # Build input specification tuple
+            # Format: (label, type) or (label, type, options) or (label, type, options, default_value) or (label, type, default_value)
             if "options" in param:
-                inputs.append((socket_label, param_type, param["options"]))
+                if "default_value" in param:
+                    inputs.append(
+                        (
+                            socket_label,
+                            param_type,
+                            param["options"],
+                            param["default_value"],
+                        )
+                    )
+                else:
+                    inputs.append((socket_label, param_type, param["options"]))
+            elif "default_value" in param:
+                inputs.append((socket_label, param_type, param["default_value"]))
             else:
                 inputs.append((socket_label, param_type))
 
@@ -80,6 +93,9 @@ class OpNode(Node):
         self.variadic_button_widgets = {}
         if self.variadic_params:
             self._create_variadic_controls()
+
+        # Always update node size after initialization to ensure proper scaling
+        self._update_node_size()
 
     def _map_type(self, type_str: str) -> SocketDataType:
         """Map schema type string to SocketDataType.
@@ -180,11 +196,55 @@ class OpNode(Node):
         self._update_variadic_button_positions()
 
     def _update_node_size(self):
-        """Update node size based on number of sockets."""
+        """Update node size based on number of sockets and content."""
         socket_spacing = 30
         min_height = 100
-        calculated_height = 40 + len(self.input_sockets) * socket_spacing + 60
+
+        # Calculate height based on both input and output sockets
+        max_socket_count = max(len(self.input_sockets), len(self.output_sockets))
+        calculated_height = 40 + max_socket_count * socket_spacing + 60
+
+        # Ensure minimum height
         self.graphics.height = max(min_height, calculated_height)
+
+        # Calculate dynamic width based on labels and widgets
+        # First, ensure labels are created so we can measure them
+        for socket in self.input_sockets:
+            if socket.label and not socket.label_item:
+                socket._create_label()
+
+        # Measure the longest label
+        max_label_width = 0
+        for socket in self.input_sockets:
+            if socket.label_item:
+                label_width = socket.label_item.boundingRect().width()
+                max_label_width = max(max_label_width, label_width)
+
+        # Calculate required width:
+        # - Socket radius: 8px
+        # - Socket to label spacing: 7px (15 - 8)
+        # - Label width: max_label_width
+        # - Label to widget spacing: 5px
+        # - Widget width: 80px (typical widget width)
+        # - Right margin: 10px
+        # - Additional space for variadic buttons if present: 54px
+        base_width = 8 + 7 + max_label_width + 5 + 80 + 10
+
+        # Add space for variadic buttons if present
+        if self.variadic_params:
+            base_width += 54
+
+        # Also check title width
+        if self.graphics.title_item:
+            title_width = self.graphics.title_item.boundingRect().width()
+            # Title needs padding: edge_size (10px) on each side
+            title_required_width = title_width + 20
+            base_width = max(base_width, title_required_width)
+
+        # Set width with minimum constraint
+        min_width = 180
+        self.graphics.width = max(min_width, base_width)
+
         self.graphics.setRect(0, 0, self.graphics.width, self.graphics.height)
         self._position_sockets()
         if self.variadic_params:
