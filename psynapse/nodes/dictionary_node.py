@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from PySide6.QtCore import Qt
@@ -127,6 +128,14 @@ class DictionaryNode(Node):
         # Disconnect cellChanged signal temporarily to avoid recursive updates
         self.table.cellChanged.disconnect(self._on_cell_changed)
 
+        # Clear all existing widgets before repopulating
+        for row in range(self.table.rowCount()):
+            for col in range(self.table.columnCount()):
+                widget = self.table.cellWidget(row, col)
+                if widget:
+                    self.table.removeCellWidget(row, col)
+                    widget.deleteLater()
+
         # Set row count: entries + 1 for the add button row
         self.table.setRowCount(len(self.entries) + 1)
 
@@ -172,6 +181,8 @@ class DictionaryNode(Node):
             type_combo.addItem("int", SocketDataType.INT)
             type_combo.addItem("float", SocketDataType.FLOAT)
             type_combo.addItem("bool", SocketDataType.BOOL)
+            type_combo.addItem("list", SocketDataType.LIST)
+            type_combo.addItem("dict", SocketDataType.DICT)
             # Find the index matching the entry's type
             current_index = 0
             for i in range(type_combo.count()):
@@ -272,6 +283,14 @@ class DictionaryNode(Node):
             return ""
         if data_type == SocketDataType.BOOL:
             return "True" if value else "False"
+        if data_type == SocketDataType.LIST:
+            if isinstance(value, list):
+                return json.dumps(value)
+            return json.dumps([])
+        if data_type == SocketDataType.DICT:
+            if isinstance(value, dict):
+                return json.dumps(value)
+            return json.dumps({})
         return str(value)
 
     def _string_to_value(self, value_str: str, data_type: SocketDataType) -> Any:
@@ -280,7 +299,27 @@ class DictionaryNode(Node):
             return data_type.get_default_value()
 
         try:
-            return data_type.validate(value_str)
+            # For list and dict, try JSON parsing first
+            if data_type == SocketDataType.LIST:
+                if value_str.strip():
+                    try:
+                        parsed = json.loads(value_str)
+                        if isinstance(parsed, list):
+                            return parsed
+                    except json.JSONDecodeError:
+                        pass
+                return data_type.get_default_value()
+            elif data_type == SocketDataType.DICT:
+                if value_str.strip():
+                    try:
+                        parsed = json.loads(value_str)
+                        if isinstance(parsed, dict):
+                            return parsed
+                    except json.JSONDecodeError:
+                        pass
+                return data_type.get_default_value()
+            else:
+                return data_type.validate(value_str)
         except Exception:
             return data_type.get_default_value()
 
