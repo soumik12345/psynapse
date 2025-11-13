@@ -1,0 +1,338 @@
+.App {
+  width: 100%;
+  height: 100%;
+  background-color: #1e1e1e;
+}
+
+/* Flow Editor Container */
+.flow-editor-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #404040;
+  gap: 20px;
+}
+
+.toolbar h1 {
+  font-size: 20px;
+  color: #ffffff;
+  margin: 0;
+  flex: 1;
+}
+
+.execute-button {
+  padding: 8px 24px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.execute-button:hover {
+  background-color: #45a049;
+}
+
+.execute-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 14px;
+  padding: 8px 12px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 4px;
+  border: 1px solid #ff6b6b;
+}
+
+/* Editor Content */
+.editor-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Node Library */
+.node-library {
+  width: 280px;
+  background-color: #252526;
+  border-right: 1px solid #404040;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.node-library h3 {
+  color: #ffffff;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.node-category {
+  margin-bottom: 24px;
+}
+
+.node-category h4 {
+  color: #a0a0a0;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.node-library-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.node-library-item:hover {
+  background-color: #3a3a3a;
+  border-color: #4CAF50;
+  transform: translateX(4px);
+}
+
+.node-library-item:active {
+  cursor: grabbing;
+}
+
+.node-icon {
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+.node-info {
+  flex: 1;
+}
+
+.node-name {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.node-description {
+  color: #a0a0a0;
+  font-size: 12px;
+}
+
+/* Flow Wrapper */
+.flow-wrapper {
+  flex: 1;
+  height: 100%;
+}
+
+/* React Flow Overrides */
+.react-flow {
+  background-color: #1e1e1e;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__controls {
+  background-color: #2d2d2d;
+  border: 1px solid #404040;
+}
+
+.react-flow__controls-button {
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #404040;
+  color: #ffffff;
+}
+
+.react-flow__controls-button:hover {
+  background-color: #3a3a3a;
+}
+
+.react-flow__minimap {
+  background-color: #2d2d2d;
+  border: 1px solid #404040;
+}
+
+.react-flow__edge-path {
+  stroke: #4CAF50;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #66BB6A;
+}
+
+/* Custom Nodes */
+.basic-op-node,
+.view-node {
+  background-color: #2d2d2d;
+  border: 2px solid #404040;
+  border-radius: 8px;
+  min-width: 180px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s;
+}
+
+.basic-op-node:hover,
+.view-node:hover {
+  border-color: #4CAF50;
+}
+
+.node-header {
+  padding: 10px 12px;
+  background-color: #3a3a3a;
+  border-bottom: 1px solid #404040;
+  border-radius: 6px 6px 0 0;
+}
+
+.node-title {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.node-body {
+  padding: 12px;
+}
+
+.socket-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.socket-row:last-child {
+  margin-bottom: 0;
+}
+
+.socket-label {
+  color: #a0a0a0;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.socket-input {
+  flex: 1;
+  padding: 6px 8px;
+  background-color: #1e1e1e;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 12px;
+  margin-left: 8px;
+  outline: none;
+}
+
+.socket-input:focus {
+  border-color: #4CAF50;
+}
+
+.socket-input::placeholder {
+  color: #666;
+}
+
+/* Socket Handles */
+.socket-handle {
+  width: 12px;
+  height: 12px;
+  background-color: #4CAF50;
+  border: 2px solid #2d2d2d;
+  border-radius: 50%;
+}
+
+.socket-handle.input-handle {
+  left: -7px;
+}
+
+.socket-handle.output-handle {
+  right: -7px;
+}
+
+.socket-handle:hover {
+  background-color: #66BB6A;
+  transform: scale(1.2);
+}
+
+/* View Node Specific */
+.view-node {
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.view-content {
+  padding: 12px;
+  background-color: #1e1e1e;
+  border-radius: 0 0 6px 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.view-placeholder {
+  color: #666;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.view-value {
+  color: #ffffff;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  word-break: break-word;
+}
+
+.view-json {
+  color: #ffffff;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.view-error {
+  color: #ff6b6b;
+  font-size: 12px;
+  padding: 8px;
+  background-color: rgba(255, 107, 107, 0.1);
+  border-radius: 4px;
+  border: 1px solid #ff6b6b;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
