@@ -1,13 +1,10 @@
 from typing import Any, Dict, List, Literal
 
-import rich
-
 
 def LLM_Message(
     role: Literal["user", "assistant", "system", "developer"],
     content: list[dict[str, Any]],
 ) -> dict[str, Any | dict[str, Any]]:
-    rich.print(content)
     return {
         "role": role,
         "content": content,
@@ -15,7 +12,12 @@ def LLM_Message(
 
 
 def create_openai_reponse(
-    model: str, messages: str | list[dict[str, Any]], schema: dict | None = None
+    model: str,
+    messages: str | list[dict[str, Any]],
+    schema: dict | None = None,
+    base_url: str = "https://api.openai.com/v1",
+    api_key_secret: str = "OPENAI_API_KEY",
+    enable_image_generation: bool = False,
 ) -> Any:
     """
     Create an OpenAI response.
@@ -23,17 +25,24 @@ def create_openai_reponse(
     Args:
         model: The model to use
         messages: The messages to send to the model, can be a string or a list of LLM messages
+        schema: The schema to use for the response
+        base_url: The base URL to use for the API
+        api_key_secret: The secret to use for the API key
+        enable_image_generation: Whether to enable image generation
 
     Returns:
         The response from the model
     """
+    import base64
     import os
+    from io import BytesIO
 
     from openai import OpenAI
+    from PIL import Image
     from pydantic import BaseModel, create_model
 
     def json_schema_type_to_py_type(schema: dict) -> Any:
-        """Very small JSON-schema → Python type mapper."""
+        """JSON-schema → Python type mapper."""
         t = schema.get("type")
 
         if t == "string":
@@ -76,16 +85,13 @@ def create_openai_reponse(
         return schema
 
     # Check if API key is available in environment
-    api_key_present = "OPENAI_API_KEY" in os.environ
+    api_key_present = api_key_secret in os.environ
     if not api_key_present:
-        raise ValueError("OPENAI_API_KEY is not set in the environment")
-    client = OpenAI()
+        raise ValueError(f"{api_key_secret} is not set in the environment")
+    client = OpenAI(base_url=base_url, api_key=os.environ[api_key_secret])
     if schema:
         text_format = pydantic_model_from_schema_dict(schema)
         messages = [messages] if isinstance(messages, dict) else messages
-        rich.print("[bold green]Creating response with schema...[/bold green]")
-        rich.print(text_format.model_json_schema())
-        rich.print(messages)
         response = client.responses.parse(
             text_format=text_format, model=model, input=messages, stream=False
         )
@@ -95,9 +101,30 @@ def create_openai_reponse(
         }
     else:
         messages = [messages] if isinstance(messages, dict) else messages
+        kwargs = {}
+        if enable_image_generation:
+            kwargs["tools"] = [{"type": "image_generation"}]
         response = client.responses.create(
-            model=model, input=messages, stream=False
-        ).model_dump()
+            model=model, input=messages, stream=False, **kwargs
+        )
+        if enable_image_generation:
+            image = Image.open(
+                BytesIO(
+                    base64.b64decode(
+                        [
+                            output.result
+                            for output in response.output
+                            if output.type == "image_generation_call"
+                        ][0]
+                    )
+                )
+            )
+            response = {
+                "response": response.model_dump(),
+                "image": image,
+            }
+        else:
+            response = response.model_dump()
     return response
 
 

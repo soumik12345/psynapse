@@ -22,6 +22,7 @@ psynapse-backend = "psynapse.__main__:psynapse_backend_cli"
 
 [project.optional-dependencies]
 llm = [
+    "google-genai>=1.50.0",
     "litellm>=1.79.1",
     "openai>=2.6.1",
     "pydantic>=2.12.3",
