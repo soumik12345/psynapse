@@ -841,12 +841,11 @@ class PsynapseEditor(QMainWindow):
                             type_str = entry_data.get("type", "str")
                             default_value = entry_data.get("default_value")
 
-                            # Convert type string back to SocketDataType enum
-                            data_type = SocketDataType.from_string(type_str)
+                            # Keep type as string (PydanticSchemaNode expects string types like "str", "list[str]", etc.)
                             node.entries.append(
                                 {
                                     "field": field,
-                                    "type": data_type,
+                                    "type": type_str,
                                     "default_value": default_value,
                                 }
                             )
@@ -855,13 +854,18 @@ class PsynapseEditor(QMainWindow):
                             node.entries = [
                                 {
                                     "field": "",
-                                    "type": SocketDataType.STRING,
+                                    "type": "str",
                                     "default_value": None,
                                 }
                             ]
-                        node._populate_table()
-                        node._update_node_size()
-                        node._update_output()
+                    # Restore schema_name from params
+                    schema_name = params.get("schema_name")
+                    if schema_name:
+                        node.schema_name = schema_name
+                        node.schema_name_input.setText(schema_name)
+                    node._populate_table()
+                    node._update_node_size()
+                    node._update_output()
                 else:
                     # OpNode - need to get schema
                     schema = self._get_node_schema(node_type)
