@@ -29,11 +29,16 @@ class GraphSerializer:
     }
 
     @staticmethod
-    def serialize_graph(nodes: List[Node]) -> Dict[str, Any]:
+    def serialize_graph(
+        nodes: List[Node], include_output_values: bool = True
+    ) -> Dict[str, Any]:
         """Serialize a list of nodes into a graph structure.
 
         Args:
             nodes: List of Node instances from the editor
+            include_output_values: If True, include output socket values in serialization.
+                                  If False, exclude output socket values (for saving to file).
+                                  Defaults to True for backend execution compatibility.
 
         Returns:
             Dictionary with 'nodes' and 'edges' keys
@@ -73,8 +78,11 @@ class GraphSerializer:
                 # Include value for output sockets that have a preset value (e.g., ObjectNode)
                 # Skip PydanticSchemaNode - its value is a type object that can't be serialized
                 # The backend will recreate the model from params
-                if socket.value is not None and not isinstance(
-                    node, PydanticSchemaNode
+                # Only include values if include_output_values is True
+                if (
+                    include_output_values
+                    and socket.value is not None
+                    and not isinstance(node, PydanticSchemaNode)
                 ):
                     socket_data["value"] = socket.value
                 output_sockets.append(socket_data)

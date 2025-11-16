@@ -444,8 +444,10 @@ class PsynapseEditor(QMainWindow):
             return
 
         try:
-            # Serialize the graph
-            graph_data = GraphSerializer.serialize_graph(self.nodes)
+            # Serialize the graph without output socket values for saving
+            graph_data = GraphSerializer.serialize_graph(
+                self.nodes, include_output_values=False
+            )
 
             # Save to file
             with open(file_path, "w") as f:
