@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QPen
@@ -40,6 +40,7 @@ class Socket:
         label: str = "",
         data_type: SocketDataType = SocketDataType.ANY,
         options: Optional[List[str]] = None,
+        default_value: Optional[Any] = None,
     ):
         self.node = node
         self.index = index
@@ -48,7 +49,11 @@ class Socket:
         self.data_type = data_type
         self.options = options  # For Literal types with specific allowed values
         self.edges = []
-        self.value = data_type.get_default_value()
+        # Use custom default value if provided, otherwise use type default
+        if default_value is not None:
+            self.value = default_value
+        else:
+            self.value = data_type.get_default_value()
 
         # Create graphics item
         self.graphics = SocketGraphics(self)
@@ -125,7 +130,8 @@ class Socket:
         widget = QSpinBox()
         widget.setMinimum(-999999)
         widget.setMaximum(999999)
-        widget.setValue(int(self.value) if self.value else 0)
+        # Use the socket's value which already has the custom default applied
+        widget.setValue(int(self.value) if self.value is not None else 0)
         widget.setFixedWidth(80)
         widget.setFixedHeight(26)
         widget.setAlignment(Qt.AlignCenter)
@@ -162,7 +168,8 @@ class Socket:
         widget.setMaximum(999999.0)
         widget.setDecimals(4)
         widget.setSingleStep(0.1)
-        widget.setValue(float(self.value) if self.value else 0.0)
+        # Use the socket's value which already has the custom default applied
+        widget.setValue(float(self.value) if self.value is not None else 0.0)
         widget.setFixedWidth(80)
         widget.setFixedHeight(26)
         widget.setAlignment(Qt.AlignCenter)
@@ -196,7 +203,10 @@ class Socket:
         """Create string input widget."""
         widget = QLineEdit()
         widget.setPlaceholderText("Enter text...")
-        widget.setText(str(self.value) if self.value else "")
+        # Use the socket's value which already has the custom default applied
+        widget.setText(
+            str(self.value) if self.value is not None and self.value != "" else ""
+        )
         widget.setFixedWidth(80)
         widget.setFixedHeight(26)
         widget.setAlignment(Qt.AlignCenter)
@@ -229,7 +239,8 @@ class Socket:
         layout.setAlignment(Qt.AlignCenter)
 
         widget = QCheckBox()
-        widget.setChecked(bool(self.value) if self.value else False)
+        # Use the socket's value which already has the custom default applied
+        widget.setChecked(bool(self.value) if self.value is not None else False)
         widget.stateChanged.connect(self._on_bool_changed)
 
         widget.setStyleSheet("""

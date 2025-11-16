@@ -109,6 +109,12 @@ def generate_node_schema_from_python_function(func: callable) -> Dict[str, Any]:
             if literal_values:
                 param_dict["options"] = literal_values
 
+            # Extract default value if it exists
+            if param.default != inspect.Parameter.empty:
+                # Only capture defaults for primitive types to avoid serialization issues
+                if isinstance(param.default, (int, float, str, bool)):
+                    param_dict["default"] = param.default
+
             params.append(param_dict)
 
     # Build returns list

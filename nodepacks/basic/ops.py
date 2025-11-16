@@ -185,3 +185,46 @@ def sum_numbers(numbers: list) -> float:
         else:
             numeric_values.append(float(num) if num is not None else 0)
     return sum(numeric_values)
+
+
+def add_with_defaults(x: float = 5.0, y: float = 3.0) -> float:
+    """
+    Add two numbers with default values.
+
+    Args:
+        x: The first number (default: 5.0)
+        y: The second number (default: 3.0)
+
+    Returns:
+        The sum of x and y
+    """
+    return x + y
+
+
+def multiply_with_defaults(a: int = 10, b: int = 2) -> int:
+    """
+    Multiply two integers with default values.
+
+    Args:
+        a: The first integer (default: 10)
+        b: The second integer (default: 2)
+
+    Returns:
+        The product of a and b
+    """
+    return a * b
+
+
+def greet_with_default(name: str = "World", excited: bool = True) -> str:
+    """
+    Create a greeting message with default values.
+
+    Args:
+        name: The name to greet (default: "World")
+        excited: Whether to use exclamation mark (default: True)
+
+    Returns:
+        A greeting message
+    """
+    suffix = "!" if excited else "."
+    return f"Hello, {name}{suffix}"

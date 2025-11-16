@@ -61,9 +61,22 @@ class OpNode(Node):
 
             # Check if this parameter has options (for Literal types)
             if "options" in param:
-                inputs.append((socket_label, param_type, param["options"]))
+                # Format: (label, type, options, default)
+                default_value = param.get("default")
+                if default_value is not None:
+                    inputs.append(
+                        (socket_label, param_type, param["options"], default_value)
+                    )
+                else:
+                    inputs.append((socket_label, param_type, param["options"]))
             else:
-                inputs.append((socket_label, param_type))
+                # Check if parameter has a default value
+                default_value = param.get("default")
+                if default_value is not None:
+                    # Format: (label, type, options, default) where options is None
+                    inputs.append((socket_label, param_type, None, default_value))
+                else:
+                    inputs.append((socket_label, param_type))
 
         # Convert schema returns to output socket specifications
         outputs = []
@@ -238,7 +251,7 @@ class OpNode(Node):
 
         # Create new socket
         socket = Socket(
-            self, insert_index, SocketType.INPUT, socket_label, socket_type, None
+            self, insert_index, SocketType.INPUT, socket_label, socket_type, None, None
         )
 
         # Insert into socket list at the correct position

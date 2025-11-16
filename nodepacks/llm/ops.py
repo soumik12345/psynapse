@@ -15,7 +15,11 @@ def LLM_Message(
 
 
 def create_openai_reponse(
-    model: str, messages: str | list[dict[str, Any]], schema: dict | None = None
+    model: str,
+    messages: str | list[dict[str, Any]],
+    schema: dict | None = None,
+    base_url: str = "https://api.openai.com/v1",
+    api_key_secret_name: str = "OPENAI_API_KEY",
 ) -> Any:
     """
     Create an OpenAI response.
@@ -23,6 +27,9 @@ def create_openai_reponse(
     Args:
         model: The model to use
         messages: The messages to send to the model, can be a string or a list of LLM messages
+        schema: The schema to use for the response
+        base_url: The base URL to use for the API
+        api_key_secret_name: The name of the environment variable to use for the API key
 
     Returns:
         The response from the model
@@ -76,10 +83,10 @@ def create_openai_reponse(
         return schema
 
     # Check if API key is available in environment
-    api_key_present = "OPENAI_API_KEY" in os.environ
+    api_key_present = api_key_secret_name in os.environ
     if not api_key_present:
-        raise ValueError("OPENAI_API_KEY is not set in the environment")
-    client = OpenAI()
+        raise ValueError(f"{api_key_secret_name} is not set in the environment")
+    client = OpenAI(base_url=base_url, api_key=os.environ.get(api_key_secret_name))
     if schema:
         text_format = pydantic_model_from_schema_dict(schema)
         messages = [messages] if isinstance(messages, dict) else messages

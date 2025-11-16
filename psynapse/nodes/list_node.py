@@ -123,7 +123,7 @@ class ListNode(Node):
         # Create new socket with index matching its position in the list
         new_index = len(self.input_sockets)
         socket = Socket(
-            self, new_index, SocketType.INPUT, "Item", SocketDataType.ANY, None
+            self, new_index, SocketType.INPUT, "Item", SocketDataType.ANY, None, None
         )
 
         # Add to list
