@@ -1,20 +1,25 @@
 [project]
-name = "psynapse"
+name = "psynapse_backend"
 dynamic = ["version"]
 description = "A node-based UI editor using PySide6 with FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "aiohttp>=3.13.1",
-    "fastapi[all]>=0.120.1",
-    "pyside6>=6.10.0",
-    "rich>=14.2.0",
-    "sse-starlette>=2.1.3",
+    "fastapi[all]>=0.121.2",
+    "pydantic>=2.12.4",
+    "python-multipart>=0.0.20",
+    "typer>=0.20.0",
 ]
 
 [project.scripts]
-psynapse = "psynapse.__main__:run_psynapse_editor"
-psynapse-backend = "psynapse.__main__:run_psynapse_backend"
+psynapse-backend = "psynapse_backend.main:cli"
+
+[project.optional-dependencies]
+llm = [
+    "litellm>=1.79.1",
+    "openai>=2.6.1",
+    "pydantic>=2.12.3",
+]
 
 [dependency-groups]
 dev = [
@@ -23,8 +28,6 @@ dev = [
     "isort>=5.13.2",
     "black>=24.10.0",
     "ruff>=0.6.9",
-    "textual-dev>=1.7.0",
-    "openai>=1.108.2",
     "pytest-anyio>=0.0.0",
     "trio>=0.31.0",
 ]
@@ -56,7 +59,7 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build.targets.wheel]
-packages = ["psynapse"]
+packages = ["psynapse_backend"]
 
 [tool.ruff]
 target-version = "py312"
@@ -65,7 +68,7 @@ target-version = "py312"
 select = ["I", "F401"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["psynapse"]
+known-first-party = ["psynapse_backend"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 combine-as-imports = true
 

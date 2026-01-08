@@ -1,7 +1,7 @@
 site_name: Psynapse
-repo_name: soumik12345/psynapse
-repo_url: https://github.com/soumik12345/psynapse
-edit_uri: https://github.com/soumik12345/psynapse/tree/main/docs
+repo_name: soumik12345/psynapse-web
+repo_url: https://github.com/soumik12345/psynapse-web
+edit_uri: https://github.com/soumik12345/psynapse-web/tree/main/docs
 
 theme:
   name: material
@@ -27,6 +27,7 @@ theme:
     - navigation.tabs
 
 markdown_extensions:
+  - attr_list
   - admonition
   # Code syntax highlighting with line numbers and anchors
   - pymdownx.highlight:
@@ -50,6 +51,9 @@ markdown_extensions:
   - pymdownx.tabbed:
       # Uses an alternative styling for tabs
       alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search
@@ -69,11 +73,22 @@ plugins:
             docstring_style: google
             # Controls the order of members (by source order in this case)
             members_order: source
-            # Controls whether to sort members alphabetically
-            sort_members: false
+            extra:
+              # Controls whether to sort members alphabetically
+              sort_members: false
 
 nav:
   - Home: index.md
-  - Implementation Details:
-    - Architecture: implementation-details/architecture.md
-    - Backend: implementation-details/backend.md
+  - Guide:
+    - Quick Start: guides/quick-start.md
+    - Architecture: guides/architecture.md
+    - Progress Nodes: guides/progress-nodes.md
+  - API Reference:
+    - Backend:
+      - Graph Executor: backend/executor.md
+      - Schema Extractor: backend/schema_extractor.md
+    - Frontend:
+      - Components: frontend/components.md
+      - Hooks: frontend/hooks.md
+      - Utilities: frontend/utils.md
+      - Types: frontend/types.md
