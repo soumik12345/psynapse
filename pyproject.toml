@@ -39,6 +39,7 @@ docs = [
     "mkdocs-minify-plugin>=0.8.0",
     "mkdocs-glightbox>=0.4.0",
     "mkdocs-jupyter>=0.25.0",
+    "mkdocs-panzoom-plugin",
     "jupyter>=1.1.1",
 ]
 build = [

@@ -1,58 +1,74 @@
 # Psynapse Quick Start Guide
 
-## Install Psynapse
+## 🚀 Get Started in 2 Ways
 
-First, clone the repository and navigate to the project directory:
+### Option 1: Docker Compose (Recommended)
+
+The fastest way to get Psynapse running:
 
 ```bash
-git clone https://github.com/soumik12345/psynapse-web
-cd psynapse-web
+git clone https://github.com/soumik12345/psynapse
+cd psynapse
+docker compose -f docker/docker-compose.yml up --build
 ```
 
-Then, install the backend dependencies:
+Access the editor at **http://localhost:5173**
+
+**Optional: With LLM Support**
+
+To enable LLM nodepacks (requires additional dependencies):
 
 ```bash
-uv venv
-source .venv/bin/activate
-uv pip install .
+OPTIONAL_DEPS=llm docker compose -f docker/docker-compose.yml up --build
 ```
 
-Finally, install the frontend dependencies:
+### Option 2: Local Development
+
+For development and customization:
+
+#### Step 1: Clone and Install
 
 ```bash
-cd frontend
-npm install
+git clone https://github.com/soumik12345/psynapse
+cd psynapse
 ```
 
-## 🚀 Get Started in 3 Steps
+#### Step 2: Start the Backend
 
-### Step 1: Start the Backend
-Open a terminal and run:
 ```bash
-uv run psynapse-backend
+uv sync
+psynapse-backend run --reload
 ```
 
 You should see:
 ```
-Starting Psynapse backend server on http://localhost:8000...
 INFO:     Started server process
 INFO:     Uvicorn running on http://0.0.0.0:8000
 ```
 
-### Step 2: Start the Frontend
-Open another terminal and run:
+**Optional: Install with LLM support**
+
 ```bash
-./start-frontend.sh
+uv sync --extra llm
+```
+
+#### Step 3: Start the Frontend
+
+Open another terminal and run:
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 You should see:
 ```
-Starting Psynapse frontend development server...
 VITE ready in XXX ms
 ➜  Local:   http://localhost:5173/
 ```
 
-### Step 3: Open Your Browser
+#### Step 4: Open Your Browser
 Navigate to: **http://localhost:5173**
 
 ## 🎯 First Workflow

@@ -26,8 +26,11 @@ theme:
     - navigation.expand
     - navigation.tabs
 
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
+
 markdown_extensions:
-  - attr_list
   - admonition
   # Code syntax highlighting with line numbers and anchors
   - pymdownx.highlight:
@@ -42,7 +45,11 @@ markdown_extensions:
   # Allows including content from other files
   - pymdownx.snippets
   # Enables nested code blocks and custom fences
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
   # Adds support for callouts/notes/warnings
   - admonition
   # Enables collapsible blocks (expandable content)
@@ -51,12 +58,10 @@ markdown_extensions:
   - pymdownx.tabbed:
       # Uses an alternative styling for tabs
       alternate_style: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search
+  - panzoom
   - mkdocstrings:
       handlers:
         python:
@@ -73,9 +78,8 @@ plugins:
             docstring_style: google
             # Controls the order of members (by source order in this case)
             members_order: source
-            extra:
-              # Controls whether to sort members alphabetically
-              sort_members: false
+            # Controls whether to sort members alphabetically
+            sort_members: false
 
 nav:
   - Home: index.md
