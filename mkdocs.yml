@@ -1,7 +1,7 @@
 site_name: Psynapse
-repo_name: soumik12345/psynapse-web
-repo_url: https://github.com/soumik12345/psynapse-web
-edit_uri: https://github.com/soumik12345/psynapse-web/tree/main/docs
+repo_name: soumik12345/psynapse
+repo_url: https://github.com/soumik12345/psynapse
+edit_uri: https://github.com/soumik12345/psynapse/tree/main/docs
 
 theme:
   name: material
