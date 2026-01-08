@@ -21,17 +21,19 @@ A visual node-based workflow editor for creating and executing computational gra
 
 ### Using Docker Compose (Recommended)
 
-```bash
-docker compose -f docker/docker-compose.yml up --build
-```
+=== "Basic"
+
+    ```bash
+    docker compose -f docker/docker-compose.yml up --build
+    ```
+
+=== "With LLM Support"
+
+    ```bash
+    OPTIONAL_DEPS=llm docker compose -f docker/docker-compose.yml up --build
+    ```
 
 Access the editor at `http://localhost:5173`
-
-The following additional nodepacks are available:
-
-=== LLMs
-
-    OPTIONAL_DEPS=llm docker compose up -d --build
 
 ### Local Development
 
