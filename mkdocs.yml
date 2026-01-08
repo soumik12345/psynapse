@@ -26,8 +26,11 @@ theme:
     - navigation.expand
     - navigation.tabs
 
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
+
 markdown_extensions:
-  - attr_list
   - admonition
   # Code syntax highlighting with line numbers and anchors
   - pymdownx.highlight:
@@ -42,7 +45,11 @@ markdown_extensions:
   # Allows including content from other files
   - pymdownx.snippets
   # Enables nested code blocks and custom fences
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
   # Adds support for callouts/notes/warnings
   - admonition
   # Enables collapsible blocks (expandable content)
@@ -51,12 +58,10 @@ markdown_extensions:
   - pymdownx.tabbed:
       # Uses an alternative styling for tabs
       alternate_style: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search
+  - panzoom
   - mkdocstrings:
       handlers:
         python:
@@ -78,9 +83,16 @@ plugins:
 
 nav:
   - Home: index.md
-  - Sample Workflows:
-    - OpenAI Workflows: sample-workflows/openai-workflows.md
-    - LiteLLM Workflows: sample-workflows/litellm-workflows.md
-  - Implementation Details:
-    - Architecture: implementation-details/architecture.md
-    - Backend: implementation-details/backend.md
+  - Guide:
+    - Quick Start: guides/quick-start.md
+    - Architecture: guides/architecture.md
+    - Progress Nodes: guides/progress-nodes.md
+  - API Reference:
+    - Backend:
+      - Graph Executor: backend/executor.md
+      - Schema Extractor: backend/schema_extractor.md
+    - Frontend:
+      - Components: frontend/components.md
+      - Hooks: frontend/hooks.md
+      - Utilities: frontend/utils.md
+      - Types: frontend/types.md

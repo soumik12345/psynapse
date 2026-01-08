@@ -1,51 +1,57 @@
 # Psynapse
 
-A cross-platform node-based UI editor for building AI workflows using Python.
+A visual node-based workflow editor for creating and executing computational graphs with Python. Psynapse is meant to be the single no-code workflow editor that lets you harness the entire power of the python ecosystem using simple nodepacks and intuitive drag-and-drop interface.
 
-https://github.com/user-attachments/assets/e75dd546-75d0-4594-a838-def97513d27e
+https://github.com/user-attachments/assets/309ea22a-1fdc-4685-baf5-cd728441c329
 
 ## Features
 
-Psynapse provides a simple and intuitive interface to build and deploy AI workflows using Python using a an intuitive node-based editor. The biggest strength of Psynapse lies in the following 2 aspects:
+- **Visual Node Editor**: Drag-and-drop interface built with ReactFlow
+- **Python Backend**: FastAPI server with real-time execution streaming
+- **Extensible Nodepacks**: Add custom Python functions as nodes
+- **Type-Safe**: Full TypeScript frontend and type-hinted Python backend
+- **Progress Tracking**: Real-time progress updates for long-running operations
+- **Multiple Node Types**: Functions, variables, lists, and view nodes
 
-1. Its written entirely in Python, making it easy to extend, customize and integrate with other Python libraries.
-2. Developing your own nodepacks for AI libraries in the Python ecosystem is as easy as writing a simple Python function with type hints for parameters and return values.
-3. The decoupled execution runtime allows you to run your workflows on a remote server or GPU clusters, while running the editor on your local machine.
+## Quick Start
 
-## Installation
+### Using Docker Compose (Recommended)
 
 ```bash
-uv pip install -U git+https://github.com/soumik12345/psynapse.git
+docker compose -f docker/docker-compose.yml up --build
 ```
 
-## Usage
+Access the editor at `http://localhost:5173`
 
-### Quick Start
+### Local Development
 
-Simply run the command `psynapse` in the terminal, this would launch the Psynapse application with a locally hosted execution runtime.
+**Backend:**
+```bash
+uv sync
+psynapse-backend run --reload
+```
 
-### Run with a remote backend
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1. Start the execution runtime locally or in a remote VM using
+## Architecture
 
-    ```bash
-    psynapse-backend --port 8000
-    ```
+- **Backend** ([psynapse_backend](psynapse_backend/)): FastAPI server with graph execution engine
+- **Frontend** ([frontend](frontend/)): React 19 + TypeScript + Vite
+- **Nodepacks** ([nodepacks](nodepacks/)): Extensible Python function libraries
 
-    The backend will be available at `http://localhost:8000`.
+## Creating Custom Nodepacks
 
-2. Launch the Psynapse editor using
+Add a new directory in `nodepacks/` with an `ops.py` file:
 
-    ```bash
-    psynapse --backend-port 8000
-    ```
+```python
+def my_function(text: str, count: int = 1) -> str:
+    """Repeats text multiple times."""
+    return text * count
+```
 
-
-## Sample Workflows
-
-- [OpenAI Workflows](https://geekyrakshit.dev/psynapse/sample-workflows/openai-workflows/)
-- [LiteLLM Workflows](https://geekyrakshit.dev/psynapse/sample-workflows/litellm-workflows/)
-
-## Acknowledgments
-
-Psynapse is heavily inspired by [Nodezator](https://github.com/IndiePython/nodezator) and [ComfyUI](https://github.com/comfyanonymous/ComfyUI).
+Restart the backend to auto-register your nodes.

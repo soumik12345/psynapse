@@ -1,5 +1,4 @@
 import math
-from typing import Any
 
 
 def add(a: float, b: float) -> float:
@@ -119,69 +118,36 @@ def exp(a: float) -> float:
     return math.exp(a)
 
 
-def at_index(
-    object: list | dict, index: Any
-) -> list | dict | None | str | int | float | bool:
-    if isinstance(object, list) and not isinstance(index, int):
-        raise ValueError("Index for a list must be an integer")
+def greet(name: str, greeting: str = "Hello", punctuation: str = "!") -> str:
+    """
+    Generate a greeting message with customizable greeting and punctuation.
+
+    This function demonstrates default parameters in the Psynapse workflow editor.
+    The 'greeting' and 'punctuation' parameters have defaults and will only appear
+    in the node properties panel, not in the node itself.
+
+    Args:
+        name: The name of the person to greet (required)
+        greeting: The greeting word to use (default: "Hello")
+        punctuation: The punctuation to use at the end (default: "!")
+
+    Returns:
+        A formatted greeting message
+    """
+    return f"{greeting}, {name}{punctuation}"
+
+
+def at_index(object: list | dict, index: int | str) -> any:
+    """
+    Get the value at a given index from a list or dictionary.
+
+    Args:
+        object: The list or dictionary to get the value from
+        index: The index to get the value from
+
+    Returns:
+        The value at the given index
+    """
+    if isinstance(object, list):
+        return object[int(index)]
     return object[index]
-
-
-def query_with_index(obj: list | dict, query: str) -> Any:
-    """
-    Query a nested list or dict using bracket notation.
-
-    Args:
-        obj: The list or dict to query
-        query: A string query in bracket notation, e.g., "['output'][0]['content'][0]['text']"
-
-    Returns:
-        The value at the specified path
-
-    Example:
-        >>> data = {'output': [1, 2, 3]}
-        >>> query_with_index(data, "['output'][0]")
-        1
-    """
-    import re
-
-    # Parse the query string to extract indices using bracket notation
-    # Pattern matches ['key'] or ["key"] or [0] style indexing
-    pattern = r"\[(['\"]?)([^'\"]+?)\1\]"
-    matches = re.findall(pattern, query)
-
-    result = obj
-    for quote, index in matches:
-        if quote:  # String key (quoted)
-            result = result[index]
-        else:  # Numeric index (unquoted)
-            result = result[int(index)]
-
-    return result
-
-
-def sum_numbers(numbers: list) -> float:
-    """
-    Sum a list of numbers.
-
-    Args:
-        numbers: A list of numbers to sum
-
-    Returns:
-        The sum of all numbers in the list
-    """
-    # Ensure we received a list
-    if not isinstance(numbers, list):
-        raise TypeError(f"Expected list, got {type(numbers)}: {numbers}")
-
-    # Convert to floats if needed
-    numeric_values = []
-    for num in numbers:
-        if isinstance(num, str):
-            try:
-                numeric_values.append(float(num))
-            except (ValueError, TypeError):
-                numeric_values.append(0)
-        else:
-            numeric_values.append(float(num) if num is not None else 0)
-    return sum(numeric_values)
