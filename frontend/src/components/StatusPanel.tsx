@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { ExecutionStatus } from "../types/schema";
 
 interface StatusPanelProps {
@@ -6,14 +6,214 @@ interface StatusPanelProps {
   onClose?: () => void;
 }
 
+// Helper to check if string is a base64 encoded image
+const isBase64Image = (str: string): boolean => {
+  if (!str.startsWith("data:image")) return false;
+  const base64Pattern = /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,/;
+  return base64Pattern.test(str);
+};
+
+// Simple Markdown renderer component
+const SimpleMarkdown = ({ content }: { content: string }) => {
+  const renderMarkdown = (text: string) => {
+    const lines = text.split("\n");
+    const elements: React.ReactNode[] = [];
+    let inCodeBlock = false;
+    let codeBlockContent: string[] = [];
+
+    lines.forEach((line, index) => {
+      // Code block handling
+      if (line.startsWith("```")) {
+        if (!inCodeBlock) {
+          inCodeBlock = true;
+          codeBlockContent = [];
+        } else {
+          inCodeBlock = false;
+          elements.push(
+            <pre
+              key={`code-${index}`}
+              style={{
+                backgroundColor: "#1e1e1e",
+                color: "#d4d4d4",
+                padding: "12px",
+                borderRadius: "6px",
+                overflow: "auto",
+                fontSize: "12px",
+                margin: "8px 0",
+                fontFamily: "monospace",
+              }}
+            >
+              <code>{codeBlockContent.join("\n")}</code>
+            </pre>
+          );
+        }
+        return;
+      }
+
+      if (inCodeBlock) {
+        codeBlockContent.push(line);
+        return;
+      }
+
+      // Headers
+      if (line.startsWith("### ")) {
+        elements.push(
+          <h3
+            key={index}
+            style={{ margin: "12px 0 8px", fontSize: "14px", fontWeight: "bold" }}
+          >
+            {line.slice(4)}
+          </h3>
+        );
+        return;
+      }
+      if (line.startsWith("## ")) {
+        elements.push(
+          <h2
+            key={index}
+            style={{ margin: "14px 0 10px", fontSize: "16px", fontWeight: "bold" }}
+          >
+            {line.slice(3)}
+          </h2>
+        );
+        return;
+      }
+      if (line.startsWith("# ")) {
+        elements.push(
+          <h1
+            key={index}
+            style={{ margin: "16px 0 12px", fontSize: "18px", fontWeight: "bold" }}
+          >
+            {line.slice(2)}
+          </h1>
+        );
+        return;
+      }
+
+      // Horizontal rule
+      if (line.match(/^(-{3,}|\*{3,}|_{3,})$/)) {
+        elements.push(
+          <hr
+            key={index}
+            style={{ margin: "12px 0", border: "none", borderTop: "1px solid #ddd" }}
+          />
+        );
+        return;
+      }
+
+      // Empty line
+      if (line.trim() === "") {
+        elements.push(<div key={index} style={{ height: "8px" }} />);
+        return;
+      }
+
+      // List items
+      if (line.match(/^[\-\*]\s/)) {
+        elements.push(
+          <div key={index} style={{ paddingLeft: "16px", margin: "4px 0" }}>
+            • {renderInlineMarkdown(line.slice(2))}
+          </div>
+        );
+        return;
+      }
+
+      // Numbered list
+      const numberedMatch = line.match(/^(\d+)\.\s/);
+      if (numberedMatch) {
+        elements.push(
+          <div key={index} style={{ paddingLeft: "16px", margin: "4px 0" }}>
+            {numberedMatch[1]}. {renderInlineMarkdown(line.slice(numberedMatch[0].length))}
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      elements.push(
+        <p key={index} style={{ margin: "6px 0", lineHeight: "1.5" }}>
+          {renderInlineMarkdown(line)}
+        </p>
+      );
+    });
+
+    return <>{elements}</>;
+  };
+
+  const renderInlineMarkdown = (text: string): React.ReactNode[] => {
+    const result: React.ReactNode[] = [];
+    let remaining = text;
+    let keyCounter = 0;
+
+    while (remaining.length > 0) {
+      // Bold **text** or __text__
+      const boldMatch = remaining.match(/^(.*?)(\*\*|__)(.+?)\2(.*)$/);
+      if (boldMatch) {
+        if (boldMatch[1]) result.push(boldMatch[1]);
+        result.push(<strong key={keyCounter++}>{boldMatch[3]}</strong>);
+        remaining = boldMatch[4];
+        continue;
+      }
+
+      // Italic *text* or _text_
+      const italicMatch = remaining.match(/^(.*?)(\*|_)(.+?)\2(.*)$/);
+      if (italicMatch) {
+        if (italicMatch[1]) result.push(italicMatch[1]);
+        result.push(<em key={keyCounter++}>{italicMatch[3]}</em>);
+        remaining = italicMatch[4];
+        continue;
+      }
+
+      // Inline code `text`
+      const codeMatch = remaining.match(/^(.*?)`(.+?)`(.*)$/);
+      if (codeMatch) {
+        if (codeMatch[1]) result.push(codeMatch[1]);
+        result.push(
+          <code
+            key={keyCounter++}
+            style={{
+              backgroundColor: "#f0f0f0",
+              padding: "2px 6px",
+              borderRadius: "3px",
+              fontSize: "11px",
+              fontFamily: "monospace",
+            }}
+          >
+            {codeMatch[2]}
+          </code>
+        );
+        remaining = codeMatch[3];
+        continue;
+      }
+
+      // No more matches, add remaining text
+      result.push(remaining);
+      break;
+    }
+
+    return result;
+  };
+
+  return (
+    <div style={{ fontFamily: "sans-serif", fontSize: "13px" }}>
+      {renderMarkdown(content)}
+    </div>
+  );
+};
+
 // TreeView Component for structured rendering of objects and arrays
 interface TreeViewProps {
   data: any;
   level?: number;
   parentKey?: string;
+  renderMode?: "raw" | "markdown";
 }
 
-const TreeView = ({ data, level = 0, parentKey = "root" }: TreeViewProps) => {
+const TreeView = ({
+  data,
+  level = 0,
+  parentKey = "root",
+  renderMode = "raw",
+}: TreeViewProps) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (key: string) => {
@@ -35,6 +235,49 @@ const TreeView = ({ data, level = 0, parentKey = "root" }: TreeViewProps) => {
   }
 
   if (typeof data === "string") {
+    // Check if it's a base64 encoded image - always render as image
+    if (isBase64Image(data)) {
+      return (
+        <div
+          style={{
+            marginTop: "8px",
+            marginBottom: "8px",
+            padding: "8px",
+            border: "1px solid #e0e0e0",
+            borderRadius: "4px",
+            backgroundColor: "#f9f9f9",
+            display: "inline-block",
+          }}
+        >
+          <img
+            src={data}
+            alt="Image"
+            style={{
+              maxWidth: "100%",
+              maxHeight: "300px",
+              borderRadius: "4px",
+              display: "block",
+            }}
+          />
+          <div
+            style={{
+              marginTop: "4px",
+              fontSize: "11px",
+              color: "#6a737d",
+              fontStyle: "italic",
+            }}
+          >
+            Image ({data.split(",")[0].split("/")[1].split(";")[0]})
+          </div>
+        </div>
+      );
+    }
+
+    // Render based on mode
+    if (renderMode === "markdown") {
+      return <SimpleMarkdown content={data} />;
+    }
+
     return <span style={{ color: "#22863a" }}>"{data}"</span>;
   }
 
@@ -71,6 +314,7 @@ const TreeView = ({ data, level = 0, parentKey = "root" }: TreeViewProps) => {
                   data={item}
                   level={level + 1}
                   parentKey={`${key}-${index}`}
+                  renderMode={renderMode}
                 />
               </div>
             ))}
@@ -114,6 +358,7 @@ const TreeView = ({ data, level = 0, parentKey = "root" }: TreeViewProps) => {
                   data={data[k]}
                   level={level + 1}
                   parentKey={`${key}-${k}`}
+                  renderMode={renderMode}
                 />
               </div>
             ))}
@@ -128,6 +373,7 @@ const TreeView = ({ data, level = 0, parentKey = "root" }: TreeViewProps) => {
 
 const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [renderModes, setRenderModes] = useState<Record<string, "raw" | "markdown">>({});
 
   const toggleExpanded = (nodeId: string) => {
     setExpandedNodes((prev) => {
@@ -139,6 +385,13 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
       }
       return next;
     });
+  };
+
+  const toggleRenderMode = (nodeId: string) => {
+    setRenderModes((prev) => ({
+      ...prev,
+      [nodeId]: prev[nodeId] === "markdown" ? "raw" : "markdown",
+    }));
   };
 
   return (
@@ -452,13 +705,46 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                     <div>
                       <div
                         style={{
-                          fontSize: "13px",
-                          fontWeight: "600",
-                          color: "#495057",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
                           marginBottom: "4px",
                         }}
                       >
-                        Output
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            color: "#495057",
+                          }}
+                        >
+                          Output
+                        </div>
+                        {typeof status.output === "string" &&
+                          !isBase64Image(status.output) && (
+                            <button
+                              onClick={() => toggleRenderMode(status.node_id)}
+                              style={{
+                                background: "none",
+                                border: "1px solid #6c757d",
+                                borderRadius: "4px",
+                                padding: "2px 8px",
+                                cursor: "pointer",
+                                fontSize: "11px",
+                                color: "#6c757d",
+                                fontWeight: "500",
+                              }}
+                              title={
+                                renderModes[status.node_id] === "markdown"
+                                  ? "Switch to raw view"
+                                  : "Switch to markdown view"
+                              }
+                            >
+                              {renderModes[status.node_id] === "markdown"
+                                ? "Raw"
+                                : "MD"}
+                            </button>
+                          )}
                       </div>
                       <div
                         style={{
@@ -476,6 +762,7 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                         <TreeView
                           data={status.output}
                           parentKey={`${status.node_id}-output`}
+                          renderMode={renderModes[status.node_id] || "raw"}
                         />
                       </div>
                     </div>
