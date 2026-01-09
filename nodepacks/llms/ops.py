@@ -1,8 +1,6 @@
 import os
 from typing import Any, Literal
 
-from openai import OpenAI
-
 
 def openai_chat_completion(
     model: str,
@@ -54,6 +52,8 @@ def openai_chat_completion(
     Returns:
         dict[str, Any]: The OpenAI response.
     """
+    from openai import OpenAI
+
     api_key = os.getenv(api_key_variable)
     if not api_key:
         raise ValueError(
@@ -79,12 +79,47 @@ def openai_chat_completion(
         completion_kwargs["top_p"] = top_p
 
     response = client.chat.completions.create(
-        model=model, messages=messages, logprobs=logprobs, **completion_kwargs
+        model=model,
+        messages=messages,
+        logprobs=logprobs,
+        stream=False,
+        **completion_kwargs,
     )
     return response.to_dict()
 
 
-def get_openai_message_content(response: dict[str, Any]) -> str:
+def litellm_chat_completion(
+    model: str,
+    messages: list[dict[str, str | dict[str, str]]],
+    temperature: float | None = None,
+    top_p: float | None = None,
+    max_completion_tokens: int | None = None,
+    max_tokens: int | None = None,
+    reasoning_effort: Literal["none", "minimal", "low", "medium", "high", "default"]
+    | None = None,
+    seed: int | None = None,
+    logprobs: bool = False,
+    base_url: str | None = None,
+) -> dict[str, Any]:
+    from litellm import completion
+
+    response = completion(
+        model=model,
+        messages=messages,
+        stream=False,
+        temperature=temperature,
+        top_p=top_p,
+        max_completion_tokens=max_completion_tokens,
+        max_tokens=max_tokens,
+        reasoning_effort=reasoning_effort,
+        seed=seed,
+        logprobs=logprobs,
+        base_url=base_url,
+    )
+    return response.to_dict()
+
+
+def get_message_content(response: dict[str, Any]) -> str:
     """Extract the message content from the OpenAI response.
 
     Args:
