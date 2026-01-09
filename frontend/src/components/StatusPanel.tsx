@@ -6,6 +6,126 @@ interface StatusPanelProps {
   onClose?: () => void;
 }
 
+// TreeView Component for structured rendering of objects and arrays
+interface TreeViewProps {
+  data: any;
+  level?: number;
+  parentKey?: string;
+}
+
+const TreeView = ({ data, level = 0, parentKey = "root" }: TreeViewProps) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (key: string) => {
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const indent = level * 16;
+
+  if (data === null || data === undefined) {
+    return <span style={{ color: "#999", fontStyle: "italic" }}>null</span>;
+  }
+
+  if (typeof data === "boolean") {
+    return <span style={{ color: "#d73a49" }}>{data ? "true" : "false"}</span>;
+  }
+
+  if (typeof data === "number") {
+    return <span style={{ color: "#005cc5" }}>{data}</span>;
+  }
+
+  if (typeof data === "string") {
+    return <span style={{ color: "#22863a" }}>"{data}"</span>;
+  }
+
+  if (Array.isArray(data)) {
+    if (data.length === 0) {
+      return <span style={{ color: "#6a737d" }}>[]</span>;
+    }
+
+    const key = `${parentKey}-array-${level}`;
+    const isExpanded = expanded[key];
+
+    return (
+      <div style={{ marginLeft: level === 0 ? "0" : `${indent}px` }}>
+        <span
+          onClick={() => toggleExpand(key)}
+          style={{
+            cursor: "pointer",
+            userSelect: "none",
+            color: "#6a737d",
+            marginRight: "4px",
+          }}
+        >
+          {isExpanded ? "▼" : "▶"}
+        </span>
+        <span style={{ color: "#6a737d" }}>Array({data.length})</span>
+        {isExpanded && (
+          <div style={{ marginLeft: "12px", marginTop: "4px" }}>
+            {data.map((item, index) => (
+              <div key={index} style={{ marginBottom: "4px" }}>
+                <span style={{ color: "#6a737d", marginRight: "8px" }}>
+                  [{index}]:
+                </span>
+                <TreeView
+                  data={item}
+                  level={level + 1}
+                  parentKey={`${key}-${index}`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (typeof data === "object") {
+    const keys = Object.keys(data);
+    if (keys.length === 0) {
+      return <span style={{ color: "#6a737d" }}>{"{}"}</span>;
+    }
+
+    const key = `${parentKey}-object-${level}`;
+    const isExpanded = expanded[key];
+
+    return (
+      <div style={{ marginLeft: level === 0 ? "0" : `${indent}px` }}>
+        <span
+          onClick={() => toggleExpand(key)}
+          style={{
+            cursor: "pointer",
+            userSelect: "none",
+            color: "#6a737d",
+            marginRight: "4px",
+          }}
+        >
+          {isExpanded ? "▼" : "▶"}
+        </span>
+        <span style={{ color: "#6a737d" }}>Object({keys.length})</span>
+        {isExpanded && (
+          <div style={{ marginLeft: "12px", marginTop: "4px" }}>
+            {keys.map((k) => (
+              <div key={k} style={{ marginBottom: "4px" }}>
+                <span style={{ color: "#6f42c1", marginRight: "8px" }}>
+                  {k}:
+                </span>
+                <TreeView
+                  data={data[k]}
+                  level={level + 1}
+                  parentKey={`${key}-${k}`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return <span>{String(data)}</span>;
+};
+
 const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
@@ -19,16 +139,6 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
       }
       return next;
     });
-  };
-
-  const renderValue = (value: any): string => {
-    if (value === null || value === undefined) {
-      return "null";
-    }
-    if (typeof value === "object") {
-      return JSON.stringify(value, null, 2);
-    }
-    return String(value);
   };
 
   return (
@@ -275,15 +385,16 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                           }}
                         >
                           {Object.entries(status.inputs).map(([key, value]) => (
-                            <div key={key} style={{ marginBottom: "4px" }}>
+                            <div key={key} style={{ marginBottom: "8px" }}>
                               <span
                                 style={{ color: "#6c757d", fontWeight: "600" }}
                               >
                                 {key}:
                               </span>{" "}
-                              <span style={{ color: "#212529" }}>
-                                {renderValue(value)}
-                              </span>
+                              <TreeView
+                                data={value}
+                                parentKey={`${status.node_id}-input-${key}`}
+                              />
                             </div>
                           ))}
                         </div>
@@ -358,9 +469,14 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                           fontFamily: "monospace",
                           color: "#212529",
                           wordBreak: "break-word",
+                          maxHeight: "300px",
+                          overflowY: "auto",
                         }}
                       >
-                        {renderValue(status.output)}
+                        <TreeView
+                          data={status.output}
+                          parentKey={`${status.node_id}-output`}
+                        />
                       </div>
                     </div>
                   )}
