@@ -21,6 +21,12 @@ https://github.com/user-attachments/assets/309ea22a-1fdc-4685-baf5-cd728441c329
 docker compose -f docker/docker-compose.yml up --build
 ```
 
+For LLM nodepacks, use:
+
+```bash
+OPTIONAL_DEPS=llm docker compose -f docker/docker-compose.yml up --build
+```
+
 Access the editor at `http://localhost:5173`
 
 ### Local Development

@@ -37,16 +37,16 @@
           {
             "source": "node_3",
             "sourceHandle": "output",
-            "target": "node_5",
+            "target": "node_7",
             "targetHandle": "response",
-            "id": "reactflow__edge-node_3output-node_5response"
+            "id": "reactflow__edge-node_3output-node_7response"
           },
           {
-            "source": "node_5",
+            "source": "node_7",
             "sourceHandle": "output",
             "target": "node_4",
             "targetHandle": "input",
-            "id": "reactflow__edge-node_5output-node_4input"
+            "id": "reactflow__edge-node_7output-node_4input"
           }
         ],
         "textContentFormat": false,
@@ -54,7 +54,7 @@
         "llmMessageRole": "system",
         "executionStatus": "completed"
       },
-      "width": 198,
+      "width": 211,
       "height": 102,
       "selected": false,
       "positionAbsolute": {
@@ -100,16 +100,16 @@
           {
             "source": "node_3",
             "sourceHandle": "output",
-            "target": "node_5",
+            "target": "node_7",
             "targetHandle": "response",
-            "id": "reactflow__edge-node_3output-node_5response"
+            "id": "reactflow__edge-node_3output-node_7response"
           },
           {
-            "source": "node_5",
+            "source": "node_7",
             "sourceHandle": "output",
             "target": "node_4",
             "targetHandle": "input",
-            "id": "reactflow__edge-node_5output-node_4input"
+            "id": "reactflow__edge-node_7output-node_4input"
           }
         ],
         "textContentFormat": false,
@@ -117,7 +117,7 @@
         "llmMessageRole": "user",
         "executionStatus": "completed"
       },
-      "width": 186,
+      "width": 191,
       "height": 102,
       "selected": false,
       "positionAbsolute": {
@@ -161,16 +161,16 @@
           {
             "source": "node_3",
             "sourceHandle": "output",
-            "target": "node_5",
+            "target": "node_7",
             "targetHandle": "response",
-            "id": "reactflow__edge-node_3output-node_5response"
+            "id": "reactflow__edge-node_3output-node_7response"
           },
           {
-            "source": "node_5",
+            "source": "node_7",
             "sourceHandle": "output",
             "target": "node_4",
             "targetHandle": "input",
-            "id": "reactflow__edge-node_5output-node_4input"
+            "id": "reactflow__edge-node_7output-node_4input"
           }
         ],
         "executionStatus": "completed"
@@ -240,16 +240,16 @@
           {
             "source": "node_3",
             "sourceHandle": "output",
-            "target": "node_5",
+            "target": "node_7",
             "targetHandle": "response",
-            "id": "reactflow__edge-node_3output-node_5response"
+            "id": "reactflow__edge-node_3output-node_7response"
           },
           {
-            "source": "node_5",
+            "source": "node_7",
             "sourceHandle": "output",
             "target": "node_4",
             "targetHandle": "input",
-            "id": "reactflow__edge-node_5output-node_4input"
+            "id": "reactflow__edge-node_7output-node_4input"
           }
         ],
         "model": "google/gemini-3-flash-preview",
@@ -271,12 +271,12 @@
       "id": "node_4",
       "type": "viewNode",
       "position": {
-        "x": 1105.3612707653394,
-        "y": 155.41963425996238
+        "x": 1162.012067167522,
+        "y": 207.51604022590504
       },
       "data": {
         "label": "View",
-        "value": "### The Dawn of Civilization: A Detailed Exploration of the Neolithic Age\n\nThe Neolithic Age, or \"New Stone Age,\" marks the most significant turning point in human history. Extending roughly from 10,000 BCE to 3,000 BCE, this era represents the transition from a nomadic existence of hunting and gathering to a settled life based on agriculture and animal domestication. Often referred to by archaeologists as the \"Neolithic Revolution,\" this period laid the foundational blocks of modern civilization, including permanent architecture, social hierarchy, specialized labor, and the birth of complex religion.\n\n#### 1. The Catalyst: Environmental Change and the Agricultural Revolution\nThe Neolithic Age began at the end of the last Ice Age (the Pleistocene). As the Earth’s climate warmed and glaciers retreated, the landscape changed, providing an environment conducive to the growth of wild cereal grains. \n\nThe shift from food gathering to food producing did not happen overnight. It was a gradual process where humans began selecting the hardiest seeds of wild wheat and barley to plant and harvest. This \"domestication\" of plants was mirrored by the domestication of animals. Instead of following herds of wild gazelles or oxen, humans began to corral and breed sheep, goats, pigs, and cattle. This provided a reliable source of meat, milk, wool, and leather, as well as labor for tilling fields.\n\n#### 2. Settlement and the Birth of Architecture\nOnce humans became dependent on crops, they could no longer remain nomadic. Crops require months of attention, from planting to harvest, which necessitated permanent housing. \n\nNeolithic dwellings evolved from simple circular huts to sophisticated rectangular structures made of sun-dried mud bricks or stone. One of the most famous examples is **Çatalhöyük** in modern-day Turkey. Inhabited around 7500 BCE, it was a proto-city where houses were built so closely together that there were no streets; people moved across rooftops and entered homes through holes in the ceiling. These settlements represent the first move toward urbanization, creating a sense of community and shared defense.\n\n#### 3. Technological Innovations and Craftsmanship\nThe name \"Neolithic\" derives from the Greek words *neos* (new) and *lithos* (stone). Unlike the chipped tools of the Paleolithic, Neolithic tools were **ground and polished**. This allowed for the creation of far more efficient axes, adzes, and hoes, which were essential for clearing forests for farmland.\n\nTwo other major technological leaps occurred during this time:\n*   **Pottery:** With a surplus of grain, humans needed durable containers for storage and cooking. The invention of pottery allowed for the boiling of food and the preservation of seeds against moisture and rodents.\n*   **Weaving:** The domestication of flax and sheep led to the development of textiles. People began to replace animal hides with woven linen and wool clothing, a major step in the evolution of human comfort and hygiene.\n\n#### 4. Social Structure and Specialization\nThe ability to produce a food surplus was the engine of social change. In a hunter-gatherer society, everyone is involved in the search for food. In a Neolithic village, the surplus meant that not everyone had to be a farmer.\n\nThis led to **division of labor**. Individuals could now specialize as potters, weavers, tool-makers, or builders. This specialization eventually led to social stratification; those who controlled the grain or claimed a connection to the divine rose to positions of leadership. Concepts of private property and land ownership emerged, as a plot of land was now a valuable asset that required protection.\n\n#### 5. Spiritual Life and Megalithic Monuments\nNeolithic humans developed complex belief systems, often centered on fertility and the cycles of nature. The \"Earth Mother\" archetype became prominent, symbolizing the fertility of both the land and the people.\n\nThis era is also defined by **Megalithic architecture**—massive stone structures that required immense communal effort. Stonehenge in England, the temples of Malta, and the \"dolmens\" found across Europe and Asia suggests a society capable of advanced engineering and astronomical observation. These sites likely served as burial grounds, astronomical calendars, or ritual centers, indicating a deep preoccupation with the afterlife and the movement of the heavens.\n\n#### 6. The Dark Side of Progress\nWhile the Neolithic Age brought security, it also brought new challenges. Settled life in close proximity to animals led to the first major outbreaks of zoonotic diseases (smallpox, flu, etc.). Diets became less varied, often leading to nutritional deficiencies compared to their hunter-gatherer ancestors. Furthermore, the concept of land ownership and surplus wealth led to the birth of organized warfare, as villages competed for fertile land and resources.\n\n#### Conclusion\nThe Neolithic Age was the crucible of the human experience. By mastering the environment through agriculture and domestication, humans fundamentally altered the trajectory of life on Earth. The transition from the \"New Stone Age\" to the \"Bronze Age\" was merely a refinement of the systems established during the Neolithic. From the bread we eat to the cities we inhabit, the echoes of the Neolithic Revolution continue to define the structure of modern human society.",
+        "value": "### The Threshold of Civilization: An Analysis of the Neolithic Age\n\nThe Neolithic Age, or the \"New Stone Age,\" represents perhaps the most significant turning point in the history of humankind. Spanning roughly from 10,000 BCE to 3,000 BCE, this era marked the transition from a nomadic existence of hunting and gathering to a settled life based on agriculture and animal domestication. Often referred to by historians as the \"Neolithic Revolution,\" this period provided the structural foundations for modern society, leading to the rise of permanent settlements, specialized labor, social hierarchies, and complex religious systems.\n\n#### The Catalyst: The Agricultural Revolution\nThe defining characteristic of the Neolithic Age was the shift from food appropriation to food production. At the end of the last Ice Age (around 10,000 BCE), the Earth’s climate became warmer and more stable. In regions like the \"Fertile Crescent\" in the Middle East, humans began to observe the life cycles of wild grasses like wheat and barley. By selecting and planting the seeds of the most productive plants, they engaged in the first instances of genetic engineering.\n\nParallel to the cultivation of plants was the domestication of animals. Rather than following migratory herds, humans began to corral and breed goats, sheep, pigs, and cattle. This provided a reliable source of protein, milk, hides, and eventually, animal power for plowing. This dual mastery over flora and fauna created a food surplus, which was the essential prerequisite for everything that followed.\n\n#### Sedentism and the First Villages\nBefore the Neolithic Age, humans lived in small, mobile bands. The requirements of farming, however, demanded that people stay in one place to sow, tend, and harvest crops. This led to the birth of \"sedentism.\" \n\nMud-brick houses replaced temporary tents and caves. Early settlements like Jericho in the Levant and Çatalhöyük in modern-day Turkey provide a glimpse into this life. Çatalhöyük, for instance, was a densely packed honeycomb of houses where residents entered through holes in the roofs. These villages allowed for larger populations to coexist, which necessitated the development of social rules and communal cooperation, such as the building of irrigation systems or defensive walls.\n\n#### Technological and Cultural Advancements\nThe \"New Stone Age\" takes its name from the evolution of stone tool technology. Unlike the chipped tools of the Paleolithic, Neolithic tools were polished and ground to create sharp, durable edges. The invention of the stone axe allowed for large-scale deforestation to create farmland, while the sickle became essential for harvesting grain.\n\nTwo other technological breakthroughs defined the era: pottery and weaving. With a surplus of grain, there was a need for storage; humans discovered that baking clay created durable, waterproof containers. Simultaneously, the transition from animal skins to textiles occurred as people learned to spin and weave wool from domesticated sheep and fibers from flax plants.\n\n#### Social Stratification and the Division of Labor\nIn a hunter-gatherer society, every member is directly involved in procuring food, leading to a largely egalitarian structure. In the Neolithic village, the food surplus meant that not everyone had to be a farmer. This led to the \"division of labor.\" Some individuals became specialized potters, weavers, toolmakers, or priests.\n\nThis specialization inevitably led to social stratification. Those who controlled the grain stores or claimed a special connection to the divine gained power and status. Over time, this evolved into a class system, with emerging leadership roles that would eventually transform into the kingships of the Bronze Age.\n\n#### Religion and Ideology\nThe religious life of Neolithic humans shifted to reflect their new environment. Their survival now depended on the whims of the weather and the fertility of the soil. Consequently, the archaeological record shows a proliferation of \"Mother Goddess\" figurines, symbolizing fertility and the Earth. Rituals became more formalized, with the construction of megalithic structures like Stonehenge in England or the temples of Göbekli Tepe in Turkey (which actually predates settled farming, suggesting that organized religion may have been a driver of the revolution rather than a result of it).\n\n#### Conclusion\nThe Neolithic Age was more than just a change in diet; it was a fundamental restructuring of the human experience. While it brought challenges—such as the spread of diseases from domestic animals and the birth of organized warfare over land—it also paved the way for the \"urban revolution.\" By the end of the Neolithic, humans had mastered the environment to such a degree that they were ready to move into the Bronze Age, inventing writing, the wheel, and the first true empires. Every aspect of modern life, from the bread we eat to the cities we inhabit, finds its roots in the transformative innovations of the New Stone Age.",
         "edges": [
           {
             "source": "node_0",
@@ -302,46 +302,46 @@
           {
             "source": "node_3",
             "sourceHandle": "output",
-            "target": "node_5",
+            "target": "node_7",
             "targetHandle": "response",
-            "id": "reactflow__edge-node_3output-node_5response"
+            "id": "reactflow__edge-node_3output-node_7response"
           },
           {
-            "source": "node_5",
+            "source": "node_7",
             "sourceHandle": "output",
             "target": "node_4",
             "targetHandle": "input",
-            "id": "reactflow__edge-node_5output-node_4input"
+            "id": "reactflow__edge-node_7output-node_4input"
           }
         ],
         "executionStatus": "completed"
       },
       "width": 400,
       "height": 355,
-      "selected": true,
+      "selected": false,
       "positionAbsolute": {
-        "x": 1105.3612707653394,
-        "y": 155.41963425996238
+        "x": 1162.012067167522,
+        "y": 207.51604022590504
       },
       "dragging": false
     },
     {
-      "id": "node_5",
+      "id": "node_7",
       "type": "functionNode",
       "position": {
-        "x": 874.6835511580575,
-        "y": 269.57075266436436
+        "x": 877.0107268870711,
+        "y": 304.7624233534178
       },
       "data": {
-        "label": "get_openai_result",
-        "functionName": "get_openai_result",
+        "label": "get_openai_message_content",
+        "functionName": "get_openai_message_content",
         "params": [
           {
             "name": "response",
             "type": "dict"
           }
         ],
-        "docstring": "",
+        "docstring": "Extract the message content from the OpenAI response.\n\nArgs:\n    response (dict[str, Any]): The OpenAI response.\n\nReturns:\n    str: The message content.",
         "edges": [
           {
             "source": "node_0",
@@ -367,27 +367,27 @@
           {
             "source": "node_3",
             "sourceHandle": "output",
-            "target": "node_5",
+            "target": "node_7",
             "targetHandle": "response",
-            "id": "reactflow__edge-node_3output-node_5response"
+            "id": "reactflow__edge-node_3output-node_7response"
           },
           {
-            "source": "node_5",
+            "source": "node_7",
             "sourceHandle": "output",
             "target": "node_4",
             "targetHandle": "input",
-            "id": "reactflow__edge-node_5output-node_4input"
+            "id": "reactflow__edge-node_7output-node_4input"
           }
         ],
         "response": "",
         "executionStatus": "completed"
       },
-      "width": 200,
+      "width": 235,
       "height": 82,
       "selected": false,
       "positionAbsolute": {
-        "x": 874.6835511580575,
-        "y": 269.57075266436436
+        "x": 877.0107268870711,
+        "y": 304.7624233534178
       },
       "dragging": false
     }
@@ -417,16 +417,16 @@
     {
       "source": "node_3",
       "sourceHandle": "output",
-      "target": "node_5",
+      "target": "node_7",
       "targetHandle": "response",
-      "id": "reactflow__edge-node_3output-node_5response"
+      "id": "reactflow__edge-node_3output-node_7response"
     },
     {
-      "source": "node_5",
+      "source": "node_7",
       "sourceHandle": "output",
       "target": "node_4",
       "targetHandle": "input",
-      "id": "reactflow__edge-node_5output-node_4input"
+      "id": "reactflow__edge-node_7output-node_4input"
     }
   ]
 }
