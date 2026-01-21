@@ -30,6 +30,12 @@ For LLM nodepacks, use:
 OPTIONAL_DEPS=llm docker compose -f docker/docker-compose.yml up --build
 ```
 
+For using nodepacks with a Pytorch GPU backend, use:
+
+```bash
+OPTIONAL_DEPS=llm,z-image docker compose -f docker/docker-compose-torch-gpu.yml up --build
+```
+
 Access the editor at `http://localhost:5173`
 
 ### Local Development
@@ -46,12 +52,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-## Architecture
-
-- **Backend** ([psynapse_backend](psynapse_backend/)): FastAPI server with graph execution engine
-- **Frontend** ([frontend](frontend/)): React 19 + TypeScript + Vite
-- **Nodepacks** ([nodepacks](nodepacks/)): Extensible Python function libraries
 
 ## Creating Custom Nodepacks
 
