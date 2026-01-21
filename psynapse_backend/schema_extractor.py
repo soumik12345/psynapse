@@ -107,13 +107,16 @@ def extract_function_schema(func: callable, filepath: str) -> dict[str, Any]:
         return None
 
 
-def extract_class_schema(cls: type, filepath: str) -> dict[str, Any]:
+def extract_class_schema(
+    cls: type, filepath: str, node_type: str = "progress"
+) -> dict[str, Any]:
     """
     Extract schema information from a class with __call__ method.
 
     Args:
         cls: The class to extract schema information from.
         filepath: The file path of the class.
+        node_type: The type of node ("progress" or "stream").
 
     Returns:
         A dictionary of schema information.
@@ -152,21 +155,28 @@ def extract_class_schema(cls: type, filepath: str) -> dict[str, Any]:
         # Extract docstring (prefer class docstring, fallback to __call__ docstring)
         docstring = inspect.getdoc(cls) or inspect.getdoc(call_method) or ""
 
-        return {
+        schema = {
             "name": cls.__name__,
             "params": params,
             "returns": returns,
             "docstring": docstring,
             "filepath": filepath,
-            "is_progress_node": True,
         }
+
+        # Add node type flag
+        if node_type == "progress":
+            schema["is_progress_node"] = True
+        elif node_type == "stream":
+            schema["is_stream_node"] = True
+
+        return schema
     except Exception as e:
         print(f"Error extracting schema for {cls.__name__}: {e}")
         return None
 
 
 def extract_schemas_from_file(
-    filepath: str, extract_classes: bool = False
+    filepath: str, extract_classes: bool = False, node_type: str = "progress"
 ) -> list[dict[str, Any]]:
     """
     Extract schemas from all functions or classes in a Python file.
@@ -174,6 +184,7 @@ def extract_schemas_from_file(
     Args:
         filepath: The file path of the Python file.
         extract_classes: If True, extract classes with __call__ method. If False, extract functions.
+        node_type: The type of node for classes ("progress" or "stream").
 
     Returns:
         A list of dictionaries of schema information.
@@ -199,7 +210,7 @@ def extract_schemas_from_file(
                     and hasattr(obj, "__call__")
                     and not name.startswith("_")  # Skip private classes
                 ):
-                    schema = extract_class_schema(obj, filepath)
+                    schema = extract_class_schema(obj, filepath, node_type=node_type)
                     if schema:
                         schemas.append(schema)
             else:
@@ -217,7 +228,7 @@ def extract_schemas_from_file(
 
 def extract_all_schemas(nodepacks_dir: str) -> list[dict[str, Any]]:
     """
-    Extract schemas from all ops.py and progress_ops.py files in the nodepacks directory.
+    Extract schemas from all ops.py, progress_ops.py, and stream_ops.py files in the nodepacks directory.
 
     Args:
         nodepacks_dir: The directory containing the nodepacks.
@@ -247,7 +258,15 @@ def extract_all_schemas(nodepacks_dir: str) -> list[dict[str, Any]]:
             progress_ops_file = nodepack_dir / "progress_ops.py"
             if progress_ops_file.exists():
                 schemas = extract_schemas_from_file(
-                    str(progress_ops_file), extract_classes=True
+                    str(progress_ops_file), extract_classes=True, node_type="progress"
+                )
+                all_schemas.extend(schemas)
+
+            # Extract schemas from stream_ops.py classes
+            stream_ops_file = nodepack_dir / "stream_ops.py"
+            if stream_ops_file.exists():
+                schemas = extract_schemas_from_file(
+                    str(stream_ops_file), extract_classes=True, node_type="stream"
                 )
                 all_schemas.extend(schemas)
 

@@ -321,16 +321,17 @@ const PsynapseEditorInner = () => {
             const existingIndex = prev.findIndex(
               (s) =>
                 s.node_id === status.node_id &&
-                (s.status === "executing" || s.status === "progress"),
+                (s.status === "executing" || s.status === "progress" || s.status === "streaming"),
             );
 
             if (
               existingIndex !== -1 &&
               (status.status === "progress" ||
+                status.status === "streaming" ||
                 status.status === "completed" ||
                 status.status === "error")
             ) {
-              // Update existing executing/progress node
+              // Update existing executing/progress/streaming node
               const updated = [...prev];
               updated[existingIndex] = status;
               return updated;
