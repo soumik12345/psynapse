@@ -87,6 +87,7 @@ nav:
     - Quick Start: guides/quick-start.md
     - Architecture: guides/architecture.md
     - Progress Nodes: guides/progress-nodes.md
+    - Streaming Nodes: guides/stream-nodes.md
   - API Reference:
     - Backend:
       - Graph Executor: backend/executor.md
