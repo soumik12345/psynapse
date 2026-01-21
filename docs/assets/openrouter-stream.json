@@ -1,0 +1,380 @@
+{
+  "nodes": [
+    {
+      "id": "node_0",
+      "type": "variableNode",
+      "position": {
+        "x": 118.5,
+        "y": 141.5
+      },
+      "data": {
+        "label": "Variable: system_message",
+        "variableName": "system_message",
+        "variableType": "String",
+        "variableValue": "You are a helpful assistant",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_8output-node_4input"
+          }
+        ],
+        "textContentFormat": false,
+        "llmMessageFormat": true,
+        "llmMessageRole": "system",
+        "executionStatus": "completed"
+      },
+      "width": 211,
+      "height": 102,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 118.5,
+        "y": 141.5
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_1",
+      "type": "variableNode",
+      "position": {
+        "x": 130.75,
+        "y": 294.25
+      },
+      "data": {
+        "label": "Variable: user_message",
+        "variableName": "user_message",
+        "variableType": "String",
+        "variableValue": "Write a detailed essay on the neolithic age",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_8output-node_4input"
+          }
+        ],
+        "textContentFormat": false,
+        "llmMessageFormat": true,
+        "llmMessageRole": "user",
+        "executionStatus": "completed"
+      },
+      "width": 191,
+      "height": 102,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 130.75,
+        "y": 294.25
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_2",
+      "type": "listNode",
+      "position": {
+        "x": 391.75,
+        "y": 214.25
+      },
+      "data": {
+        "label": "List",
+        "inputCount": 2,
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_8output-node_4input"
+          }
+        ],
+        "executionStatus": "completed"
+      },
+      "width": 180,
+      "height": 150,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 391.75,
+        "y": 214.25
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_4",
+      "type": "viewNode",
+      "position": {
+        "x": 947.8452223248203,
+        "y": 205.35273876284745
+      },
+      "data": {
+        "label": "View",
+        "value": {
+          "id": "gen-1769008105-oqbK9QVHEnZQ5bmL4Vmk",
+          "object": "chat.completion",
+          "created": 1769008115,
+          "model": "google/gemini-3-flash-preview",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "### The Threshold of Civilization: An Analysis of the Neolithic Age\n\nThe Neolithic Age, or the \"New Stone Age,\" represents perhaps the most significant turning point in human history. Lasting roughly from 10,000 BCE to 3,000 BCE, this era marked the transition from small, nomadic bands of hunter-gatherers to settled, agricultural societies. This transformation, often called the **Neolithic Revolution**, laid the foundational stones for modern civilization, including the birth of cities, organized religion, complex social hierarchies, and technological innovation.\n\n#### The Catalyst: The Neolithic Revolution\nThe defining characteristic of the Neolithic Age was the shift from food gathering to food production. For hundreds of thousands of years, humans lived as nomads, following seasonal migrations of animals and ripening fruits. Around 10,000 BCE, as the last Ice Age receded and the Earth’s climate became warmer and more stable, humans began to domesticate plants and animals.\n\nIn the \"Fertile Crescent\" of the Middle East, humans began cultivating wild grains like wheat and barley. Simultaneously or shortly after, similar shifts occurred independently in other parts of the world: rice in the Yangtze River valley, maize in Mesoamerica, and potatoes in the Andes. The domestication of animals—such as sheep, goats, pigs, and cattle—provided a reliable source of protein, milk, hides, and labor. This shift ensured a stable food supply, leading to a population explosion.\n\n#### Settlement and the Birth of Architecture\nOnce humans were no longer required to follow wandering herds, they began to build permanent structures. This led to the emergence of the first villages. Early Neolithic homes were often made of sun-dried mud bricks or timber, featuring hearths for cooking and raised platforms for sleeping.\n\nOne of the most famous Neolithic settlements is **Çatalhöyük** in modern-day Turkey. Dating back to 7500 BCE, it was a dense \"proto-city\" where houses were built directly against one another with no streets; residents moved across rooftops and entered homes through holes in the ceiling. Such settlements prove that Neolithic people were developing complex social lives and a shared sense of community safety.\n\n#### Technological and Artistic Advancements\nWhile the era is named for its \"New Stone\" tools, the technology of the Neolithic was far more sophisticated than simple sharpened rocks. Tools were now ground and polished rather than just flaked, resulting in highly efficient axes for clearing forests and sickles for harvesting grain.\n\nThe Neolithic also saw the invention of **pottery**. With a surplus of grain, humans needed durable containers for storage and cooking. This led to the development of ceramics, which were often decorated with geometric patterns, signaling an artistic awakening. Additionally, the invention of the loom allowed for the weaving of textiles—linen and wool—meaning humans no longer relied solely on animal skins for clothing.\n\n#### Social Stratification and Specialization\nThe ability to produce a food surplus changed the social fabric of humanity. In a hunter-gatherer society, everyone was involved in finding food. In a Neolithic village, a surplus meant that not everyone had to farm. This led to **labor specialization**. Some became potters, others weavers, toolmakers, or priests.\n\nAs specialization grew, so did social hierarchy. Wealth began to accumulate in the hands of certain families or leaders. The concept of private property emerged, leading to the need for protection and governance. Inequalities in burial goods found in Neolithic graves suggest that some individuals held higher status or power than others, marking the end of the egalitarianism that characterized the Paleolithic.\n\n#### Religion and Megalithic Monuments\nThe Neolithic era witnessed an evolution in human spirituality. Religions became more organized and centered on the elements crucial to farming: the sun, the seasons, and fertility. The \"Mother Goddess\" figures found throughout Europe and Asia suggest a reverence for the earth’s fertility.\n\nFurthermore, this era is known for **megalithic architecture**—massive stone structures built for ritual or funerary purposes. **Stonehenge** in England and the temples of **Göbekli Tepe** in Turkey (which sits on the cusp of the transition) demonstrate an extraordinary level of communal effort, engineering skill, and astronomical knowledge. These sites suggest that Neolithic people had a complex understanding of time and the cosmos.\n\n#### Conclusion\nThe Neolithic Age was far more than just a change in tool-making; it was a total restructuring of the human experience. By tethering themselves to the land, humans traded the freedom of the nomad for the security of the settler. This era birthed the concepts of home, property, and community that define us today. However, it was a double-edged sword; while it brought stability and art, it also introduced systemic warfare, social inequality, and infectious diseases. Ultimately, the Neolithic Age was the crucible in which the first sparks of true civilization were struck, lighting the way for the great empires of antiquity."
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 16,
+            "completion_tokens": 1013,
+            "total_tokens": 1029
+          }
+        },
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_8output-node_4input"
+          }
+        ],
+        "executionStatus": "completed"
+      },
+      "width": 200,
+      "height": 91,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 947.8452223248203,
+        "y": 205.35273876284745
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_8",
+      "type": "functionNode",
+      "position": {
+        "x": 634.7423945932894,
+        "y": 214.05672647726652
+      },
+      "data": {
+        "label": "OpenAIChatCompletionStream",
+        "functionName": "OpenAIChatCompletionStream",
+        "params": [
+          {
+            "name": "model",
+            "type": "str"
+          },
+          {
+            "name": "messages",
+            "type": "list"
+          },
+          {
+            "name": "base_url",
+            "type": "str",
+            "default": "https://api.openai.com/v1"
+          },
+          {
+            "name": "api_key_variable",
+            "type": "str",
+            "default": "OPENAI_API_KEY"
+          },
+          {
+            "name": "max_completion_tokens",
+            "type": "int | None",
+            "default": null
+          },
+          {
+            "name": "max_tokens",
+            "type": "int | None",
+            "default": null
+          },
+          {
+            "name": "reasoning_effort",
+            "type": "Optional",
+            "default": null
+          },
+          {
+            "name": "temperature",
+            "type": "float | None",
+            "default": null
+          },
+          {
+            "name": "seed",
+            "type": "int | None",
+            "default": null
+          },
+          {
+            "name": "top_p",
+            "type": "float | None",
+            "default": null
+          }
+        ],
+        "docstring": "Make a streaming chat completion request to OpenAI.\n\nThis node streams tokens in real-time to the Execution Status panel,\nallowing you to see the response as it's being generated.\n\nThe final output is a complete response dict matching the non-streaming\nversion structure, including usage statistics.",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_8output-node_4input"
+          }
+        ],
+        "model": "google/gemini-3-flash-preview",
+        "messages": "",
+        "base_url": "https://openrouter.ai/api/v1",
+        "api_key_variable": "OPENROUTER_API_KEY",
+        "max_completion_tokens": null,
+        "max_tokens": null,
+        "reasoning_effort": null,
+        "temperature": null,
+        "seed": null,
+        "top_p": null,
+        "executionStatus": "completed"
+      },
+      "width": 239,
+      "height": 135,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 634.7423945932894,
+        "y": 214.05672647726652
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_0",
+      "sourceHandle": "output",
+      "target": "node_2",
+      "targetHandle": "input-0",
+      "id": "reactflow__edge-node_0output-node_2input-0"
+    },
+    {
+      "source": "node_1",
+      "sourceHandle": "output",
+      "target": "node_2",
+      "targetHandle": "input-1",
+      "id": "reactflow__edge-node_1output-node_2input-1"
+    },
+    {
+      "source": "node_2",
+      "sourceHandle": "output",
+      "target": "node_8",
+      "targetHandle": "messages",
+      "id": "reactflow__edge-node_2output-node_8messages"
+    },
+    {
+      "source": "node_8",
+      "sourceHandle": "output",
+      "target": "node_4",
+      "targetHandle": "input",
+      "id": "reactflow__edge-node_8output-node_4input"
+    }
+  ]
+}
