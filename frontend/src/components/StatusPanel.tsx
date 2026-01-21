@@ -13,6 +13,23 @@ const isBase64Image = (str: string): boolean => {
   return base64Pattern.test(str);
 };
 
+// Helper to check if a string is a repr() output (non-JSON-serializable object representation)
+const isReprString = (str: string): boolean => {
+  // Matches patterns like: <ClassName object at 0x...>, <module 'name' from ...>, etc.
+  const reprPattern = /^<[^>]+>$/;
+  return reprPattern.test(str);
+};
+
+// Helper to check if an object is a repr-converted object from backend
+const isReprObject = (obj: unknown): obj is { __repr__: string; __type__: string } => {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "__repr__" in obj &&
+    "__type__" in obj
+  );
+};
+
 // Simple Markdown renderer component
 const SimpleMarkdown = ({ content }: { content: string }) => {
   const renderMarkdown = (text: string) => {
@@ -273,6 +290,25 @@ const TreeView = ({
       );
     }
 
+    // Check if it's a repr() string (non-JSON-serializable object)
+    if (isReprString(data)) {
+      return (
+        <span
+          style={{
+            color: "#6f42c1",
+            fontStyle: "italic",
+            backgroundColor: "#f5f0ff",
+            padding: "2px 6px",
+            borderRadius: "3px",
+            fontSize: "11px",
+          }}
+          title="Non-serializable object (repr)"
+        >
+          {data}
+        </span>
+      );
+    }
+
     // Render based on mode
     if (renderMode === "markdown") {
       return <SimpleMarkdown content={data} />;
@@ -325,6 +361,25 @@ const TreeView = ({
   }
 
   if (typeof data === "object") {
+    // Check if it's a repr-converted object from backend (non-JSON-serializable)
+    if (isReprObject(data)) {
+      return (
+        <span
+          style={{
+            color: "#6f42c1",
+            fontStyle: "italic",
+            backgroundColor: "#f5f0ff",
+            padding: "2px 6px",
+            borderRadius: "3px",
+            fontSize: "11px",
+          }}
+          title={`Non-serializable ${data.__type__} object (repr)`}
+        >
+          {data.__repr__}
+        </span>
+      );
+    }
+
     const keys = Object.keys(data);
     if (keys.length === 0) {
       return <span style={{ color: "#6a737d" }}>{"{}"}</span>;
