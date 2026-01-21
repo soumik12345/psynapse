@@ -4,6 +4,9 @@ A visual node-based workflow editor for creating and executing computational gra
 
 https://github.com/user-attachments/assets/309ea22a-1fdc-4685-baf5-cd728441c329
 
+https://github.com/user-attachments/assets/660d8857-9c8e-4287-a45e-83637e9bdd12
+
+
 ## Features
 
 - **Visual Node Editor**: Drag-and-drop interface built with ReactFlow
