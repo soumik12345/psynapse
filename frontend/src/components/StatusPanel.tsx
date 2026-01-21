@@ -374,6 +374,7 @@ const TreeView = ({
 const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [renderModes, setRenderModes] = useState<Record<string, "raw" | "markdown">>({});
+  const [streamingRenderModes, setStreamingRenderModes] = useState<Record<string, "raw" | "markdown">>({});
 
   const toggleExpanded = (nodeId: string) => {
     setExpandedNodes((prev) => {
@@ -389,6 +390,13 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
 
   const toggleRenderMode = (nodeId: string) => {
     setRenderModes((prev) => ({
+      ...prev,
+      [nodeId]: prev[nodeId] === "markdown" ? "raw" : "markdown",
+    }));
+  };
+
+  const toggleStreamingRenderMode = (nodeId: string) => {
+    setStreamingRenderModes((prev) => ({
       ...prev,
       [nodeId]: prev[nodeId] === "markdown" ? "raw" : "markdown",
     }));
@@ -486,6 +494,7 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
               const isError = status.status === "error";
               const isCompleted = status.status === "completed";
               const isProgress = status.status === "progress";
+              const isStreaming = status.status === "streaming";
 
               return (
                 <div
@@ -495,7 +504,7 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                     border: `2px solid ${
                       isError
                         ? "#dc3545"
-                        : isExecuting || isProgress
+                        : isExecuting || isProgress || isStreaming
                           ? "#007bff"
                           : "#28a745"
                     }`,
@@ -518,7 +527,7 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                       style={{
                         backgroundColor: isError
                           ? "#dc3545"
-                          : isExecuting || isProgress
+                          : isExecuting || isProgress || isStreaming
                             ? "#007bff"
                             : "#28a745",
                         color: "#ffffff",
@@ -564,6 +573,20 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
 
                     {/* Progress indicator for progress nodes */}
                     {isProgress && (
+                      <div
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          border: "3px solid #f3f3f3",
+                          borderTop: "3px solid #007bff",
+                          borderRadius: "50%",
+                          animation: "spin 1s linear infinite",
+                        }}
+                      />
+                    )}
+
+                    {/* Streaming indicator for stream nodes */}
+                    {isStreaming && (
                       <div
                         style={{
                           width: "20px",
@@ -700,6 +723,97 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
                     </div>
                   )}
 
+                  {/* Streaming Text Section */}
+                  {isStreaming && status.streaming_text !== undefined && (
+                    <div style={{ marginBottom: "8px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "#007bff",
+                              fontWeight: "500",
+                            }}
+                          >
+                            Streaming...
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => toggleStreamingRenderMode(status.node_id)}
+                          style={{
+                            background: "none",
+                            border: "1px solid #6c757d",
+                            borderRadius: "4px",
+                            padding: "2px 8px",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            color: "#6c757d",
+                            fontWeight: "500",
+                          }}
+                          title={
+                            streamingRenderModes[status.node_id] === "markdown"
+                              ? "Switch to raw view"
+                              : "Switch to markdown view"
+                          }
+                        >
+                          {streamingRenderModes[status.node_id] === "markdown"
+                            ? "Raw"
+                            : "MD"}
+                        </button>
+                      </div>
+                      <div
+                        style={{
+                          padding: "12px",
+                          backgroundColor: "#f0f8ff",
+                          borderRadius: "4px",
+                          fontSize: "13px",
+                          fontFamily:
+                            streamingRenderModes[status.node_id] === "markdown"
+                              ? "inherit"
+                              : "monospace",
+                          color: "#212529",
+                          wordBreak: "break-word",
+                          whiteSpace: "pre-wrap",
+                          maxHeight: "300px",
+                          overflowY: "auto",
+                          lineHeight: "1.5",
+                          border: "1px solid #b8daff",
+                        }}
+                      >
+                        {streamingRenderModes[status.node_id] === "markdown" ? (
+                          <SimpleMarkdown content={status.streaming_text} />
+                        ) : (
+                          <>
+                            {status.streaming_text}
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: "8px",
+                                height: "16px",
+                                backgroundColor: "#007bff",
+                                marginLeft: "2px",
+                                animation: "blink 1s step-end infinite",
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Output Section */}
                   {isCompleted && status.output !== undefined && (
                     <div>
@@ -803,12 +917,16 @@ const StatusPanel = ({ statusHistory, onClose }: StatusPanelProps) => {
         )}
       </div>
 
-      {/* CSS Animation for spinner */}
+      {/* CSS Animations for spinner and cursor blink */}
       <style>
         {`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
           }
         `}
       </style>

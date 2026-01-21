@@ -18,16 +18,19 @@ class GraphExecutor:
     Attributes:
         nodepacks_dir: The directory containing the nodepacks.
         function_registry: A dictionary of functions from the nodepacks.
+        progress_class_registry: A dictionary of progress classes from the nodepacks.
+        stream_class_registry: A dictionary of stream classes from the nodepacks.
     """
 
     def __init__(self, nodepacks_dir: str):
         self.nodepacks_dir = nodepacks_dir
         self.function_registry = {}
         self.progress_class_registry = {}
+        self.stream_class_registry = {}
         self._load_functions()
 
     def _load_functions(self):
-        """Load all functions and progress classes from nodepacks into registries."""
+        """Load all functions, progress classes, and stream classes from nodepacks into registries."""
         from pathlib import Path
 
         nodepacks_path = Path(self.nodepacks_dir)
@@ -45,6 +48,11 @@ class GraphExecutor:
                 progress_ops_file = nodepack_dir / "progress_ops.py"
                 if progress_ops_file.exists():
                     self._load_progress_classes_from_file(str(progress_ops_file))
+
+                # Load stream classes from stream_ops.py
+                stream_ops_file = nodepack_dir / "stream_ops.py"
+                if stream_ops_file.exists():
+                    self._load_stream_classes_from_file(str(stream_ops_file))
 
     def _load_functions_from_file(self, filepath: str):
         """Load functions from a specific file."""
@@ -86,6 +94,30 @@ class GraphExecutor:
 
         except Exception as e:
             print(f"Error loading progress classes from {filepath}: {e}")
+
+    def _load_stream_classes_from_file(self, filepath: str):
+        """Load stream classes from a specific file."""
+        try:
+            spec = importlib.util.spec_from_file_location("module", filepath)
+            if spec is None or spec.loader is None:
+                return
+
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            for name, obj in inspect.getmembers(module):
+                # Load classes with __call__ method (skip private classes)
+                if (
+                    inspect.isclass(obj)
+                    and obj.__module__ == module.__name__
+                    and hasattr(obj, "__call__")
+                    and not name.startswith("_")
+                ):
+                    # Store the class (not instance) in registry
+                    self.stream_class_registry[name] = obj
+
+        except Exception as e:
+            print(f"Error loading stream classes from {filepath}: {e}")
 
     def topological_sort(self, nodes: list[dict], edges: list[dict]) -> list[str]:
         """
@@ -648,20 +680,22 @@ class GraphExecutor:
                     }
 
                 else:
-                    # Function node: execute the function or progress class
+                    # Function node: execute the function, progress class, or stream class
                     function_name = node.get("data", {}).get("functionName")
                     node_name = node.get("data", {}).get(
                         "label", function_name or "Unknown"
                     )
 
-                    # Check if it's a progress class or regular function
+                    # Check if it's a progress class, stream class, or regular function
                     is_progress_node = function_name in self.progress_class_registry
+                    is_stream_node = function_name in self.stream_class_registry
 
                     if not function_name:
                         continue
 
                     if (
                         not is_progress_node
+                        and not is_stream_node
                         and function_name not in self.function_registry
                     ):
                         continue
@@ -671,6 +705,12 @@ class GraphExecutor:
                         progress_class = self.progress_class_registry[function_name]
                         # Get signature from __call__ method
                         sig = inspect.signature(progress_class.__call__)
+                        # Filter out 'self' parameter
+                        param_names = [p for p in sig.parameters.keys() if p != "self"]
+                    elif is_stream_node:
+                        stream_class = self.stream_class_registry[function_name]
+                        # Get signature from __call__ method
+                        sig = inspect.signature(stream_class.__call__)
                         # Filter out 'self' parameter
                         param_names = [p for p in sig.parameters.keys() if p != "self"]
                     else:
@@ -706,7 +746,7 @@ class GraphExecutor:
                         "inputs": inputs,
                     }
 
-                    # Execute function or progress class
+                    # Execute function, progress class, or stream class
                     try:
                         # Convert string inputs to appropriate types if needed
                         type_hints = {}
@@ -715,6 +755,8 @@ class GraphExecutor:
 
                             if is_progress_node:
                                 type_hints = get_type_hints(progress_class.__call__)
+                            elif is_stream_node:
+                                type_hints = get_type_hints(stream_class.__call__)
                             else:
                                 type_hints = get_type_hints(func)
                         except:
@@ -792,6 +834,92 @@ class GraphExecutor:
                             # Drain remaining progress updates
                             while not progress_queue.empty():
                                 yield progress_queue.get()
+
+                            # Handle result or error
+                            if error_container:
+                                error_msg = str(error_container[0])
+                                print(
+                                    f"Error executing node {node_id} ({function_name}): {error_container[0]}"
+                                )
+                                node_outputs[node_id] = None
+
+                                # Yield error status
+                                yield {
+                                    "node_id": node_id,
+                                    "node_number": node_number,
+                                    "node_name": node_name,
+                                    "status": "error",
+                                    "inputs": inputs,
+                                    "error": error_msg,
+                                }
+                            else:
+                                result = (
+                                    result_container[0] if result_container else None
+                                )
+                                node_outputs[node_id] = result
+
+                                # Yield completed status
+                                yield {
+                                    "node_id": node_id,
+                                    "node_number": node_number,
+                                    "node_name": node_name,
+                                    "status": "completed",
+                                    "inputs": inputs,
+                                    "output": result,
+                                }
+                        elif is_stream_node:
+                            # Execute stream node with threading and streaming updates
+                            stream_queue = queue.Queue()
+                            result_container = []
+                            error_container = []
+                            accumulated_text = []
+
+                            # Instantiate the stream class
+                            instance = stream_class()
+
+                            # Set up stream callback
+                            def stream_callback(chunk: str):
+                                accumulated_text.append(chunk)
+                                stream_queue.put(
+                                    {
+                                        "node_id": node_id,
+                                        "node_number": node_number,
+                                        "node_name": node_name,
+                                        "status": "streaming",
+                                        "streaming_text": "".join(accumulated_text),
+                                        "streaming_chunk": chunk,
+                                        "inputs": inputs,
+                                    }
+                                )
+
+                            # Access the _stream_reporter and set callback
+                            if hasattr(instance, "_stream_reporter"):
+                                instance._stream_reporter.set_callback(stream_callback)
+
+                            # Execute in a separate thread
+                            def execute_with_stream():
+                                try:
+                                    result = instance(**converted_inputs)
+                                    result_container.append(result)
+                                except Exception as e:
+                                    error_container.append(e)
+
+                            exec_thread = threading.Thread(target=execute_with_stream)
+                            exec_thread.start()
+
+                            # Yield stream updates while executing
+                            while exec_thread.is_alive():
+                                try:
+                                    stream_update = stream_queue.get(timeout=0.1)
+                                    yield stream_update
+                                except queue.Empty:
+                                    pass
+
+                            exec_thread.join()
+
+                            # Drain remaining stream updates
+                            while not stream_queue.empty():
+                                yield stream_queue.get()
 
                             # Handle result or error
                             if error_container:

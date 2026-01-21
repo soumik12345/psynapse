@@ -17,6 +17,7 @@ export interface FunctionSchema {
   docstring: string;
   filepath: string;
   is_progress_node?: boolean;
+  is_stream_node?: boolean;
 }
 
 export interface NodeData {
@@ -50,10 +51,12 @@ export interface ExecutionStatus {
   node_id: string;
   node_number: number;
   node_name: string;
-  status: "executing" | "completed" | "error" | "progress";
+  status: "executing" | "completed" | "error" | "progress" | "streaming";
   inputs?: Record<string, any>;
   output?: any;
   error?: string;
   progress?: number;
   progress_message?: string;
+  streaming_text?: string;
+  streaming_chunk?: string;
 }
