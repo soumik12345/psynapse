@@ -30,17 +30,20 @@ graph TB
 
         FuncReg[Function Registry]
         ProgReg[Progress Class Registry]
+        StreamReg[Stream Class Registry]
     end
 
     subgraph Nodepacks["Nodepacks"]
         OpsFile[ops.py<br/>Regular Functions]
         ProgFile[progress_ops.py<br/>Progress Classes]
+        StreamFile[stream_ops.py<br/>Stream Classes]
     end
 
     NodeLib -->|"HTTP GET"| SchemaEP
     SchemaEP --> SchemaExt
     SchemaExt -->|"Introspect"| OpsFile
     SchemaExt -->|"Introspect"| ProgFile
+    SchemaExt -->|"Introspect"| StreamFile
 
     Canvas --> ExecBtn
     ExecBtn -->|"HTTP POST"| ExecEP
@@ -51,11 +54,14 @@ graph TB
 
     GraphExec -->|"Load"| FuncReg
     GraphExec -->|"Load"| ProgReg
+    GraphExec -->|"Load"| StreamReg
     StreamExec -->|"Load"| FuncReg
     StreamExec -->|"Load"| ProgReg
+    StreamExec -->|"Load"| StreamReg
 
     FuncReg -.->|"Import"| OpsFile
     ProgReg -.->|"Import"| ProgFile
+    StreamReg -.->|"Import"| StreamFile
 
     StreamEP -->|"SSE Stream"| Status
     ExecEP -->|"JSON Response"| Canvas
@@ -72,7 +78,7 @@ graph TB
 **Purpose**: Dynamically discover and extract metadata from Python functions and classes in nodepacks.
 
 **Process**:
-1. Scan `nodepacks/` directory for all `ops.py` and `progress_ops.py` files
+1. Scan `nodepacks/` directory for all `ops.py`, `progress_ops.py`, and `stream_ops.py` files
 2. Load each module dynamically using `importlib`
 3. For each function in `ops.py`:
    - Extract function signature using `inspect.signature()`
@@ -86,6 +92,12 @@ graph TB
    - Extract docstrings from class or `__call__` method
    - Detect `Literal` type hints for dropdown UI controls
    - Build JSON schema with `is_progress_node: true` flag
+5. For each class in `stream_ops.py`:
+   - Extract `__call__` method signature (skip private classes starting with `_`)
+   - Parse type hints from `__call__` method (excluding `self` parameter)
+   - Extract docstrings from class or `__call__` method
+   - Detect `Literal` type hints for dropdown UI controls
+   - Build JSON schema with `is_stream_node: true` flag
 
 **Output Schema**:
 ```json
@@ -123,6 +135,7 @@ graph TB
 **Key Components**:
 - **Function Registry**: Dictionary mapping function names to callable functions from `ops.py`
 - **Progress Class Registry**: Dictionary mapping class names to classes from `progress_ops.py`
+- **Stream Class Registry**: Dictionary mapping class names to classes from `stream_ops.py`
 
 #### Topological Sorting (Kahn's Algorithm)
 ```python
@@ -171,11 +184,19 @@ The executor supports four node types, each with distinct behavior:
    - Progress format: `{percent: 0.0-1.0, message: "..."}`
    - Store output when complete
 
+6. **Stream Nodes** (from `stream_ops.py`):
+   - Instantiate stream-aware class
+   - Set up `_stream_reporter` with callback mechanism
+   - Execute `__call__` method in separate thread
+   - Stream text chunks via callback during execution (e.g., LLM token streaming)
+   - Streaming format: `{streaming_text: "accumulated...", streaming_chunk: "new chunk"}`
+   - Store final output when complete
+
 #### Error Handling
 - Type conversion errors (caught and logged)
 - Missing functions/classes in registries
 - Function execution exceptions (output set to None)
-- Thread execution errors for progress nodes
+- Thread execution errors for progress and stream nodes
 - Cycle detection in graph (raises ValueError)
 
 #### Environment Variables
@@ -188,7 +209,7 @@ The executor supports four node types, each with distinct behavior:
 **Initialization**:
 - Uses FastAPI lifespan events to initialize GraphExecutor on startup
 - Loads nodepacks from `NODEPACKS_DIR` environment variable (default: `./nodepacks`)
-- Populates function and progress class registries on startup
+- Populates function, progress class, and stream class registries on startup
 
 **Endpoints**:
 
@@ -198,7 +219,7 @@ The executor supports four node types, each with distinct behavior:
 
 #### GET `/get_schema`
 - Extracts and returns schemas for all functions/classes in nodepacks
-- Calls `extract_all_schemas()` to scan all `ops.py` and `progress_ops.py` files
+- Calls `extract_all_schemas()` to scan all `ops.py`, `progress_ops.py`, and `stream_ops.py` files
 - Used by frontend on startup to populate node library
 - Response: Array of schema objects (see Schema Extraction section)
 
@@ -216,6 +237,7 @@ The executor supports four node types, each with distinct behavior:
 - Response headers include `Cache-Control: no-cache` and `X-Accel-Buffering: no`
 - Returns status for each node: `executing` → `completed`/`error`
 - Progress nodes also emit `progress` status during execution
+- Stream nodes emit `streaming` status with text chunks during execution
 - Final event contains ViewNode results
 
 **SSE Event Format:**
@@ -236,6 +258,17 @@ data: {"node_id":"node_2","node_number":2,"node_name":"ProgressOp","status":"pro
 data: {"node_id":"node_2","node_number":2,"node_name":"ProgressOp","status":"progress","progress":0.6,"progress_message":"Processing item 6/10","inputs":{"count":10}}
 
 data: {"node_id":"node_2","node_number":2,"node_name":"ProgressOp","status":"completed","inputs":{"count":10},"output":90}
+```
+
+**Stream Node Event Format:**
+```json
+data: {"node_id":"node_3","node_number":3,"node_name":"OpenAIChatCompletionStream","status":"executing","inputs":{"model":"gpt-4","messages":[...]}}
+
+data: {"node_id":"node_3","node_number":3,"node_name":"OpenAIChatCompletionStream","status":"streaming","streaming_text":"Hello","streaming_chunk":"Hello","inputs":{"model":"gpt-4","messages":[...]}}
+
+data: {"node_id":"node_3","node_number":3,"node_name":"OpenAIChatCompletionStream","status":"streaming","streaming_text":"Hello, world","streaming_chunk":", world","inputs":{"model":"gpt-4","messages":[...]}}
+
+data: {"node_id":"node_3","node_number":3,"node_name":"OpenAIChatCompletionStream","status":"completed","inputs":{"model":"gpt-4","messages":[...]},"output":{"id":"chatcmpl-...","choices":[...]}}
 ```
 
 **Error Event Format:**
@@ -430,6 +463,7 @@ graph TD
 - Status indicators:
   - Animated spinner for `executing` nodes
   - Progress bar for `progress` nodes (shows percentage and message)
+  - Streaming text display for `streaming` nodes (shows accumulated text in real-time)
   - Green checkmark for `completed` nodes
   - Red X for `error` nodes
 - Collapsible inputs section (click to expand/collapse)
@@ -442,6 +476,7 @@ graph TD
 - Color-coded status borders:
   - Blue for executing
   - Orange for progress
+  - Cyan for streaming
   - Green for completed
   - Red for error
 - White cards with colored left borders
@@ -467,7 +502,7 @@ sequenceDiagram
     User->>Frontend: Opens application
     Frontend->>useSchema Hook: Mount component
     useSchema Hook->>Backend: GET /get_schema
-    Backend->>Nodepacks: Scan ops.py and progress_ops.py
+    Backend->>Nodepacks: Scan ops.py, progress_ops.py, and stream_ops.py
     Nodepacks-->>Backend: Function/Class metadata
     Backend-->>useSchema Hook: Array of schemas
     useSchema Hook-->>Frontend: Schemas available
@@ -508,6 +543,17 @@ sequenceDiagram
                 GraphExecutor->>Backend: Yield "progress" status
                 Backend-->>Frontend: SSE event: progress
                 Frontend->>Frontend: Update progress bar
+            end
+            Nodepacks-->>GraphExecutor: Return final result
+            GraphExecutor->>Backend: Yield "completed" status
+            Backend-->>Frontend: SSE event: completed
+        else Stream Node
+            GraphExecutor->>Nodepacks: Call stream class __call__
+            loop Streaming chunks
+                Nodepacks->>GraphExecutor: Emit text chunk
+                GraphExecutor->>Backend: Yield "streaming" status
+                Backend-->>Frontend: SSE event: streaming
+                Frontend->>Frontend: Update streaming text display
             end
             Nodepacks-->>GraphExecutor: Return final result
             GraphExecutor->>Backend: Yield "completed" status
@@ -564,6 +610,16 @@ Input: Node data + Connected edges
   → Set up _progress_reporter callback
   → Execute in separate thread
   → Yield progress updates (0.0-1.0 + message)
+  → Store final output in node_outputs dict
+```
+
+**Stream Node**:
+```
+Input: Node data + Connected edges
+  → Instantiate stream class
+  → Set up _stream_reporter callback
+  → Execute in separate thread
+  → Yield streaming text chunks (accumulated + chunk)
   → Store final output in node_outputs dict
 ```
 
@@ -793,6 +849,98 @@ class MyProgressOperation:
 - Progress message shown below bar
 - Real-time updates as operation executes
 
+## Stream Node Pattern
+
+Stream nodes enable real-time text streaming for operations like LLM token generation:
+
+### Implementation Pattern
+
+```python
+# In nodepacks/<nodepack>/stream_ops.py
+
+class _StreamReporter:
+    """Internal class for stream reporting."""
+    def __init__(self):
+        self._callback = None
+
+    def set_callback(self, callback):
+        """Set the callback for stream updates."""
+        self._callback = callback
+
+    def emit(self, chunk: str):
+        """Emit a text chunk to the stream."""
+        if self._callback and chunk:
+            self._callback(chunk)
+
+
+class MyStreamOperation:
+    """
+    A stream-aware operation that emits text chunks in real-time.
+    """
+    def __init__(self):
+        self._stream_reporter = _StreamReporter()
+
+    def __call__(self, prompt: str) -> str:
+        """Execute operation with streaming output."""
+        result_chunks = []
+
+        # Example: Process and emit chunks
+        for word in prompt.split():
+            processed = word.upper() + " "
+            result_chunks.append(processed)
+            # Emit each chunk as it's processed
+            self._stream_reporter.emit(processed)
+
+        return "".join(result_chunks)
+```
+
+### Real-World Example: LLM Streaming
+
+```python
+# In nodepacks/llms/stream_ops.py
+
+class OpenAIChatCompletionStream:
+    """Make a streaming chat completion request to OpenAI."""
+
+    def __init__(self):
+        self._stream_reporter = _StreamReporter()
+
+    def __call__(self, model: str, messages: list[dict]) -> dict:
+        from openai import OpenAI
+        client = OpenAI()
+
+        stream = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True,
+        )
+
+        accumulated_content = []
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                accumulated_content.append(content)
+                # Emit token as it arrives
+                self._stream_reporter.emit(content)
+
+        return {"content": "".join(accumulated_content)}
+```
+
+### Threading Model
+
+- Stream nodes execute in separate threads to avoid blocking
+- Text chunks sent via queue from thread to main executor
+- Main executor yields SSE events while thread is running
+- Accumulated text tracked for each streaming update
+- Errors caught in thread and reported via error status
+
+### Frontend Display
+
+- Stream nodes show real-time text in StatusPanel
+- Accumulated text displayed as it arrives
+- Typing effect as new chunks append
+- Final output shown when streaming completes
+
 ## Error Handling
 
 ### Backend Errors
@@ -807,7 +955,7 @@ class MyProgressOperation:
 - Missing functions/classes in registries (node skipped, output set to `None`)
 - Type conversion errors (caught, logged, output set to `None`)
 - Function execution exceptions (caught, logged, yields error status in streaming)
-- Thread execution errors for progress nodes (caught, yields error status)
+- Thread execution errors for progress and stream nodes (caught, yields error status)
 
 **API Errors**:
 - Invalid request format (400 Bad Request)
@@ -837,7 +985,7 @@ class MyProgressOperation:
 ### Backend
 
 **Initialization**:
-- Function and progress class registries built once on startup
+- Function, progress class, and stream class registries built once on startup
 - Module imports cached by Python's import system
 - Nodepacks directory scanned only during initialization
 
@@ -851,7 +999,7 @@ class MyProgressOperation:
 - SSE events sent immediately as nodes complete
 - No buffering of status updates
 - Progress updates queued and yielded in real-time
-- Thread overhead for progress nodes (one thread per progress node)
+- Thread overhead for progress and stream nodes (one thread per progress/stream node)
 
 ### Frontend
 
@@ -874,13 +1022,13 @@ class MyProgressOperation:
 
 ### Adding New Node Types
 
-**Backend** ([psynapse_backend/executor.py](psynapse_backend/executor.py)):
+**Backend** (`psynapse_backend/executor.py`):
 1. Add new node type handling in `execute_graph()` and `execute_graph_streaming()`
 2. Implement execution logic for the node type
 3. Handle inputs/outputs appropriately
 4. Add to node type checks (e.g., `elif node_type == "newNodeType"`)
 
-**Frontend** ([frontend/src/components/](frontend/src/components/)):
+**Frontend** (`frontend/src/components/`):
 1. Create new node component in `frontend/src/components/NewNodeType.tsx`
 2. Add to `nodeTypes` registry in `PsynapseEditor.tsx`
 3. Add to NodeLibraryPanel for drag-and-drop
@@ -890,7 +1038,7 @@ class MyProgressOperation:
 
 **Backend**:
 1. Update type hints in Python functions (e.g., use `MyCustomType` annotation)
-2. Update `get_type_name()` in [psynapse_backend/schema_extractor.py](psynapse_backend/schema_extractor.py)
+2. Update `get_type_name()` in `psynapse_backend/schema_extractor.py`
 3. Add type conversion logic in executor's `execute_graph()` methods
 4. Document the type in schema extraction
 
@@ -922,7 +1070,20 @@ class MyProgressOperation:
                self._progress_reporter.update(i+1, iterations, f"Step {i+1}")
            return "Done"
    ```
-4. Restart backend or use `--nodepack-dir` flag
+4. (Optional) Add `stream_ops.py` with stream classes:
+   ```python
+   class MyStreamOp:
+       def __init__(self):
+           self._stream_reporter = _StreamReporter()
+
+       def __call__(self, text: str) -> str:
+           result = []
+           for word in text.split():
+               self._stream_reporter.emit(word + " ")
+               result.append(word)
+           return " ".join(result)
+   ```
+5. Restart backend or use `--nodepack-dir` flag
 5. Functions/classes automatically appear in library
 
 **Best Practices**:
@@ -936,20 +1097,20 @@ class MyProgressOperation:
 
 ### Backend Tests
 
-See [psynapse_backend/test_backend.py](psynapse_backend/test_backend.py) for examples:
+See `psynapse_backend/test_backend.py` for examples:
 
 **Schema Extraction**:
 - Verify correct parameter extraction
 - Test default value handling
 - Validate `Literal` type detection
-- Check progress class vs regular function differentiation
+- Check progress class, stream class, and regular function differentiation
 
 **Graph Execution**:
 - Test topological sort with various graph structures
 - Verify cycle detection (should raise `ValueError`)
 - Test all node types: FunctionNode, VariableNode, ListNode, ViewNode
 - Validate type conversion accuracy
-- Test progress node threading and callbacks
+- Test progress and stream node threading and callbacks
 - Verify environment variable injection and restoration
 
 **Integration Tests**:
@@ -972,7 +1133,7 @@ See [psynapse_backend/test_backend.py](psynapse_backend/test_backend.py) for exa
 
 **E2E Tests**:
 - Complete workflow: load → edit → execute → view results
-- Progress node real-time updates
+- Progress and stream node real-time updates
 - Abort execution during progress
 
 ## Deployment
