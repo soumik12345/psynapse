@@ -21,6 +21,8 @@ def split_name(full_name: str) -> AnnotatedDict[Literal["first", "last"]]:
 
 This creates a node with two output handles: `first` and `last`. Downstream nodes can connect to either output independently.
 
+![](../assets/annotated-dict.png)
+
 ## How It Works
 
 1. **Schema Extraction**: When the backend loads your nodepack, it detects the `AnnotatedDict[Literal[...]]` return type and extracts the key names

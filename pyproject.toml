@@ -21,6 +21,7 @@ llm = [
     "pydantic>=2.12.3",
 ]
 z-image = [
+    "accelerate>=1.12.0",
     "diffusers>=0.36.0",
     "sentencepiece>=0.2.1",
     "transformers>=4.57.6",
