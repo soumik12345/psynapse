@@ -5,6 +5,9 @@ import type { NodeData } from "../types/schema";
 const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
   const params = data.params || [];
   const edges = data.edges || [];
+  // Get returns array - default to single "output" handle for backward compatibility
+  const returns = data.returns || [{ name: "output", type: "any" }];
+  const hasMultipleOutputs = returns.length > 1;
 
   // Filter params: only show those WITHOUT default values in the node
   const paramsWithoutDefaults = useMemo(() => {
@@ -170,16 +173,75 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
           );
         })}
 
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="output"
-        style={{
-          background: "#4a90e2",
-          width: "10px",
-          height: "10px",
-        }}
-      />
+      {/* Output section for multiple outputs */}
+      {hasMultipleOutputs ? (
+        <div
+          style={{
+            marginTop: "10px",
+            borderTop: "1px solid #eee",
+            paddingTop: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "10px",
+              color: "#999",
+              marginBottom: "6px",
+            }}
+          >
+            Outputs:
+          </div>
+          {returns.map((ret) => (
+            <div
+              key={ret.name}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                marginBottom: "6px",
+                position: "relative",
+                minHeight: "20px",
+                paddingRight: "8px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "11px",
+                  color: "#666",
+                }}
+              >
+                {ret.name}
+              </span>
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={ret.name}
+                style={{
+                  background: "#4a90e2",
+                  width: "10px",
+                  height: "10px",
+                  position: "absolute",
+                  right: "-5px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Single output - default centered position */
+        <Handle
+          type="source"
+          position={Position.Right}
+          id={returns[0]?.name || "output"}
+          style={{
+            background: "#4a90e2",
+            width: "10px",
+            height: "10px",
+          }}
+        />
+      )}
     </div>
   );
 };

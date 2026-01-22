@@ -154,6 +154,7 @@ const PsynapseEditorInner = () => {
           label: schema.name,
           functionName: schema.name,
           params: schema.params,
+          returns: schema.returns,
           docstring: schema.docstring,
           onChange: handleNodeDataChange,
           edges: [], // Will be updated with actual edges

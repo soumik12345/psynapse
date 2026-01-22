@@ -24,6 +24,7 @@ export interface NodeData {
   label: string;
   functionName?: string;
   params?: ParamSchema[];
+  returns?: ReturnSchema[];
   docstring?: string;
   executionStatus?: "executing" | "completed" | "error";
   variableName?: string;

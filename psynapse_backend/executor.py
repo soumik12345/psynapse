@@ -7,6 +7,48 @@ from collections import defaultdict, deque
 from typing import Any
 
 
+def _extract_output_value(
+    node_outputs: dict[str, Any], source_id: str, source_handle: str
+) -> Any:
+    """
+    Extract the output value from a node, handling AnnotatedDict outputs.
+
+    For AnnotatedDict nodes (which have multiple output handles), the sourceHandle
+    specifies which key to extract from the dictionary. For regular nodes with
+    a single "output" or "result" handle, the full value is returned.
+
+    Args:
+        node_outputs: Dictionary mapping node IDs to their output values.
+        source_id: The ID of the source node.
+        source_handle: The handle name (e.g., "output", "result", or a key name for AnnotatedDict).
+
+    Returns:
+        The extracted value.
+
+    Raises:
+        ValueError: If the sourceHandle is a key that doesn't exist in the dict output.
+    """
+    source_value = node_outputs[source_id]
+
+    # If sourceHandle is "output" or "result", return the full value (backward compatible)
+    if source_handle in ("output", "result"):
+        return source_value
+
+    # Otherwise, treat sourceHandle as a key to extract from a dict (AnnotatedDict case)
+    if isinstance(source_value, dict):
+        if source_handle not in source_value:
+            raise ValueError(
+                f"AnnotatedDict output missing expected key '{source_handle}'. "
+                f"Available keys: {list(source_value.keys())}"
+            )
+        return source_value[source_handle]
+
+    # If not a dict but sourceHandle is not "output"/"result", this is an error
+    raise ValueError(
+        f"Cannot extract key '{source_handle}' from non-dict output of type {type(source_value).__name__}"
+    )
+
+
 class GraphExecutor:
     """
     GraphExecutor is responsible for executing the node graph.
@@ -222,7 +264,10 @@ class GraphExecutor:
                         source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
-                            view_node_results[node_id] = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            view_node_results[node_id] = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
                         else:
                             view_node_results[node_id] = None
                     else:
@@ -338,8 +383,14 @@ class GraphExecutor:
                     output_list = []
                     for edge in sorted_edges:
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            output_list.append(node_outputs[source_id])
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            output_list.append(
+                                _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
+                            )
 
                     node_outputs[node_id] = output_list
 
@@ -368,11 +419,15 @@ class GraphExecutor:
                     for edge in incoming_edges.get(node_id, []):
                         target_handle = edge.get("targetHandle", "")
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
                             # The target handle should indicate which parameter to set
                             if target_handle in param_names:
-                                inputs[target_handle] = node_outputs[source_id]
+                                # Use helper to extract value (handles AnnotatedDict outputs)
+                                inputs[target_handle] = _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
 
                     # Execute function
                     try:
@@ -478,8 +533,12 @@ class GraphExecutor:
                     if incoming:
                         edge = incoming[0]  # ViewNode has single input
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            inputs["input"] = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            inputs["input"] = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
 
                     # Yield executing status
                     yield {
@@ -497,8 +556,11 @@ class GraphExecutor:
                         source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
-                            view_node_results[node_id] = node_outputs[source_id]
-                            output = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            output = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
+                            view_node_results[node_id] = output
                         else:
                             view_node_results[node_id] = None
                             output = None
@@ -648,8 +710,12 @@ class GraphExecutor:
                     inputs = {}
                     for idx, edge in enumerate(sorted_edges):
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            inputs[f"input-{idx}"] = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            inputs[f"input-{idx}"] = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
 
                     # Yield executing status
                     yield {
@@ -664,8 +730,14 @@ class GraphExecutor:
                     output_list = []
                     for edge in sorted_edges:
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            output_list.append(node_outputs[source_id])
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            output_list.append(
+                                _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
+                            )
 
                     node_outputs[node_id] = output_list
 
@@ -731,11 +803,15 @@ class GraphExecutor:
                     for edge in incoming_edges.get(node_id, []):
                         target_handle = edge.get("targetHandle", "")
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
                             # The target handle should indicate which parameter to set
                             if target_handle in param_names:
-                                inputs[target_handle] = node_outputs[source_id]
+                                # Use helper to extract value (handles AnnotatedDict outputs)
+                                inputs[target_handle] = _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
 
                     # Yield executing status
                     yield {
