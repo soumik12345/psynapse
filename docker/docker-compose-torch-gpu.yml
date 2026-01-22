@@ -11,8 +11,10 @@ services:
       - "8000:8000"
     environment:
       - NODEPACKS_DIR=/app/nodepacks
+      - HF_HOME=/root/.cache/huggingface
     volumes:
       - ../nodepacks:/app/nodepacks
+      - ~/.cache/huggingface:/root/.cache/huggingface
     command: uvicorn psynapse_backend.main:app --host 0.0.0.0 --port 8000
     deploy:
       resources:
