@@ -10,6 +10,7 @@ from diffusers import (
     logging as diffusers_logging,
 )
 from diffusers.image_processor import VaeImageProcessor
+from diffusers.utils.torch_utils import randn_tensor
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from transformers.models.qwen3.modeling_qwen3 import Qwen3Model
 from transformers.utils import logging as transformers_logging
@@ -60,18 +61,35 @@ def load_text_encoder(
 
 
 def load_scheduler(
-    model_name: str = "Tongyi-MAI/Z-Image-Turbo", subfolder: str = "scheduler"
-):
+    model_name: str = "Tongyi-MAI/Z-Image-Turbo",
+    subfolder: str = "scheduler",
+    num_inference_steps: int = 50,
+    device: str = "cuda:0",
+) -> AnnotatedDict[Literal["scheduler", "timesteps", "num_warmup_steps"]]:
     """
     Load a scheduler from a pretrained model repository.
 
     Args:
          model_name: The name or path of the pretrained model.
         subfolder: The name of the scheduler subfolder in the Hugging Face model repository.
+        num_inference_steps: The number of inference steps to use for the scheduler.
+        device: The execution device for the scheduler.
+
+    Returns:
+        A dictionary with 3 keys: 'scheduler', 'timesteps', and 'num_warmup_steps'
     """
-    return FlowMatchEulerDiscreteScheduler.from_pretrained(
+    scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(
         model_name, subfolder=subfolder
     )
+    scheduler.sigma_min = 0.0
+    scheduler.set_timesteps(num_inference_steps, device=device)
+    timesteps = scheduler.timesteps
+    num_warmup_steps = max(len(timesteps) - num_inference_steps * scheduler.order, 0)
+    return {
+        "scheduler": scheduler,
+        "timesteps": timesteps,
+        "num_warmup_steps": num_warmup_steps,
+    }
 
 
 def load_diffusion_transformer(
@@ -103,9 +121,10 @@ def load_diffusion_transformer(
 def load_vae(
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "vae",
-    vae_scale_factor: int | None = None,
     device: str = "cuda:0",
-) -> AnnotatedDict[Literal["vae_model", "vae_hook", "vae_image_processor"]]:
+) -> AnnotatedDict[
+    Literal["vae_model", "vae_hook", "vae_scale_factor", "vae_image_processor"]
+]:
     """
     Load a VAE from a pretrained model repository.
 
@@ -115,7 +134,7 @@ def load_vae(
         device: The execution device for the model
 
     Returns:
-        A dictionary with 3 keys: 'vae_model', 'vae_hook', and 'vae_image_processor'
+        A dictionary with 4 keys: 'vae_model', 'vae_hook', 'vae_scale_factor', and 'vae_image_processor'
     """
     diffusers_logging.set_verbosity_info()
     model = AutoencoderKL.from_pretrained(
@@ -124,15 +143,12 @@ def load_vae(
         torch_dtype=torch.bfloat16,
     )
     model, hook = cpu_offload_with_hook(model, execution_device=device)
-    vae_scale_factor = (
-        2 ** (len(model.config.block_out_channels) - 1)
-        if vae_scale_factor is None
-        else vae_scale_factor
-    )
+    vae_scale_factor = 2 ** (len(model.config.block_out_channels) - 1)
     image_processor = VaeImageProcessor(vae_scale_factor=vae_scale_factor * 2)
     return {
         "vae_model": model,
         "vae_hook": hook,
+        "vae_scale_factor": vae_scale_factor,
         "vae_image_processor": image_processor,
     }
 
@@ -140,6 +156,7 @@ def load_vae(
 # ============================== Encode Prompts ============================== #
 
 
+@torch.no_grad()
 def encode_prompt(
     prompt: str,
     tokenizer: PreTrainedTokenizerBase,
@@ -148,6 +165,20 @@ def encode_prompt(
     max_sequence_length: int = 512,
     device: str = "cuda:0",
 ) -> list[torch.Tensor]:
+    """
+    Encodes a prompt into a list of embeddings.
+
+    Args:
+        prompt: The prompt to encode.
+        tokenizer: The tokenizer to use for encoding.
+        text_encoder: The text encoder to use for encoding.
+        text_encoder_hook: The hook to use for offloading the text encoder.
+        max_sequence_length: The maximum sequence length for the tokenizer.
+        device: The device to run the model on.
+
+    Returns:
+        A list of embeddings.
+    """
     prompt = [prompt]
     for i, prompt_item in enumerate(prompt):
         messages = [{"role": "user", "content": prompt_item}]
@@ -176,3 +207,52 @@ def encode_prompt(
         prompt_embeddings[i][prompt_masks[i]] for i in range(len(prompt_embeddings))
     ]
     return embeddngs_list
+
+
+@torch.no_grad()
+def initialize_random_latents(
+    height: int, width: int, vae_scale_factor: int, device: str = "cuda:0"
+) -> torch.Tensor:
+    """
+    Creates random noise tensors sampled from a Gaussian distribution that will be iteratively denoised into a coherent image,
+
+    Args:
+        height: The height of the image.
+        width: The width of the image.
+        vae_scale_factor: The scale factor of the VAE.
+        device: The device to run the model on.
+
+    Returns:
+        A random noise tensor sampled from a Gaussian distribution.
+    """
+    height = 2 * (int(height) // (vae_scale_factor * 2))
+    width = 2 * (int(width) // (vae_scale_factor * 2))
+    shape = (1, num_channels_latents, height, width)
+    return randn_tensor(shape, device=device, dtype=torch.bfloat16)
+
+
+def calculate_timestep_shift(
+    image_seq_len,
+    base_seq_len: int = 256,
+    max_seq_len: int = 4096,
+    base_shift: float = 0.5,
+    max_shift: float = 1.15,
+) -> float:
+    """
+    Calculate the resolution-dependent timestep shift parameter (`mu`) for flow-matching diffusion models like FLUX.
+    It enables dynamic adjustment of the noise schedule based on image resolution.
+
+    Args:
+        image_seq_len: The length of the image sequence.
+        base_seq_len: The base length of the image sequence.
+        max_seq_len: The maximum length of the image sequence.
+        base_shift: The base shift parameter.
+        max_shift: The maximum shift parameter.
+
+    Returns:
+        The resolution-dependent timestep shift parameter.
+    """
+    slope = (max_shift - base_shift) / (max_seq_len - base_seq_len)
+    y_intercept = base_shift - slope * base_seq_len
+    timestep_shift = image_seq_len * slope + y_intercept
+    return timestep_shift
