@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
+FROM pytorch/pytorch:2.10.0-cuda12.8-cudnn9-runtime
 
 WORKDIR /app
 
@@ -15,16 +15,16 @@ COPY nodepacks ./nodepacks
 COPY .git ./.git
 
 # Install uv for faster dependency management
-RUN pip install --no-cache-dir uv
+RUN pip install --no-cache-dir --break-system-packages uv
 
 # Build argument for optional dependencies (e.g., "llm" or "llm,backend")
 ARG OPTIONAL_DEPS=""
 
 # Install dependencies using uv
 RUN if [ -z "$OPTIONAL_DEPS" ]; then \
-        uv pip install --system -e .; \
+    uv pip install --system --break-system-packages -e .; \
     else \
-        uv pip install --system -e ".[$OPTIONAL_DEPS]"; \
+    uv pip install --system --break-system-packages -e ".[$OPTIONAL_DEPS]"; \
     fi
 
 # Expose the backend port
