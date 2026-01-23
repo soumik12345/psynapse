@@ -77,19 +77,28 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
         {data.label}
       </div>
 
-      {paramsWithoutDefaults.map((param, index) => {
+      {paramsWithoutDefaults.map((param) => {
         const isConnected = connectedInputs.has(param.name);
         return (
-          <div key={param.name} style={{ marginBottom: "8px" }}>
+          <div
+            key={param.name}
+            style={{
+              marginBottom: "8px",
+              position: "relative",
+            }}
+          >
             <Handle
               type="target"
               position={Position.Left}
               id={param.name}
               style={{
-                top: `${50 + index * 40}px`,
                 background: "#4a90e2",
                 width: "10px",
                 height: "10px",
+                position: "absolute",
+                left: "-15px",
+                top: "50%",
+                transform: "translateY(-50%)",
               }}
             />
             <label
@@ -154,24 +163,20 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
       {/* Add handles for params with defaults (hidden inputs, but need handles for connections) */}
       {params
         .filter((param) => param.default !== undefined)
-        .map((param, index) => {
-          const handleTop = 50 + (paramsWithoutDefaults.length + index) * 40;
-          return (
-            <Handle
-              key={`default-${param.name}`}
-              type="target"
-              position={Position.Left}
-              id={param.name}
-              style={{
-                top: `${handleTop}px`,
-                background: "#4a90e2",
-                width: "10px",
-                height: "10px",
-                opacity: 0, // Hide the handle visually but keep it functional
-              }}
-            />
-          );
-        })}
+        .map((param) => (
+          <Handle
+            key={`default-${param.name}`}
+            type="target"
+            position={Position.Left}
+            id={param.name}
+            style={{
+              background: "#4a90e2",
+              width: "10px",
+              height: "10px",
+              opacity: 0, // Hide the handle visually but keep it functional
+            }}
+          />
+        ))}
 
       {/* Output section for multiple outputs */}
       {hasMultipleOutputs ? (
