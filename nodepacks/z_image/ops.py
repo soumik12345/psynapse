@@ -222,7 +222,7 @@ def initialize_random_latents(
     vae_scale_factor: int,
     num_channels_latents: int,
     device: str = "cuda:0",
-) -> torch.Tensor:
+) -> AnnotatedDict[Literal["latents", "image_seq_len"]]:
     """
     Creates random noise tensors sampled from a Gaussian distribution that will be iteratively denoised into a coherent image,
 
@@ -238,7 +238,12 @@ def initialize_random_latents(
     height = 2 * (int(height) // (vae_scale_factor * 2))
     width = 2 * (int(width) // (vae_scale_factor * 2))
     shape = (1, num_channels_latents, height, width)
-    return randn_tensor(shape, device=device, dtype=torch.bfloat16)
+    latents = randn_tensor(shape, device=device, dtype=torch.bfloat16)
+    image_seq_len = (latents.shape[2] // 2) * (latents.shape[3] // 2)
+    return {
+        "latents": latents,
+        "image_seq_len": image_seq_len,
+    }
 
 
 def calculate_timestep_shift(
