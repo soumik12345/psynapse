@@ -61,6 +61,7 @@ def load_text_encoder(
 
 
 def load_scheduler(
+    timestep_shift: float,
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "scheduler",
     num_inference_steps: int = 50,
@@ -82,7 +83,7 @@ def load_scheduler(
         model_name, subfolder=subfolder
     )
     scheduler.sigma_min = 0.0
-    scheduler.set_timesteps(num_inference_steps, device=device)
+    scheduler.set_timesteps(num_inference_steps, device=device, mu=timestep_shift)
     timesteps = scheduler.timesteps
     num_warmup_steps = max(len(timesteps) - num_inference_steps * scheduler.order, 0)
     return {
@@ -211,7 +212,11 @@ def encode_prompt(
 
 @torch.no_grad()
 def initialize_random_latents(
-    height: int, width: int, vae_scale_factor: int, device: str = "cuda:0"
+    height: int,
+    width: int,
+    vae_scale_factor: int,
+    num_channels_latents: int,
+    device: str = "cuda:0",
 ) -> torch.Tensor:
     """
     Creates random noise tensors sampled from a Gaussian distribution that will be iteratively denoised into a coherent image,
@@ -256,3 +261,43 @@ def calculate_timestep_shift(
     y_intercept = base_shift - slope * base_seq_len
     timestep_shift = image_seq_len * slope + y_intercept
     return timestep_shift
+
+
+# if __name__ == "__main__":
+#     tokenizer = load_tokenizer()
+
+#     text_encoder_result = load_text_encoder()
+#     text_encoder = text_encoder_result["text_encoder_model"]
+#     text_encoder_hook = text_encoder_result["text_encoder_hook"]
+
+#     prompt = "A fantasy landscape with mountains and a river, detailed, vibrant colors"
+#     embeddings = encode_prompt(
+#         prompt,
+#         tokenizer,
+#         text_encoder,
+#         text_encoder_hook,
+#     )
+
+#     vae_result = load_vae()
+#     vae = vae_result["vae_model"]
+#     vae_hook = vae_result["vae_hook"]
+#     vae_scale_factor = vae_result["vae_scale_factor"]
+#     vae_image_processor = vae_result["vae_image_processor"]
+
+#     dit_result = load_diffusion_transformer()
+#     dit = dit_result["dit_model"]
+#     dit_hook = dit_result["dit_hook"]
+
+#     latents = initialize_random_latents(
+#         height=1024,
+#         width=1024,
+#         num_channels_latents=dit.in_channels,
+#         vae_scale_factor=vae_scale_factor,
+#         device="cuda:0",
+#     )
+
+#     image_seq_len = (latents.shape[2] // 2) * (latents.shape[3] // 2)
+#     timestep_shift = calculate_timestep_shift(image_seq_len=image_seq_len)
+#     scheduler_results = load_scheduler(timestep_shift=timestep_shift)
+#     timesteps = scheduler_results["timesteps"]
+#     num_warmup_steps = scheduler_results["num_warmup_steps"]
