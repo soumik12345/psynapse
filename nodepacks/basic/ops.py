@@ -1,7 +1,9 @@
 import math
+import time
 from typing import Literal
 
 from psynapse_backend.schema_extractor import AnnotatedDict
+from psynapse_backend.stateful_op_utils import ProgressReporter
 
 
 def add(a: float, b: float) -> float:
@@ -198,3 +200,27 @@ def divmod_numbers(
         "quotient": a // b,
         "remainder": a % b,
     }
+
+
+class ProgressOpp:
+    def __init__(self):
+        self._progress_reporter = ProgressReporter()
+
+    def __call__(self, count: int) -> int:
+        """
+        Process items with progress reporting.
+
+        Args:
+            count: Number of items to process
+
+        Returns:
+            Sum of processed items
+        """
+        results = []
+        for i in range(count):
+            time.sleep(5)
+            results.append(i * 2)
+            self._progress_reporter.update(
+                i + 1, count, f"Processing item {i + 1}/{count}"
+            )
+        return sum(results)

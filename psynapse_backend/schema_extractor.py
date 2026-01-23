@@ -174,8 +174,32 @@ def extract_function_schema(func: callable, filepath: str) -> dict[str, Any]:
         return None
 
 
+def detect_class_node_type(cls: type) -> str | None:
+    """
+    Detect the node type of a class based on its attributes.
+
+    Args:
+        cls: The class to inspect.
+
+    Returns:
+        "progress" if the class has _progress_reporter,
+        "stream" if the class has _stream_reporter,
+        None otherwise.
+    """
+    try:
+        # Try to inspect __init__ source code to detect reporter usage
+        init_source = inspect.getsource(cls.__init__)
+        if "_progress_reporter" in init_source:
+            return "progress"
+        elif "_stream_reporter" in init_source:
+            return "stream"
+    except (TypeError, OSError):
+        pass
+    return None
+
+
 def extract_class_schema(
-    cls: type, filepath: str, node_type: str = "progress"
+    cls: type, filepath: str, node_type: str | None = None
 ) -> dict[str, Any]:
     """
     Extract schema information from a class with __call__ method.
@@ -183,12 +207,15 @@ def extract_class_schema(
     Args:
         cls: The class to extract schema information from.
         filepath: The file path of the class.
-        node_type: The type of node ("progress" or "stream").
+        node_type: The type of node ("progress", "stream", or None for auto-detection).
 
     Returns:
         A dictionary of schema information.
     """
     try:
+        # Auto-detect node type if not specified
+        if node_type is None:
+            node_type = detect_class_node_type(cls)
         # Get __call__ method signature
         call_method = cls.__call__
         sig = inspect.signature(call_method)
@@ -320,13 +347,19 @@ def extract_all_schemas(nodepacks_dir: str) -> list[dict[str, Any]]:
     # Iterate through all subdirectories
     for nodepack_dir in nodepacks_path.iterdir():
         if nodepack_dir.is_dir():
-            # Extract schemas from regular ops.py functions
+            # Extract schemas from regular ops.py functions and classes
             ops_file = nodepack_dir / "ops.py"
             if ops_file.exists():
+                # Extract functions
                 schemas = extract_schemas_from_file(
                     str(ops_file), extract_classes=False
                 )
                 all_schemas.extend(schemas)
+                # Also extract classes with __call__ method (auto-detect node type)
+                class_schemas = extract_schemas_from_file(
+                    str(ops_file), extract_classes=True, node_type=None
+                )
+                all_schemas.extend(class_schemas)
 
             # Extract schemas from progress_ops.py classes
             progress_ops_file = nodepack_dir / "progress_ops.py"
