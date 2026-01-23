@@ -97,7 +97,7 @@ def load_diffusion_transformer(
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "transformer",
     device: str = "cuda:0",
-) -> AnnotatedDict[Literal["dit_model", "dit_hook"]]:
+) -> AnnotatedDict[Literal["dit_model", "dit_hook", "num_channels_latents"]]:
     """
     Load a diffusion transformer from a pretrained model repository.
 
@@ -107,7 +107,7 @@ def load_diffusion_transformer(
         device: The execution device for the model
 
     Returns:
-        A dictionary with 2 keys: 'dit_model' and 'dit_hook'
+        A dictionary with 3 keys: 'dit_model', 'dit_hook', and 'num_channels_latents'
     """
     diffusers_logging.set_verbosity_info()
     model = ZImageTransformer2DModel.from_pretrained(
@@ -116,7 +116,11 @@ def load_diffusion_transformer(
         torch_dtype=torch.bfloat16,
     )
     model, hook = cpu_offload_with_hook(model, execution_device=device)
-    return {"dit_model": model, "dit_hook": hook}
+    return {
+        "dit_model": model,
+        "dit_hook": hook,
+        "num_channels_latents": model.in_channels,
+    }
 
 
 def load_vae(
@@ -204,10 +208,11 @@ def encode_prompt(
         attention_mask=prompt_masks,
         output_hidden_states=True,
     ).hidden_states[-2]
-    embeddngs_list = [
+    embeddings_list = [
         prompt_embeddings[i][prompt_masks[i]] for i in range(len(prompt_embeddings))
     ]
-    return embeddngs_list
+    text_encoder_hook.offload()
+    return embeddings_list
 
 
 @torch.no_grad()
