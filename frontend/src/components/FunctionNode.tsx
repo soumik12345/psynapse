@@ -383,17 +383,48 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
           ))}
         </div>
       ) : (
-        /* Single output - default centered position */
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={returns[0]?.name || "output"}
+        /* Single output - show label alongside handle */
+        <div
           style={{
-            background: "#4a90e2",
-            width: "10px",
-            height: "10px",
+            marginTop: "10px",
+            borderTop: "1px solid #eee",
+            paddingTop: "8px",
           }}
-        />
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              position: "relative",
+              minHeight: "20px",
+              paddingRight: "8px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#666",
+              }}
+            >
+              {returns[0]?.name || "output"}
+            </span>
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={returns[0]?.name || "output"}
+              style={{
+                background: "#4a90e2",
+                width: "10px",
+                height: "10px",
+                position: "absolute",
+                right: "-5px",
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -16,8 +16,7 @@ from transformers.models.qwen3.modeling_qwen3 import Qwen3Model
 from transformers.utils import logging as transformers_logging
 
 from psynapse_backend.schema_extractor import AnnotatedDict
-
-# ============================== Load Diffusion Pipeline Components ============================== #
+from psynapse_backend.stateful_op_utils import ProgressReporter
 
 
 def load_tokenizer(
@@ -158,9 +157,6 @@ def load_vae(
     }
 
 
-# ============================== Encode Prompts ============================== #
-
-
 @torch.no_grad()
 def encode_prompt(
     prompt: str,
@@ -273,130 +269,137 @@ def calculate_timestep_shift(
     return timestep_shift
 
 
-@torch.no_grad()
-def denoise(
-    latents: torch.Tensor,
-    prompt_embeddings: list[torch.Tensor],
-    timesteps: torch.Tensor,
-    scheduler: FlowMatchEulerDiscreteScheduler,
-    transformer: ZImageTransformer2DModel,
-    transformer_hook: UserCpuOffloadHook,
-    guidance_scale: float = 0.0,
-    cfg_normalization: bool = False,
-    cfg_truncation: float = 1.0,
-    negative_prompt_embeddings: list[torch.Tensor] | None = None,
-) -> torch.Tensor:
-    """
-    The core denoising loop that iteratively removes noise from the latents.
+class DenoisingDiffusion:
+    def __init__(self):
+        self._progress_reporter = ProgressReporter()
 
-    Args:
-        latents: The noisy latent tensor to denoise.
-        prompt_embeddings: List of prompt embeddings.
-        timesteps: The timesteps to use for denoising.
-        scheduler: The scheduler to use for denoising.
-        transformer: The diffusion transformer model.
-        transformer_hook: The hook to use for offloading the transformer.
-        guidance_scale: Guidance scale for classifier-free guidance.
-            Values > 1 enable CFG.
-        cfg_normalization: Whether to apply CFG normalization.
-        cfg_truncation: Truncation value for CFG (0-1). CFG is disabled
-            for normalized time values > cfg_truncation.
-        negative_prompt_embeddings: List of negative prompt embeddings
-            (required if guidance_scale > 1).
+    @torch.no_grad()
+    def __call__(
+        self,
+        prompt_embeddings: list[torch.Tensor],
+        latents: torch.Tensor,
+        scheduler: FlowMatchEulerDiscreteScheduler,
+        timesteps: torch.Tensor,
+        transformer: ZImageTransformer2DModel,
+        transformer_hook: UserCpuOffloadHook,
+        guidance_scale: float = 0.0,
+        cfg_normalization: bool = False,
+        cfg_truncation: float = 1.0,
+        negative_prompt_embeddings: list[torch.Tensor] | None = None,
+    ) -> AnnotatedDict[Literal["denoised_latents"]]:
+        """
+        The core denoising loop that iteratively removes noise from the latents.
 
-    Returns:
-        The denoised latent tensor.
-    """
-    do_classifier_free_guidance = guidance_scale > 1.0
-    actual_batch_size = latents.shape[0]
+        Args:
+            prompt_embeddings: List of prompt embeddings.
+            latents: The noisy latent tensor to denoise.
+            scheduler: The scheduler to use for denoising.
+            timesteps: The timesteps to use for denoising.
+            transformer: The diffusion transformer model.
+            transformer_hook: The hook to use for offloading the transformer.
+            guidance_scale: Guidance scale for classifier-free guidance.
+                Values > 1 enable CFG.
+            cfg_normalization: Whether to apply CFG normalization.
+            cfg_truncation: Truncation value for CFG (0-1). CFG is disabled
+                for normalized time values > cfg_truncation.
+            negative_prompt_embeddings: List of negative prompt embeddings
+                (required if guidance_scale > 1).
 
-    if do_classifier_free_guidance:
-        if negative_prompt_embeddings is None:
-            raise ValueError(
-                "negative_prompt_embeddings is required when guidance_scale > 1"
-            )
+        Returns:
+            A dictionary with 'denoised_latents' key containing the denoised latent tensor.
+        """
+        do_classifier_free_guidance = guidance_scale > 1.0
+        actual_batch_size = latents.shape[0]
 
-    for i, t in enumerate(timesteps):
-        # Expand timestep to batch dimension
-        timestep = t.expand(latents.shape[0])
-        # Normalize timestep to [0, 1] range
-        timestep = (1000 - timestep) / 1000
-        # Get normalized time for cfg truncation check
-        t_norm = timestep[0].item()
+        if do_classifier_free_guidance:
+            if negative_prompt_embeddings is None:
+                raise ValueError(
+                    "negative_prompt_embeddings is required when guidance_scale > 1"
+                )
 
-        # Handle cfg truncation
-        current_guidance_scale = guidance_scale
-        if (
-            do_classifier_free_guidance
-            and cfg_truncation is not None
-            and cfg_truncation <= 1
-        ):
-            if t_norm > cfg_truncation:
-                current_guidance_scale = 0.0
+        for i, t in enumerate(timesteps):
+            # Expand timestep to batch dimension
+            timestep = t.expand(latents.shape[0])
+            # Normalize timestep to [0, 1] range
+            timestep = (1000 - timestep) / 1000
+            # Get normalized time for cfg truncation check
+            t_norm = timestep[0].item()
 
-        # Run CFG only if configured AND scale is non-zero
-        apply_cfg = do_classifier_free_guidance and current_guidance_scale > 0
+            # Handle cfg truncation
+            current_guidance_scale = guidance_scale
+            if (
+                do_classifier_free_guidance
+                and cfg_truncation is not None
+                and cfg_truncation <= 1
+            ):
+                if t_norm > cfg_truncation:
+                    current_guidance_scale = 0.0
 
-        if apply_cfg:
-            latents_typed = latents.to(transformer.dtype)
-            latent_model_input = latents_typed.repeat(2, 1, 1, 1)
-            prompt_embeds_model_input = prompt_embeddings + negative_prompt_embeddings
-            timestep_model_input = timestep.repeat(2)
-        else:
-            latent_model_input = latents.to(transformer.dtype)
-            prompt_embeds_model_input = prompt_embeddings
-            timestep_model_input = timestep
+            # Run CFG only if configured AND scale is non-zero
+            apply_cfg = do_classifier_free_guidance and current_guidance_scale > 0
 
-        # Add temporal dimension (for video compatibility in the model)
-        latent_model_input = latent_model_input.unsqueeze(2)
-        latent_model_input_list = list(latent_model_input.unbind(dim=0))
+            if apply_cfg:
+                latents_typed = latents.to(transformer.dtype)
+                latent_model_input = latents_typed.repeat(2, 1, 1, 1)
+                prompt_embeds_model_input = (
+                    prompt_embeddings + negative_prompt_embeddings
+                )
+                timestep_model_input = timestep.repeat(2)
+            else:
+                latent_model_input = latents.to(transformer.dtype)
+                prompt_embeds_model_input = prompt_embeddings
+                timestep_model_input = timestep
 
-        # Forward pass through transformer
-        model_out_list = transformer(
-            latent_model_input_list,
-            timestep_model_input,
-            prompt_embeds_model_input,
-            return_dict=False,
-        )[0]
+            # Add temporal dimension (for video compatibility in the model)
+            latent_model_input = latent_model_input.unsqueeze(2)
+            latent_model_input_list = list(latent_model_input.unbind(dim=0))
 
-        if apply_cfg:
-            # Perform CFG
-            pos_out = model_out_list[:actual_batch_size]
-            neg_out = model_out_list[actual_batch_size:]
+            # Forward pass through transformer
+            model_out_list = transformer(
+                latent_model_input_list,
+                timestep_model_input,
+                prompt_embeds_model_input,
+                return_dict=False,
+            )[0]
 
-            noise_pred = []
-            for j in range(actual_batch_size):
-                pos = pos_out[j].float()
-                neg = neg_out[j].float()
+            if apply_cfg:
+                # Perform CFG
+                pos_out = model_out_list[:actual_batch_size]
+                neg_out = model_out_list[actual_batch_size:]
 
-                pred = pos + current_guidance_scale * (pos - neg)
+                noise_pred = []
+                for j in range(actual_batch_size):
+                    pos = pos_out[j].float()
+                    neg = neg_out[j].float()
 
-                # Renormalization
-                if cfg_normalization and float(cfg_normalization) > 0.0:
-                    ori_pos_norm = torch.linalg.vector_norm(pos)
-                    new_pos_norm = torch.linalg.vector_norm(pred)
-                    max_new_norm = ori_pos_norm * float(cfg_normalization)
-                    if new_pos_norm > max_new_norm:
-                        pred = pred * (max_new_norm / new_pos_norm)
+                    pred = pos + current_guidance_scale * (pos - neg)
 
-                noise_pred.append(pred)
+                    # Renormalization
+                    if cfg_normalization and float(cfg_normalization) > 0.0:
+                        ori_pos_norm = torch.linalg.vector_norm(pos)
+                        new_pos_norm = torch.linalg.vector_norm(pred)
+                        max_new_norm = ori_pos_norm * float(cfg_normalization)
+                        if new_pos_norm > max_new_norm:
+                            pred = pred * (max_new_norm / new_pos_norm)
 
-            noise_pred = torch.stack(noise_pred, dim=0)
-        else:
-            noise_pred = torch.stack([out.float() for out in model_out_list], dim=0)
+                    noise_pred.append(pred)
 
-        # Remove temporal dimension
-        noise_pred = noise_pred.squeeze(2)
-        # Negate the noise prediction (model predicts velocity / negative noise)
-        noise_pred = -noise_pred
+                noise_pred = torch.stack(noise_pred, dim=0)
+            else:
+                noise_pred = torch.stack([out.float() for out in model_out_list], dim=0)
 
-        # Compute the previous noisy sample x_t -> x_t-1
-        latents = scheduler.step(
-            noise_pred.to(torch.float32), t, latents, return_dict=False
-        )[0]
+            # Remove temporal dimension
+            noise_pred = noise_pred.squeeze(2)
+            # Negate the noise prediction (model predicts velocity / negative noise)
+            noise_pred = -noise_pred
 
-    transformer_hook.offload()
-    return latents
+            # Compute the previous noisy sample x_t -> x_t-1
+            latents = scheduler.step(
+                noise_pred.to(torch.float32), t, latents, return_dict=False
+            )[0]
+
+        transformer_hook.offload()
+        return {"denoised_latents": latents}
 
 
 @torch.no_grad()
