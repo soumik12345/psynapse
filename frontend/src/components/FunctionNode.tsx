@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import type { NodeData } from "../types/schema";
 
@@ -9,9 +9,17 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
   const returns = data.returns || [{ name: "output", type: "any" }];
   const hasMultipleOutputs = returns.length > 1;
 
+  // State for accordion expansion (default parameters)
+  const [defaultsExpanded, setDefaultsExpanded] = useState(false);
+
   // Filter params: only show those WITHOUT default values in the node
   const paramsWithoutDefaults = useMemo(() => {
     return params.filter((param) => param.default === undefined);
+  }, [params]);
+
+  // Filter params: those WITH default values (for accordion)
+  const paramsWithDefaults = useMemo(() => {
+    return params.filter((param) => param.default !== undefined);
   }, [params]);
 
   // Check which input handles are connected
@@ -68,13 +76,64 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
     >
       <div
         style={{
-          fontWeight: "bold",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: "10px",
-          color: "#333",
-          fontSize: "14px",
         }}
       >
-        {data.label}
+        <div
+          style={{
+            fontWeight: "bold",
+            color: "#333",
+            fontSize: "14px",
+          }}
+        >
+          {data.label}
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (data.onOpenPanel) {
+              data.onOpenPanel(id);
+            }
+          }}
+          style={{
+            padding: "4px 6px",
+            background: "transparent",
+            border: "1px solid #ddd",
+            borderRadius: "4px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+          }}
+          title="Open node panel"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#f0f0f0";
+            e.currentTarget.style.borderColor = "#4a90e2";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.borderColor = "#ddd";
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#666"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </button>
       </div>
 
       {paramsWithoutDefaults.map((param) => {
@@ -160,23 +219,112 @@ const FunctionNode = ({ data, id }: NodeProps<NodeData>) => {
         );
       })}
 
-      {/* Add handles for params with defaults (hidden inputs, but need handles for connections) */}
-      {params
-        .filter((param) => param.default !== undefined)
-        .map((param) => (
-          <Handle
-            key={`default-${param.name}`}
-            type="target"
-            position={Position.Left}
-            id={param.name}
+      {/* Collapsible accordion for params with defaults */}
+      {paramsWithDefaults.length > 0 && (
+        <div
+          style={{
+            marginTop: "8px",
+            borderTop: "1px solid #eee",
+            paddingTop: "8px",
+          }}
+        >
+          <button
+            onClick={() => setDefaultsExpanded(!defaultsExpanded)}
             style={{
-              background: "#4a90e2",
-              width: "10px",
-              height: "10px",
-              opacity: 0, // Hide the handle visually but keep it functional
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "none",
+              border: "none",
+              padding: "4px 0",
+              cursor: "pointer",
+              fontSize: "11px",
+              color: "#666",
+              width: "100%",
+              textAlign: "left",
             }}
-          />
-        ))}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                transition: "transform 0.2s ease",
+                transform: defaultsExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                fontSize: "10px",
+              }}
+            >
+              ▶
+            </span>
+            <span>Defaults ({paramsWithDefaults.length})</span>
+          </button>
+
+          {/* Expanded content with handles */}
+          {defaultsExpanded && (
+            <div style={{ marginTop: "6px" }}>
+              {paramsWithDefaults.map((param) => {
+                const isConnected = connectedInputs.has(param.name);
+                return (
+                  <div
+                    key={param.name}
+                    style={{
+                      marginBottom: "8px",
+                      position: "relative",
+                    }}
+                  >
+                    <Handle
+                      type="target"
+                      position={Position.Left}
+                      id={param.name}
+                      style={{
+                        background: "#4a90e2",
+                        width: "10px",
+                        height: "10px",
+                        position: "absolute",
+                        left: "-15px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                      }}
+                    />
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "11px",
+                        color: "#666",
+                      }}
+                    >
+                      {param.name} ({param.type})
+                      {isConnected && (
+                        <span style={{ color: "#4a90e2", marginLeft: "4px" }}>●</span>
+                      )}
+                      {!isConnected && (
+                        <span style={{ color: "#999", marginLeft: "4px", fontStyle: "italic" }}>
+                          = {typeof param.default === "string" ? `"${param.default}"` : String(param.default)}
+                        </span>
+                      )}
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Hidden handles when collapsed (needed for connections to still work) */}
+          {!defaultsExpanded &&
+            paramsWithDefaults.map((param) => (
+              <Handle
+                key={`default-${param.name}`}
+                type="target"
+                position={Position.Left}
+                id={param.name}
+                style={{
+                  background: "#4a90e2",
+                  width: "10px",
+                  height: "10px",
+                  opacity: 0,
+                }}
+              />
+            ))}
+        </div>
+      )}
 
       {/* Output section for multiple outputs */}
       {hasMultipleOutputs ? (
