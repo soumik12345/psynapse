@@ -11,13 +11,11 @@ from diffusers import (
 )
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.utils.torch_utils import randn_tensor
-from PIL import Image
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from transformers.models.qwen3.modeling_qwen3 import Qwen3Model
 from transformers.utils import logging as transformers_logging
 
 from psynapse_backend.schema_extractor import AnnotatedDict
-from psynapse_backend.stateful_op_utils import ProgressReporter
 
 # ============================== Load Diffusion Pipeline Components ============================== #
 
@@ -38,7 +36,6 @@ def load_tokenizer(
 
 
 def load_text_encoder(
-    previous_hook: UserCpuOffloadHook | None,
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "text_encoder",
     device: str = "cuda:0",
@@ -46,8 +43,6 @@ def load_text_encoder(
     """Load a text encoder from a pretrained model.
 
     Args:
-        previous_hook: Optional hook from a previously loaded model to chain offloading.
-            When this model runs, the previous model will be automatically offloaded.
         model_name: The name or path of the pretrained model.
         subfolder: The name of the text encoder subfolder in the Hugging Face model repository.
         device: The execution device for the model
@@ -61,9 +56,7 @@ def load_text_encoder(
         subfolder=subfolder,
         dtype=torch.bfloat16,
     )
-    model, hook = cpu_offload_with_hook(
-        model, execution_device=device, prev_module_hook=previous_hook
-    )
+    model, hook = cpu_offload_with_hook(model, execution_device=device)
     return {"text_encoder_model": model, "text_encoder_hook": hook}
 
 
@@ -71,7 +64,7 @@ def load_scheduler(
     timestep_shift: float,
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "scheduler",
-    num_inference_steps: int = 50,
+    num_inference_steps: int = 9,
     device: str = "cuda:0",
 ) -> AnnotatedDict[Literal["scheduler", "timesteps", "num_warmup_steps"]]:
     """
@@ -101,7 +94,6 @@ def load_scheduler(
 
 
 def load_diffusion_transformer(
-    previous_hook: UserCpuOffloadHook | None,
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "transformer",
     device: str = "cuda:0",
@@ -110,8 +102,6 @@ def load_diffusion_transformer(
     Load a diffusion transformer from a pretrained model repository.
 
     Args:
-        previous_hook: Optional hook from a previously loaded model to chain offloading.
-            When this model runs, the previous model will be automatically offloaded.
         model_name: The name or path of the pretrained model.
         subfolder: The name of the diffusion transformer subfolder in the Hugging Face model repository.
         device: The execution device for the model
@@ -125,9 +115,7 @@ def load_diffusion_transformer(
         subfolder=subfolder,
         torch_dtype=torch.bfloat16,
     )
-    model, hook = cpu_offload_with_hook(
-        model, execution_device=device, prev_module_hook=previous_hook
-    )
+    model, hook = cpu_offload_with_hook(model, execution_device=device)
     return {
         "dit_model": model,
         "dit_hook": hook,
@@ -136,7 +124,6 @@ def load_diffusion_transformer(
 
 
 def load_vae(
-    previous_hook: UserCpuOffloadHook | None,
     model_name: str = "Tongyi-MAI/Z-Image-Turbo",
     subfolder: str = "vae",
     device: str = "cuda:0",
@@ -147,8 +134,6 @@ def load_vae(
     Load a VAE from a pretrained model repository.
 
     Args:
-        previous_hook: Optional hook from a previously loaded model to chain offloading.
-            When this model runs, the previous model will be automatically offloaded.
         model_name: The name or path of the pretrained model.
         subfolder: The name of the VAE subfolder in the Hugging Face model repository.
         device: The execution device for the model
@@ -162,9 +147,7 @@ def load_vae(
         subfolder=subfolder,
         torch_dtype=torch.bfloat16,
     )
-    model, hook = cpu_offload_with_hook(
-        model, execution_device=device, prev_module_hook=previous_hook
-    )
+    model, hook = cpu_offload_with_hook(model, execution_device=device)
     vae_scale_factor = 2 ** (len(model.config.block_out_channels) - 1)
     image_processor = VaeImageProcessor(vae_scale_factor=vae_scale_factor * 2)
     return {
@@ -290,140 +273,130 @@ def calculate_timestep_shift(
     return timestep_shift
 
 
-class DenoisingDiffusion:
-    def __init__(self):
-        self._progress_reporter = ProgressReporter()
+@torch.no_grad()
+def denoise(
+    latents: torch.Tensor,
+    prompt_embeddings: list[torch.Tensor],
+    timesteps: torch.Tensor,
+    scheduler: FlowMatchEulerDiscreteScheduler,
+    transformer: ZImageTransformer2DModel,
+    transformer_hook: UserCpuOffloadHook,
+    guidance_scale: float = 0.0,
+    cfg_normalization: bool = False,
+    cfg_truncation: float = 1.0,
+    negative_prompt_embeddings: list[torch.Tensor] | None = None,
+) -> torch.Tensor:
+    """
+    The core denoising loop that iteratively removes noise from the latents.
 
-    def __call__(
-        self,
-        latents: torch.Tensor,
-        prompt_embeddings: list[torch.Tensor],
-        timesteps: torch.Tensor,
-        scheduler: FlowMatchEulerDiscreteScheduler,
-        transformer: ZImageTransformer2DModel,
-        transformer_hook: UserCpuOffloadHook,
-        guidance_scale: float = 0.0,
-        cfg_normalization: bool = False,
-        cfg_truncation: float = 1.0,
-        negative_prompt_embeddings: list[torch.Tensor] | None = None,
-    ) -> torch.Tensor:
-        """
-        The core denoising loop that iteratively removes noise from the latents.
+    Args:
+        latents: The noisy latent tensor to denoise.
+        prompt_embeddings: List of prompt embeddings.
+        timesteps: The timesteps to use for denoising.
+        scheduler: The scheduler to use for denoising.
+        transformer: The diffusion transformer model.
+        transformer_hook: The hook to use for offloading the transformer.
+        guidance_scale: Guidance scale for classifier-free guidance.
+            Values > 1 enable CFG.
+        cfg_normalization: Whether to apply CFG normalization.
+        cfg_truncation: Truncation value for CFG (0-1). CFG is disabled
+            for normalized time values > cfg_truncation.
+        negative_prompt_embeddings: List of negative prompt embeddings
+            (required if guidance_scale > 1).
 
-        Args:
-            latents: The noisy latent tensor to denoise.
-            prompt_embeddings: List of prompt embeddings.
-            timesteps: The timesteps to use for denoising.
-            scheduler: The scheduler to use for denoising.
-            transformer: The diffusion transformer model.
-            transformer_hook: The hook to use for offloading the transformer.
-            guidance_scale: Guidance scale for classifier-free guidance.
-                Values > 1 enable CFG.
-            cfg_normalization: Whether to apply CFG normalization.
-            cfg_truncation: Truncation value for CFG (0-1). CFG is disabled
-                for normalized time values > cfg_truncation.
-            negative_prompt_embeddings: List of negative prompt embeddings
-                (required if guidance_scale > 1).
+    Returns:
+        The denoised latent tensor.
+    """
+    do_classifier_free_guidance = guidance_scale > 1.0
+    actual_batch_size = latents.shape[0]
 
-        Returns:
-            The denoised latent tensor.
-        """
-        do_classifier_free_guidance = guidance_scale > 1.0
-        actual_batch_size = latents.shape[0]
-
-        if do_classifier_free_guidance:
-            if negative_prompt_embeddings is None:
-                raise ValueError(
-                    "negative_prompt_embeddings is required when guidance_scale > 1"
-                )
-
-        for i, t in enumerate(timesteps):
-            # Expand timestep to batch dimension
-            timestep = t.expand(latents.shape[0])
-            # Normalize timestep to [0, 1] range
-            timestep = (1000 - timestep) / 1000
-            # Get normalized time for cfg truncation check
-            t_norm = timestep[0].item()
-
-            # Handle cfg truncation
-            current_guidance_scale = guidance_scale
-            if (
-                do_classifier_free_guidance
-                and cfg_truncation is not None
-                and cfg_truncation <= 1
-            ):
-                if t_norm > cfg_truncation:
-                    current_guidance_scale = 0.0
-
-            # Run CFG only if configured AND scale is non-zero
-            apply_cfg = do_classifier_free_guidance and current_guidance_scale > 0
-
-            if apply_cfg:
-                latents_typed = latents.to(transformer.dtype)
-                latent_model_input = latents_typed.repeat(2, 1, 1, 1)
-                prompt_embeds_model_input = (
-                    prompt_embeddings + negative_prompt_embeddings
-                )
-                timestep_model_input = timestep.repeat(2)
-            else:
-                latent_model_input = latents.to(transformer.dtype)
-                prompt_embeds_model_input = prompt_embeddings
-                timestep_model_input = timestep
-
-            # Add temporal dimension (for video compatibility in the model)
-            latent_model_input = latent_model_input.unsqueeze(2)
-            latent_model_input_list = list(latent_model_input.unbind(dim=0))
-
-            # Forward pass through transformer
-            model_out_list = transformer(
-                latent_model_input_list,
-                timestep_model_input,
-                prompt_embeds_model_input,
-                return_dict=False,
-            )[0]
-
-            if apply_cfg:
-                # Perform CFG
-                pos_out = model_out_list[:actual_batch_size]
-                neg_out = model_out_list[actual_batch_size:]
-
-                noise_pred = []
-                for j in range(actual_batch_size):
-                    pos = pos_out[j].float()
-                    neg = neg_out[j].float()
-
-                    pred = pos + current_guidance_scale * (pos - neg)
-
-                    # Renormalization
-                    if cfg_normalization and float(cfg_normalization) > 0.0:
-                        ori_pos_norm = torch.linalg.vector_norm(pos)
-                        new_pos_norm = torch.linalg.vector_norm(pred)
-                        max_new_norm = ori_pos_norm * float(cfg_normalization)
-                        if new_pos_norm > max_new_norm:
-                            pred = pred * (max_new_norm / new_pos_norm)
-
-                    noise_pred.append(pred)
-
-                noise_pred = torch.stack(noise_pred, dim=0)
-            else:
-                noise_pred = torch.stack([out.float() for out in model_out_list], dim=0)
-
-            # Remove temporal dimension
-            noise_pred = noise_pred.squeeze(2)
-            # Negate the noise prediction (model predicts velocity / negative noise)
-            noise_pred = -noise_pred
-
-            # Compute the previous noisy sample x_t -> x_t-1
-            latents = scheduler.step(
-                noise_pred.to(torch.float32), t, latents, return_dict=False
-            )[0]
-
-            self._progress_reporter.update(
-                i + 1, len(timesteps), f"Denoising step {i + 1}/{len(timesteps)}"
+    if do_classifier_free_guidance:
+        if negative_prompt_embeddings is None:
+            raise ValueError(
+                "negative_prompt_embeddings is required when guidance_scale > 1"
             )
 
-        transformer_hook.offload()
-        return latents
+    for i, t in enumerate(timesteps):
+        # Expand timestep to batch dimension
+        timestep = t.expand(latents.shape[0])
+        # Normalize timestep to [0, 1] range
+        timestep = (1000 - timestep) / 1000
+        # Get normalized time for cfg truncation check
+        t_norm = timestep[0].item()
+
+        # Handle cfg truncation
+        current_guidance_scale = guidance_scale
+        if (
+            do_classifier_free_guidance
+            and cfg_truncation is not None
+            and cfg_truncation <= 1
+        ):
+            if t_norm > cfg_truncation:
+                current_guidance_scale = 0.0
+
+        # Run CFG only if configured AND scale is non-zero
+        apply_cfg = do_classifier_free_guidance and current_guidance_scale > 0
+
+        if apply_cfg:
+            latents_typed = latents.to(transformer.dtype)
+            latent_model_input = latents_typed.repeat(2, 1, 1, 1)
+            prompt_embeds_model_input = prompt_embeddings + negative_prompt_embeddings
+            timestep_model_input = timestep.repeat(2)
+        else:
+            latent_model_input = latents.to(transformer.dtype)
+            prompt_embeds_model_input = prompt_embeddings
+            timestep_model_input = timestep
+
+        # Add temporal dimension (for video compatibility in the model)
+        latent_model_input = latent_model_input.unsqueeze(2)
+        latent_model_input_list = list(latent_model_input.unbind(dim=0))
+
+        # Forward pass through transformer
+        model_out_list = transformer(
+            latent_model_input_list,
+            timestep_model_input,
+            prompt_embeds_model_input,
+            return_dict=False,
+        )[0]
+
+        if apply_cfg:
+            # Perform CFG
+            pos_out = model_out_list[:actual_batch_size]
+            neg_out = model_out_list[actual_batch_size:]
+
+            noise_pred = []
+            for j in range(actual_batch_size):
+                pos = pos_out[j].float()
+                neg = neg_out[j].float()
+
+                pred = pos + current_guidance_scale * (pos - neg)
+
+                # Renormalization
+                if cfg_normalization and float(cfg_normalization) > 0.0:
+                    ori_pos_norm = torch.linalg.vector_norm(pos)
+                    new_pos_norm = torch.linalg.vector_norm(pred)
+                    max_new_norm = ori_pos_norm * float(cfg_normalization)
+                    if new_pos_norm > max_new_norm:
+                        pred = pred * (max_new_norm / new_pos_norm)
+
+                noise_pred.append(pred)
+
+            noise_pred = torch.stack(noise_pred, dim=0)
+        else:
+            noise_pred = torch.stack([out.float() for out in model_out_list], dim=0)
+
+        # Remove temporal dimension
+        noise_pred = noise_pred.squeeze(2)
+        # Negate the noise prediction (model predicts velocity / negative noise)
+        noise_pred = -noise_pred
+
+        # Compute the previous noisy sample x_t -> x_t-1
+        latents = scheduler.step(
+            noise_pred.to(torch.float32), t, latents, return_dict=False
+        )[0]
+
+    transformer_hook.offload()
+    return latents
 
 
 @torch.no_grad()
@@ -432,7 +405,7 @@ def decode_latents(
     vae: AutoencoderKL,
     vae_hook: UserCpuOffloadHook,
     image_processor: VaeImageProcessor,
-) -> list[Image.Image]:
+) -> list:
     """
     Decode latents to PIL images using the VAE.
 
