@@ -8,16 +8,19 @@ import typer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from PIL import Image
 from pydantic import BaseModel
 
 from psynapse_backend.executor import GraphExecutor
 from psynapse_backend.schema_extractor import extract_all_schemas
+from psynapse_backend.utils import pil_image_to_openai_string
 
 
 def _make_json_serializable(obj: Any, seen: set | None = None) -> Any:
     """
     Recursively convert an object to a JSON-serializable form.
     Non-serializable objects are converted to their repr() string.
+    PIL Images are converted to base64-encoded strings.
 
     Args:
         obj: The object to convert.
@@ -44,6 +47,10 @@ def _make_json_serializable(obj: Any, seen: set | None = None) -> Any:
     seen.add(obj_id)
 
     try:
+        # Handle PIL Images - convert to base64 string for frontend rendering
+        if isinstance(obj, Image.Image):
+            return pil_image_to_openai_string(obj)
+
         # Handle lists
         if isinstance(obj, list):
             return [_make_json_serializable(item, seen) for item in obj]
