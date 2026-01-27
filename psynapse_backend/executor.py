@@ -7,6 +7,48 @@ from collections import defaultdict, deque
 from typing import Any
 
 
+def _extract_output_value(
+    node_outputs: dict[str, Any], source_id: str, source_handle: str
+) -> Any:
+    """
+    Extract the output value from a node, handling AnnotatedDict outputs.
+
+    For AnnotatedDict nodes (which have multiple output handles), the sourceHandle
+    specifies which key to extract from the dictionary. For regular nodes with
+    a single "output" or "result" handle, the full value is returned.
+
+    Args:
+        node_outputs: Dictionary mapping node IDs to their output values.
+        source_id: The ID of the source node.
+        source_handle: The handle name (e.g., "output", "result", or a key name for AnnotatedDict).
+
+    Returns:
+        The extracted value.
+
+    Raises:
+        ValueError: If the sourceHandle is a key that doesn't exist in the dict output.
+    """
+    source_value = node_outputs[source_id]
+
+    # If sourceHandle is "output" or "result", return the full value (backward compatible)
+    if source_handle in ("output", "result"):
+        return source_value
+
+    # Otherwise, treat sourceHandle as a key to extract from a dict (AnnotatedDict case)
+    if isinstance(source_value, dict):
+        if source_handle not in source_value:
+            raise ValueError(
+                f"AnnotatedDict output missing expected key '{source_handle}'. "
+                f"Available keys: {list(source_value.keys())}"
+            )
+        return source_value[source_handle]
+
+    # If not a dict but sourceHandle is not "output"/"result", this is an error
+    raise ValueError(
+        f"Cannot extract key '{source_handle}' from non-dict output of type {type(source_value).__name__}"
+    )
+
+
 class GraphExecutor:
     """
     GraphExecutor is responsible for executing the node graph.
@@ -54,8 +96,31 @@ class GraphExecutor:
                 if stream_ops_file.exists():
                     self._load_stream_classes_from_file(str(stream_ops_file))
 
+    def _detect_class_node_type(self, cls: type) -> str | None:
+        """
+        Detect the node type of a class based on its attributes.
+
+        Args:
+            cls: The class to inspect.
+
+        Returns:
+            "progress" if the class has _progress_reporter,
+            "stream" if the class has _stream_reporter,
+            None otherwise.
+        """
+        try:
+            # Try to inspect __init__ source code to detect reporter usage
+            init_source = inspect.getsource(cls.__init__)
+            if "_progress_reporter" in init_source:
+                return "progress"
+            elif "_stream_reporter" in init_source:
+                return "stream"
+        except (TypeError, OSError):
+            pass
+        return None
+
     def _load_functions_from_file(self, filepath: str):
-        """Load functions from a specific file."""
+        """Load functions and classes from a specific file."""
         try:
             spec = importlib.util.spec_from_file_location("module", filepath)
             if spec is None or spec.loader is None:
@@ -67,6 +132,22 @@ class GraphExecutor:
             for name, obj in inspect.getmembers(module):
                 if inspect.isfunction(obj) and obj.__module__ == module.__name__:
                     self.function_registry[name] = obj
+                # Also load classes with __call__ method
+                elif (
+                    inspect.isclass(obj)
+                    and obj.__module__ == module.__name__
+                    and hasattr(obj, "__call__")
+                    and not name.startswith("_")
+                ):
+                    # Auto-detect node type based on class attributes
+                    node_type = self._detect_class_node_type(obj)
+                    if node_type == "progress":
+                        self.progress_class_registry[name] = obj
+                    elif node_type == "stream":
+                        self.stream_class_registry[name] = obj
+                    else:
+                        # Regular callable class - treat as function
+                        self.function_registry[name] = obj
 
         except Exception as e:
             print(f"Error loading functions from {filepath}: {e}")
@@ -222,7 +303,10 @@ class GraphExecutor:
                         source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
-                            view_node_results[node_id] = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            view_node_results[node_id] = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
                         else:
                             view_node_results[node_id] = None
                     else:
@@ -338,26 +422,51 @@ class GraphExecutor:
                     output_list = []
                     for edge in sorted_edges:
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            output_list.append(node_outputs[source_id])
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            output_list.append(
+                                _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
+                            )
 
                     node_outputs[node_id] = output_list
 
                 else:
-                    # Function node: execute the function
+                    # Function node: execute the function, progress class, or stream class
                     function_name = node.get("data", {}).get("functionName")
-                    if not function_name or function_name not in self.function_registry:
+                    if not function_name:
                         continue
 
-                    func = self.function_registry[function_name]
+                    # Check if it's a progress class, stream class, or regular function
+                    is_progress_node = function_name in self.progress_class_registry
+                    is_stream_node = function_name in self.stream_class_registry
+
+                    if (
+                        not is_progress_node
+                        and not is_stream_node
+                        and function_name not in self.function_registry
+                    ):
+                        continue
+
+                    # Get the callable and parameter names
+                    if is_progress_node:
+                        callable_cls = self.progress_class_registry[function_name]
+                        sig = inspect.signature(callable_cls.__call__)
+                        param_names = [p for p in sig.parameters.keys() if p != "self"]
+                    elif is_stream_node:
+                        callable_cls = self.stream_class_registry[function_name]
+                        sig = inspect.signature(callable_cls.__call__)
+                        param_names = [p for p in sig.parameters.keys() if p != "self"]
+                    else:
+                        func = self.function_registry[function_name]
+                        sig = inspect.signature(func)
+                        param_names = list(sig.parameters.keys())
 
                     # Gather inputs
                     node_data = node.get("data", {})
                     inputs = {}
-
-                    # Get parameter names from function signature
-                    sig = inspect.signature(func)
-                    param_names = list(sig.parameters.keys())
 
                     # First, use default values from node data
                     for param_name in param_names:
@@ -368,21 +477,29 @@ class GraphExecutor:
                     for edge in incoming_edges.get(node_id, []):
                         target_handle = edge.get("targetHandle", "")
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
                             # The target handle should indicate which parameter to set
                             if target_handle in param_names:
-                                inputs[target_handle] = node_outputs[source_id]
+                                # Use helper to extract value (handles AnnotatedDict outputs)
+                                inputs[target_handle] = _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
 
-                    # Execute function
+                    # Execute function or class
                     try:
                         # Convert string inputs to appropriate types if needed
-                        sig = inspect.signature(func)
                         type_hints = {}
                         try:
                             from typing import get_type_hints
 
-                            type_hints = get_type_hints(func)
+                            if is_progress_node:
+                                type_hints = get_type_hints(callable_cls.__call__)
+                            elif is_stream_node:
+                                type_hints = get_type_hints(callable_cls.__call__)
+                            else:
+                                type_hints = get_type_hints(func)
                         except:
                             pass
 
@@ -405,7 +522,12 @@ class GraphExecutor:
                             else:
                                 converted_inputs[param_name] = value
 
-                        result = func(**converted_inputs)
+                        if is_progress_node or is_stream_node:
+                            # Instantiate class and call it
+                            instance = callable_cls()
+                            result = instance(**converted_inputs)
+                        else:
+                            result = func(**converted_inputs)
                         node_outputs[node_id] = result
 
                     except Exception as e:
@@ -478,8 +600,12 @@ class GraphExecutor:
                     if incoming:
                         edge = incoming[0]  # ViewNode has single input
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            inputs["input"] = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            inputs["input"] = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
 
                     # Yield executing status
                     yield {
@@ -497,8 +623,11 @@ class GraphExecutor:
                         source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
-                            view_node_results[node_id] = node_outputs[source_id]
-                            output = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            output = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
+                            view_node_results[node_id] = output
                         else:
                             view_node_results[node_id] = None
                             output = None
@@ -648,8 +777,12 @@ class GraphExecutor:
                     inputs = {}
                     for idx, edge in enumerate(sorted_edges):
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            inputs[f"input-{idx}"] = node_outputs[source_id]
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            inputs[f"input-{idx}"] = _extract_output_value(
+                                node_outputs, source_id, source_handle
+                            )
 
                     # Yield executing status
                     yield {
@@ -664,8 +797,14 @@ class GraphExecutor:
                     output_list = []
                     for edge in sorted_edges:
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
                         if source_id in node_outputs:
-                            output_list.append(node_outputs[source_id])
+                            # Use helper to extract value (handles AnnotatedDict outputs)
+                            output_list.append(
+                                _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
+                            )
 
                     node_outputs[node_id] = output_list
 
@@ -731,11 +870,15 @@ class GraphExecutor:
                     for edge in incoming_edges.get(node_id, []):
                         target_handle = edge.get("targetHandle", "")
                         source_id = edge["source"]
+                        source_handle = edge.get("sourceHandle", "output")
 
                         if source_id in node_outputs:
                             # The target handle should indicate which parameter to set
                             if target_handle in param_names:
-                                inputs[target_handle] = node_outputs[source_id]
+                                # Use helper to extract value (handles AnnotatedDict outputs)
+                                inputs[target_handle] = _extract_output_value(
+                                    node_outputs, source_id, source_handle
+                                )
 
                     # Yield executing status
                     yield {

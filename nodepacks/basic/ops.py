@@ -1,4 +1,9 @@
 import math
+import time
+from typing import Literal
+
+from psynapse_backend.schema_extractor import AnnotatedDict
+from psynapse_backend.stateful_op_utils import ProgressReporter
 
 
 def add(a: float, b: float) -> float:
@@ -151,3 +156,71 @@ def at_index(object: list | dict, index: int | str) -> any:
     if isinstance(object, list):
         return object[int(index)]
     return object[index]
+
+
+def split_name(full_name: str) -> AnnotatedDict[Literal["first", "last"]]:
+    """
+    Split a full name into first and last name components.
+
+    This function demonstrates the AnnotatedDict feature which creates
+    multiple output handles for the node - one for 'first' and one for 'last'.
+
+    Args:
+        full_name: The full name to split (e.g., "John Doe")
+
+    Returns:
+        A dictionary with 'first' and 'last' keys containing the name parts
+    """
+    parts = full_name.strip().split(" ", 1)
+    return {
+        "first": parts[0],
+        "last": parts[1] if len(parts) > 1 else "",
+    }
+
+
+def divmod_numbers(
+    a: float, b: float
+) -> AnnotatedDict[Literal["quotient", "remainder"]]:
+    """
+    Calculate both the quotient and remainder of a division operation.
+
+    This function demonstrates the AnnotatedDict feature for mathematical operations,
+    creating separate output handles for 'quotient' and 'remainder'.
+
+    Args:
+        a: The dividend (number to be divided)
+        b: The divisor (number to divide by)
+
+    Returns:
+        A dictionary with 'quotient' and 'remainder' keys
+    """
+    if b == 0:
+        raise ValueError("Division by zero")
+    return {
+        "quotient": a // b,
+        "remainder": a % b,
+    }
+
+
+class ProgressOpp:
+    def __init__(self):
+        self._progress_reporter = ProgressReporter()
+
+    def __call__(self, count: int) -> int:
+        """
+        Process items with progress reporting.
+
+        Args:
+            count: Number of items to process
+
+        Returns:
+            Sum of processed items
+        """
+        results = []
+        for i in range(count):
+            time.sleep(5)
+            results.append(i * 2)
+            self._progress_reporter.update(
+                i + 1, count, f"Processing item {i + 1}/{count}"
+            )
+        return sum(results)

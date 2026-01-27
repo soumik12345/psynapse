@@ -89,6 +89,7 @@ nav:
     - Architecture: guides/architecture.md
     - Progress Nodes: guides/progress-nodes.md
     - Streaming Nodes: guides/stream-nodes.md
+    - Annotated Dictionaries: guides/annotated-dicts.md
   - Examples:
     - LLM Examples: examples/llm.md
   - API Reference:

@@ -52,18 +52,68 @@ const ListNode = ({ data, id }: NodeProps<NodeData>) => {
         minWidth: "180px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         transition: "border-color 0.3s ease, border-width 0.3s ease",
-        cursor: "pointer",
       }}
     >
       <div
         style={{
-          fontWeight: "bold",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: "12px",
-          color: "#6b21a8",
-          fontSize: "14px",
         }}
       >
-        List
+        <div
+          style={{
+            fontWeight: "bold",
+            color: "#6b21a8",
+            fontSize: "14px",
+          }}
+        >
+          List
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (data.onOpenPanel) {
+              data.onOpenPanel(id);
+            }
+          }}
+          style={{
+            padding: "4px 6px",
+            background: "transparent",
+            border: "1px solid #c084fc",
+            borderRadius: "4px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+          }}
+          title="Open node panel"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#ede9fe";
+            e.currentTarget.style.borderColor = "#9333ea";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.borderColor = "#c084fc";
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#6b21a8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </button>
       </div>
 
       {/* Input sockets */}

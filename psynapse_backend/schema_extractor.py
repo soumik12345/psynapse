@@ -1,7 +1,24 @@
 import importlib.util
 import inspect
 from pathlib import Path
-from typing import Any, Literal, get_args, get_origin, get_type_hints
+from typing import Any, Generic, Literal, TypeVar, get_args, get_origin, get_type_hints
+
+# Type variable for AnnotatedDict
+T = TypeVar("T")
+
+
+class AnnotatedDict(dict, Generic[T]):
+    """
+    A dictionary type hint that specifies the expected output keys.
+
+    Usage:
+        def my_func() -> AnnotatedDict[Literal["key1", "key2"]]:
+            return {"key1": value1, "key2": value2}
+
+    This creates multiple output handles in the node editor, one for each key.
+    """
+
+    pass
 
 
 def get_type_name(type_hint: Any) -> str:
@@ -53,6 +70,49 @@ def get_literal_values(type_hint: Any) -> list[str] | None:
     return None
 
 
+def parse_annotated_dict_keys(type_hint: Any) -> list[str] | None:
+    """
+    Parse AnnotatedDict[Literal['key1', 'key2', ...]] and return the key names.
+
+    Args:
+        type_hint: The type hint to check.
+
+    Returns:
+        A list of key names if the type hint is AnnotatedDict with Literal keys, None otherwise.
+    """
+    try:
+        origin = get_origin(type_hint)
+        if origin is None:
+            return None
+
+        # Check if origin is AnnotatedDict
+        # Handle both direct class comparison and name-based matching
+        origin_name = getattr(origin, "__name__", None) or str(origin)
+        if origin_name != "AnnotatedDict" and origin is not AnnotatedDict:
+            return None
+
+        # Get the type arguments
+        args = get_args(type_hint)
+        if not args:
+            return None
+
+        # First argument should be Literal with key names
+        literal_arg = args[0]
+        literal_origin = get_origin(literal_arg)
+        if literal_origin is not Literal:
+            return None
+
+        # Extract the literal string values (key names)
+        keys = get_args(literal_arg)
+        if not keys:
+            return None
+
+        # Ensure all keys are strings
+        return [str(key) for key in keys]
+    except Exception:
+        return None
+
+
 def extract_function_schema(func: callable, filepath: str) -> dict[str, Any]:
     """
     Extract schema information from a function.
@@ -90,7 +150,14 @@ def extract_function_schema(func: callable, filepath: str) -> dict[str, Any]:
 
         # Extract return type
         return_type = type_hints.get("return", Any)
-        returns = [{"name": "result", "type": get_type_name(return_type)}]
+
+        # Check for AnnotatedDict return type
+        annotated_dict_keys = parse_annotated_dict_keys(return_type)
+        if annotated_dict_keys:
+            # Create multiple return entries, one for each key
+            returns = [{"name": key, "type": "any"} for key in annotated_dict_keys]
+        else:
+            returns = [{"name": "result", "type": get_type_name(return_type)}]
 
         # Extract docstring
         docstring = inspect.getdoc(func) or ""
@@ -107,8 +174,32 @@ def extract_function_schema(func: callable, filepath: str) -> dict[str, Any]:
         return None
 
 
+def detect_class_node_type(cls: type) -> str | None:
+    """
+    Detect the node type of a class based on its attributes.
+
+    Args:
+        cls: The class to inspect.
+
+    Returns:
+        "progress" if the class has _progress_reporter,
+        "stream" if the class has _stream_reporter,
+        None otherwise.
+    """
+    try:
+        # Try to inspect __init__ source code to detect reporter usage
+        init_source = inspect.getsource(cls.__init__)
+        if "_progress_reporter" in init_source:
+            return "progress"
+        elif "_stream_reporter" in init_source:
+            return "stream"
+    except (TypeError, OSError):
+        pass
+    return None
+
+
 def extract_class_schema(
-    cls: type, filepath: str, node_type: str = "progress"
+    cls: type, filepath: str, node_type: str | None = None
 ) -> dict[str, Any]:
     """
     Extract schema information from a class with __call__ method.
@@ -116,12 +207,15 @@ def extract_class_schema(
     Args:
         cls: The class to extract schema information from.
         filepath: The file path of the class.
-        node_type: The type of node ("progress" or "stream").
+        node_type: The type of node ("progress", "stream", or None for auto-detection).
 
     Returns:
         A dictionary of schema information.
     """
     try:
+        # Auto-detect node type if not specified
+        if node_type is None:
+            node_type = detect_class_node_type(cls)
         # Get __call__ method signature
         call_method = cls.__call__
         sig = inspect.signature(call_method)
@@ -150,7 +244,14 @@ def extract_class_schema(
 
         # Extract return type
         return_type = type_hints.get("return", Any)
-        returns = [{"name": "result", "type": get_type_name(return_type)}]
+
+        # Check for AnnotatedDict return type
+        annotated_dict_keys = parse_annotated_dict_keys(return_type)
+        if annotated_dict_keys:
+            # Create multiple return entries, one for each key
+            returns = [{"name": key, "type": "any"} for key in annotated_dict_keys]
+        else:
+            returns = [{"name": "result", "type": get_type_name(return_type)}]
 
         # Extract docstring (prefer class docstring, fallback to __call__ docstring)
         docstring = inspect.getdoc(cls) or inspect.getdoc(call_method) or ""
@@ -246,13 +347,19 @@ def extract_all_schemas(nodepacks_dir: str) -> list[dict[str, Any]]:
     # Iterate through all subdirectories
     for nodepack_dir in nodepacks_path.iterdir():
         if nodepack_dir.is_dir():
-            # Extract schemas from regular ops.py functions
+            # Extract schemas from regular ops.py functions and classes
             ops_file = nodepack_dir / "ops.py"
             if ops_file.exists():
+                # Extract functions
                 schemas = extract_schemas_from_file(
                     str(ops_file), extract_classes=False
                 )
                 all_schemas.extend(schemas)
+                # Also extract classes with __call__ method (auto-detect node type)
+                class_schemas = extract_schemas_from_file(
+                    str(ops_file), extract_classes=True, node_type=None
+                )
+                all_schemas.extend(class_schemas)
 
             # Extract schemas from progress_ops.py classes
             progress_ops_file = nodepack_dir / "progress_ops.py"

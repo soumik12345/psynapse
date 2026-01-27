@@ -89,6 +89,31 @@ const PsynapseEditorInner = () => {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
+  // Callback to open node panel from dedicated button in node UI
+  const handleOpenNodePanel = useCallback((nodeId: string) => {
+    setSelectedNodeId(nodeId);
+  }, []);
+
+  const handleNodeDataChange = useCallback(
+    (nodeId: string, paramName: string, value: string) => {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                [paramName]: value,
+              },
+            };
+          }
+          return node;
+        }),
+      );
+    },
+    [setNodes],
+  );
+
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
@@ -121,6 +146,7 @@ const PsynapseEditorInner = () => {
             label: "View",
             value: undefined,
             edges: [], // Will be updated with actual edges
+            onOpenPanel: handleOpenNodePanel,
           },
         };
       } else if (data.type === "variableNode") {
@@ -134,6 +160,7 @@ const PsynapseEditorInner = () => {
             variableType: "String",
             variableValue: "",
             edges: [], // Will be updated with actual edges
+            onOpenPanel: handleOpenNodePanel,
           },
         };
       } else if (data.type === "listNode") {
@@ -146,6 +173,7 @@ const PsynapseEditorInner = () => {
             inputCount: 1,
             onChange: handleNodeDataChange,
             edges: [], // Will be updated with actual edges
+            onOpenPanel: handleOpenNodePanel,
           },
         };
       } else if (data.type === "functionNode" && data.schema) {
@@ -154,9 +182,11 @@ const PsynapseEditorInner = () => {
           label: schema.name,
           functionName: schema.name,
           params: schema.params,
+          returns: schema.returns,
           docstring: schema.docstring,
           onChange: handleNodeDataChange,
           edges: [], // Will be updated with actual edges
+          onOpenPanel: handleOpenNodePanel,
         };
 
         // Initialize default values for parameters
@@ -183,27 +213,7 @@ const PsynapseEditorInner = () => {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, setNodes],
-  );
-
-  const handleNodeDataChange = useCallback(
-    (nodeId: string, paramName: string, value: string) => {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                [paramName]: value,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    },
-    [setNodes],
+    [reactFlowInstance, setNodes, handleNodeDataChange, handleOpenNodePanel],
   );
 
   const handleNodePanelUpdate = useCallback(
@@ -239,25 +249,12 @@ const PsynapseEditorInner = () => {
     [setNodes],
   );
 
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    event.stopPropagation(); // Prevent event from bubbling to pane
-    if (
-      node.type === "variableNode" ||
-      node.type === "functionNode" ||
-      node.type === "listNode"
-    ) {
-      setSelectedNodeId(node.id);
-    } else {
-      setSelectedNodeId(null);
-    }
-  }, []);
-
   const handlePaneClick = useCallback(() => {
     // Close the node panel when clicking on the canvas
     setSelectedNodeId(null);
   }, []);
 
-  // Update nodes with edge information whenever edges change
+  // Update nodes with edge information and onOpenPanel callback whenever edges change
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
@@ -265,10 +262,11 @@ const PsynapseEditorInner = () => {
         data: {
           ...node.data,
           edges: edges,
+          onOpenPanel: handleOpenNodePanel,
         },
       })),
     );
-  }, [edges, setNodes]);
+  }, [edges, setNodes, handleOpenNodePanel]);
 
   // Clear selected node if it's deleted
   useEffect(() => {
@@ -838,7 +836,6 @@ const PsynapseEditorInner = () => {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            onNodeClick={handleNodeClick}
             onPaneClick={handlePaneClick}
             onInit={setReactFlowInstance}
             onDrop={onDrop}

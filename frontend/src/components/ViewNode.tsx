@@ -9,6 +9,23 @@ const isBase64Image = (str: string): boolean => {
   return base64Pattern.test(str);
 };
 
+// Helper to check if a string is a repr() output (non-JSON-serializable object representation)
+const isReprString = (str: string): boolean => {
+  // Matches patterns like: <ClassName object at 0x...>, <module 'name' from ...>, etc.
+  const reprPattern = /^<[^>]+>$/;
+  return reprPattern.test(str);
+};
+
+// Helper to check if an object is a repr-converted object from backend
+const isReprObject = (obj: unknown): obj is { __repr__: string; __type__: string } => {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "__repr__" in obj &&
+    "__type__" in obj
+  );
+};
+
 // Simple Markdown renderer component
 const SimpleMarkdown = ({ content }: { content: string }) => {
   const renderMarkdown = (text: string) => {
@@ -229,6 +246,25 @@ const TreeView = ({ data, level = 0, renderMode = 'raw' }: TreeViewProps) => {
       );
     }
 
+    // Check if it's a repr() string (non-JSON-serializable object)
+    if (isReprString(data)) {
+      return (
+        <span
+          style={{
+            color: "#6f42c1",
+            fontStyle: "italic",
+            backgroundColor: "#f5f0ff",
+            padding: "2px 6px",
+            borderRadius: "3px",
+            fontSize: "11px",
+          }}
+          title="Non-serializable object (repr)"
+        >
+          {data}
+        </span>
+      );
+    }
+
     // Render based on mode
     if (renderMode === 'markdown') {
       return <SimpleMarkdown content={data} />;
@@ -276,6 +312,25 @@ const TreeView = ({ data, level = 0, renderMode = 'raw' }: TreeViewProps) => {
   }
 
   if (typeof data === "object") {
+    // Check if it's a repr-converted object from backend (non-JSON-serializable)
+    if (isReprObject(data)) {
+      return (
+        <span
+          style={{
+            color: "#6f42c1",
+            fontStyle: "italic",
+            backgroundColor: "#f5f0ff",
+            padding: "2px 6px",
+            borderRadius: "3px",
+            fontSize: "11px",
+          }}
+          title={`Non-serializable ${data.__type__} object (repr)`}
+        >
+          {data.__repr__}
+        </span>
+      );
+    }
+
     const keys = Object.keys(data);
     if (keys.length === 0) {
       return <span style={{ color: "#6a737d" }}>{"{}"}</span>;
@@ -317,7 +372,7 @@ const TreeView = ({ data, level = 0, renderMode = 'raw' }: TreeViewProps) => {
   return <span>{String(data)}</span>;
 };
 
-const ViewNode = ({ data }: NodeProps<NodeData>) => {
+const ViewNode = ({ data, id }: NodeProps<NodeData>) => {
   const [renderMode, setRenderMode] = useState<'raw' | 'markdown'>('raw');
   
   const hasValue = data.value !== undefined && data.value !== null;
@@ -384,12 +439,63 @@ const ViewNode = ({ data }: NodeProps<NodeData>) => {
       >
         <div
           style={{
-            fontWeight: "bold",
-            color: "#166534",
-            fontSize: "14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          View
+          <div
+            style={{
+              fontWeight: "bold",
+              color: "#166534",
+              fontSize: "14px",
+            }}
+          >
+            View
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (data.onOpenPanel) {
+                data.onOpenPanel(id);
+              }
+            }}
+            style={{
+              padding: "4px 6px",
+              background: "transparent",
+              border: "1px solid #86efac",
+              borderRadius: "4px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+            }}
+            title="Open node panel"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#dcfce7";
+              e.currentTarget.style.borderColor = "#50c878";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "#86efac";
+            }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#166534"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </button>
         </div>
         {/* Render mode toggle - only show for non-image strings */}
         {isStringValue && !isImageString && (

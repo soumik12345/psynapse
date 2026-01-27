@@ -8,10 +8,90 @@ import typer
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from PIL import Image
 from pydantic import BaseModel
 
 from psynapse_backend.executor import GraphExecutor
 from psynapse_backend.schema_extractor import extract_all_schemas
+from psynapse_backend.utils import pil_image_to_openai_string
+
+
+def _make_json_serializable(obj: Any, seen: set | None = None) -> Any:
+    """
+    Recursively convert an object to a JSON-serializable form.
+    Non-serializable objects are converted to their repr() string.
+    PIL Images are converted to base64-encoded strings.
+
+    Args:
+        obj: The object to convert.
+        seen: Set of object ids already processed (for circular reference detection).
+
+    Returns:
+        A JSON-serializable version of the object.
+    """
+    if seen is None:
+        seen = set()
+
+    # Handle None
+    if obj is None:
+        return None
+
+    # Handle primitives (these are always JSON-serializable)
+    if isinstance(obj, (bool, int, float, str)):
+        return obj
+
+    # Check for circular references
+    obj_id = id(obj)
+    if obj_id in seen:
+        return f"<circular reference: {type(obj).__name__}>"
+    seen.add(obj_id)
+
+    try:
+        # Handle PIL Images - convert to base64 string for frontend rendering
+        if isinstance(obj, Image.Image):
+            return pil_image_to_openai_string(obj)
+
+        # Handle lists
+        if isinstance(obj, list):
+            return [_make_json_serializable(item, seen) for item in obj]
+
+        # Handle tuples (convert to list for JSON)
+        if isinstance(obj, tuple):
+            return [_make_json_serializable(item, seen) for item in obj]
+
+        # Handle dicts
+        if isinstance(obj, dict):
+            return {str(k): _make_json_serializable(v, seen) for k, v in obj.items()}
+
+        # Try to serialize as-is first
+        try:
+            json.dumps(obj)
+            return obj
+        except (TypeError, ValueError):
+            pass
+
+        # For objects with __dict__, try to convert to dict
+        if hasattr(obj, "__dict__") and not isinstance(obj, type):
+            try:
+                return {
+                    "__repr__": repr(obj),
+                    "__type__": type(obj).__name__,
+                }
+            except Exception:
+                pass
+
+        # Fallback: use repr()
+        return repr(obj)
+
+    except Exception:
+        # Ultimate fallback
+        try:
+            return repr(obj)
+        except Exception:
+            return f"<unserializable: {type(obj).__name__}>"
+    finally:
+        seen.discard(obj_id)
+
 
 # Get nodepacks directory path - will be set at startup
 NODEPACKS_DIR = os.getenv(
@@ -61,7 +141,7 @@ class ExecuteRequest(BaseModel):
 
     Attributes:
         nodes: The nodes of the graph.
-        edges: The edges of the graph.
+        edges: The edges of the graph.``
         env_vars: Optional environment variables to set during execution.
     """
 
@@ -98,7 +178,8 @@ def execute_graph(request: ExecuteRequest):
         results = graph_executor.execute_graph(
             request.nodes, request.edges, request.env_vars
         )
-        return {"results": results}
+        serializable_results = _make_json_serializable(results)
+        return {"results": serializable_results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error executing graph: {str(e)}")
 
@@ -114,10 +195,9 @@ def execute_graph_stream(request: ExecuteRequest):
             for status_update in graph_executor.execute_graph_streaming(
                 request.nodes, request.edges, request.env_vars
             ):
-                # Format as SSE event
-                yield f"data: {json.dumps(status_update)}\n\n"
+                serializable_update = _make_json_serializable(status_update)
+                yield f"data: {json.dumps(serializable_update)}\n\n"
         except Exception as e:
-            # Send error event
             error_event = {
                 "status": "error",
                 "error": str(e),

@@ -33,6 +33,12 @@ A visual node-based workflow editor for creating and executing computational gra
     OPTIONAL_DEPS=llm docker compose -f docker/docker-compose.yml up --build
     ```
 
+=== "With Pytorch GPU Backend"
+
+    ```bash
+    OPTIONAL_DEPS=llm,z-image docker compose -f docker/docker-compose-torch-gpu.yml up --build
+    ```
+
 Access the editor at `http://localhost:5173`
 
 ### Local Development
@@ -49,12 +55,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-## Architecture
-
-- **Backend**: FastAPI server with graph execution engine
-- **Frontend**: React 19 + TypeScript + Vite
-- **Nodepacks**: Extensible Python function libraries
 
 ## Creating Custom Nodepacks
 

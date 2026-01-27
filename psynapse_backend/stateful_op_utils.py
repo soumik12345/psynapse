@@ -1,8 +1,7 @@
-import time
 from typing import Callable, Optional
 
 
-class _ProgressReporter:
+class ProgressReporter:
     """Context-aware progress reporter for node execution."""
 
     def __init__(self):
@@ -24,25 +23,17 @@ class _ProgressReporter:
             self._callback(percent, message)
 
 
-class ProgressOpp:
+class StreamReporter:
+    """Context-aware stream reporter for streaming text content."""
+
     def __init__(self):
-        self._progress_reporter = _ProgressReporter()
+        self._callback: Optional[Callable[[str], None]] = None
 
-    def __call__(self, count: int) -> int:
-        """
-        Process items with progress reporting.
+    def set_callback(self, callback: Callable[[str], None]):
+        """Set the callback for stream updates."""
+        self._callback = callback
 
-        Args:
-            count: Number of items to process
-
-        Returns:
-            Sum of processed items
-        """
-        results = []
-        for i in range(count):
-            time.sleep(5)
-            results.append(i * 2)
-            self._progress_reporter.update(
-                i + 1, count, f"Processing item {i + 1}/{count}"
-            )
-        return sum(results)
+    def emit(self, chunk: str):
+        """Emit a text chunk to the stream."""
+        if self._callback and chunk:
+            self._callback(chunk)
