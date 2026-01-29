@@ -317,6 +317,7 @@ class DenoisingDiffusion:
                     "negative_prompt_embeddings is required when guidance_scale > 1"
                 )
 
+        total_steps = len(timesteps)
         for i, t in enumerate(timesteps):
             # Expand timestep to batch dimension
             timestep = t.expand(latents.shape[0])
@@ -397,6 +398,10 @@ class DenoisingDiffusion:
             latents = scheduler.step(
                 noise_pred.to(torch.float32), t, latents, return_dict=False
             )[0]
+
+            self._progress_reporter.update(
+                i + 1, total_steps, f"Denoising step {i + 1}/{total_steps}"
+            )
 
         transformer_hook.offload()
         return {"denoised_latents": latents}
