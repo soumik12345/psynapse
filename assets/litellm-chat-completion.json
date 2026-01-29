@@ -1,0 +1,468 @@
+{
+  "nodes": [
+    {
+      "id": "node_0",
+      "type": "variableNode",
+      "position": {
+        "x": 118.5,
+        "y": 141.5
+      },
+      "data": {
+        "label": "Variable: system_message",
+        "variableName": "system_message",
+        "variableType": "String",
+        "variableValue": "You are a helpful assistant",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_10",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_10output-node_4input"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_10",
+            "targetHandle": "response",
+            "id": "reactflow__edge-node_8output-node_10response"
+          }
+        ],
+        "textContentFormat": false,
+        "llmMessageFormat": true,
+        "llmMessageRole": "system",
+        "executionStatus": "completed"
+      },
+      "width": 211,
+      "height": 102,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 118.5,
+        "y": 141.5
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_1",
+      "type": "variableNode",
+      "position": {
+        "x": 130.75,
+        "y": 294.25
+      },
+      "data": {
+        "label": "Variable: user_message",
+        "variableName": "user_message",
+        "variableType": "String",
+        "variableValue": "Write a detailed essay on the neolithic age",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_10",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_10output-node_4input"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_10",
+            "targetHandle": "response",
+            "id": "reactflow__edge-node_8output-node_10response"
+          }
+        ],
+        "textContentFormat": false,
+        "llmMessageFormat": true,
+        "llmMessageRole": "user",
+        "executionStatus": "completed"
+      },
+      "width": 191,
+      "height": 102,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 130.75,
+        "y": 294.25
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_2",
+      "type": "listNode",
+      "position": {
+        "x": 391.75,
+        "y": 214.25
+      },
+      "data": {
+        "label": "List",
+        "inputCount": 2,
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_10",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_10output-node_4input"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_10",
+            "targetHandle": "response",
+            "id": "reactflow__edge-node_8output-node_10response"
+          }
+        ],
+        "executionStatus": "completed"
+      },
+      "width": 180,
+      "height": 149,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 391.75,
+        "y": 214.25
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_4",
+      "type": "viewNode",
+      "position": {
+        "x": 1162.012067167522,
+        "y": 207.51604022590504
+      },
+      "data": {
+        "label": "View",
+        "value": "## The Dawn of Permanence: Unraveling the Neolithic Revolution\n\nThe Neolithic Age, often hailed as the \"New Stone Age,\" represents one of the most profound and transformative epochs in human history. Far from merely refining stone tools, this period, spanning roughly from 10,000 BCE to 4,500 BCE (though exact dates vary regionally), witnessed a radical shift in human existence – a revolution that laid the very foundations of civilization as we know it. It was an age defined by the transition from a nomadic, hunter-gatherer lifestyle to a settled, agricultural existence, bringing with it a cascade of innovations that fundamentally reshaped human societies, economies, and our relationship with the natural world.\n\nThe catalyst for this monumental change was the advent of agriculture. Prior to the Neolithic, Homo sapiens survived by foraging for wild plants and hunting animals, a mode of subsistence that necessitated constant movement and limited population growth. The \"discovery\" – more accurately, the gradual realization and refinement – of cultivating crops and domesticating animals liberated humans from the immediate constraints of their environment. Regions rich in wild cereals like wheat and barley, such as the Fertile Crescent in the Near East, became the cradles of this agricultural revolution. The careful selection of seeds, the taming of wild animals like goats, sheep, cows, and pigs, and the development of rudimentary farming techniques marked a dramatic departure from millions of years of human prehistory. This newfound ability to produce food surpluses was the bedrock upon which all subsequent Neolithic advancements were built.\n\nThe most immediate and discernible consequence of agriculture was sedentarism. No longer beholden to the migratory patterns of game or the seasonal availability of wild plants, communities could establish permanent settlements. This transition is vividly illustrated by archaeological sites such as Çatalhöyük in modern-day Turkey, a sprawling neolithic town with tightly packed mud-brick houses, entered through roofs, and a complex social structure. The shift to a settled life fostered a deeper connection to the land, cultivating not only crops but also a sense of belonging and territoriality. It also allowed for the accumulation of possessions and the development of more elaborate dwellings, moving beyond temporary shelters to robust, durable structures that reflected a long-term commitment to a particular location.\n\nWith permanent settlements came a dramatic increase in population density. The ability to feed more people from a smaller land area led to a burgeoning population, which, in turn, fueled further societal complexities. The establishment of villages and early towns necessitated new forms of social organization. Kinship structures, while still important, began to give way to more hierarchical arrangements. Evidence suggests the emergence of specialized labor, where individuals could dedicate their time to crafts, construction, or religious duties, rather than solely to food procurement. This division of labor, a hallmark of more complex societies, further enhanced efficiency and fostered innovation.\n\nTechnological advancements during the Neolithic were directly intertwined with the agricultural revolution and settled life. Stone tools, while still prevalent, underwent significant refinement. Polished stone axes, adzes, and sickles, meticulously crafted and far more durable than their Paleolithic predecessors, became essential for clearing land, cultivating fields, and harvesting crops. The invention of pottery, a revolutionary material, allowed for the storage of surplus grains, cooking, and the transportation of liquids. Textiles, initially woven from plant fibers like flax and later from animal wool, provided new forms of clothing and shelter. The development of permanent architecture, often employing mud brick, timber, and sometimes stone, speaks to an increasing understanding of construction and engineering principles. These technological innovations not only improved daily life but also reflect a growing intellectual capacity and problem-solving aptitude within these nascent societies.\n\nThe Neolithic Age also witnessed the emergence of new belief systems and cultural practices. With a focus on fertility and the bounty of the earth, goddesses associated with agriculture and nurturing became prominent in many Neolithic iconographies. Elaborate burial practices, often involving the interment of possessions and symbolic objects, suggest a developing understanding of the afterlife and a reverence for ancestors. Megalithic structures, such as Stonehenge, though often associated with later periods, find their conceptual roots in the Neolithic, hinting at early forms of collective labor, astronomical observation, and ritualistic ceremonies that bound communities together. These cultural expressions provided a framework for understanding the world, reinforcing social cohesion, and giving meaning to the challenges and triumphs of a new way of life.\n\nHowever, the Neolithic Revolution was not without its drawbacks. The increased population density, coupled with reliance on a limited range of crops, made communities more vulnerable to disease and famine. Close proximity to domesticated animals also facilitated the transmission of zoonotic diseases. The concept of private property, which emerged with settled agriculture and the accumulation of surpluses, likely led to increased competition and conflict over resources, paving the way for early forms of warfare. The environmental impact of widespread deforestation for agricultural land and the long-term effects of monoculture also began to take their toll, laying the groundwork for environmental challenges that continue to this day.\n\nIn conclusion, the Neolithic Age stands as a testament to humanity's remarkable adaptability and ingenuity. The transition from a nomadic hunter-gatherer existence to a settled, agricultural lifestyle was a paradigm shift that fundamentally redefined what it meant to be human. It ushered in an era of unprecedented population growth, technological innovation, social complexity, and cultural development. The humble seeds sown by early farmers in the Fertile Crescent blossomed into the foundations of villages, towns, and eventually, the urban centers we inhabit today. While the Neolithic Revolution brought both progress and new challenges, its legacy is undeniable. It was the age when humanity first put down roots, literally and metaphorically, setting the stage for the intricate tapestry of civilizations that would follow, forever changing the course of human history.",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_10",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_10output-node_4input"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_10",
+            "targetHandle": "response",
+            "id": "reactflow__edge-node_8output-node_10response"
+          }
+        ],
+        "executionStatus": "completed"
+      },
+      "width": 400,
+      "height": 355,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 1162.012067167522,
+        "y": 207.51604022590504
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_8",
+      "type": "functionNode",
+      "position": {
+        "x": 619.2943370372144,
+        "y": 288.8761068139392
+      },
+      "data": {
+        "label": "litellm_chat_completion",
+        "functionName": "litellm_chat_completion",
+        "params": [
+          {
+            "name": "model",
+            "type": "str"
+          },
+          {
+            "name": "messages",
+            "type": "list"
+          },
+          {
+            "name": "temperature",
+            "type": "float | None",
+            "default": null
+          },
+          {
+            "name": "top_p",
+            "type": "float | None",
+            "default": null
+          },
+          {
+            "name": "max_completion_tokens",
+            "type": "int | None",
+            "default": null
+          },
+          {
+            "name": "max_tokens",
+            "type": "int | None",
+            "default": null
+          },
+          {
+            "name": "reasoning_effort",
+            "type": "Optional",
+            "default": null
+          },
+          {
+            "name": "seed",
+            "type": "int | None",
+            "default": null
+          },
+          {
+            "name": "logprobs",
+            "type": "bool",
+            "default": false
+          },
+          {
+            "name": "base_url",
+            "type": "str | None",
+            "default": null
+          }
+        ],
+        "docstring": "",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_10",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_10output-node_4input"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_10",
+            "targetHandle": "response",
+            "id": "reactflow__edge-node_8output-node_10response"
+          }
+        ],
+        "model": "openrouter/google/gemini-2.5-flash",
+        "messages": "",
+        "temperature": null,
+        "top_p": null,
+        "max_completion_tokens": null,
+        "max_tokens": null,
+        "reasoning_effort": null,
+        "seed": null,
+        "logprobs": false,
+        "base_url": null,
+        "executionStatus": "completed"
+      },
+      "width": 200,
+      "height": 135,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 619.2943370372144,
+        "y": 288.8761068139392
+      },
+      "dragging": false
+    },
+    {
+      "id": "node_10",
+      "type": "functionNode",
+      "position": {
+        "x": 889.9963289102564,
+        "y": 267.8321357142681
+      },
+      "data": {
+        "label": "get_message_content",
+        "functionName": "get_message_content",
+        "params": [
+          {
+            "name": "response",
+            "type": "dict"
+          }
+        ],
+        "docstring": "Extract the message content from the OpenAI response.\n\nArgs:\n    response (dict[str, Any]): The OpenAI response.\n\nReturns:\n    str: The message content.",
+        "edges": [
+          {
+            "source": "node_0",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-0",
+            "id": "reactflow__edge-node_0output-node_2input-0"
+          },
+          {
+            "source": "node_1",
+            "sourceHandle": "output",
+            "target": "node_2",
+            "targetHandle": "input-1",
+            "id": "reactflow__edge-node_1output-node_2input-1"
+          },
+          {
+            "source": "node_2",
+            "sourceHandle": "output",
+            "target": "node_8",
+            "targetHandle": "messages",
+            "id": "reactflow__edge-node_2output-node_8messages"
+          },
+          {
+            "source": "node_10",
+            "sourceHandle": "output",
+            "target": "node_4",
+            "targetHandle": "input",
+            "id": "reactflow__edge-node_10output-node_4input"
+          },
+          {
+            "source": "node_8",
+            "sourceHandle": "output",
+            "target": "node_10",
+            "targetHandle": "response",
+            "id": "reactflow__edge-node_8output-node_10response"
+          }
+        ],
+        "response": "",
+        "executionStatus": "completed"
+      },
+      "width": 200,
+      "height": 82,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 889.9963289102564,
+        "y": 267.8321357142681
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_0",
+      "sourceHandle": "output",
+      "target": "node_2",
+      "targetHandle": "input-0",
+      "id": "reactflow__edge-node_0output-node_2input-0"
+    },
+    {
+      "source": "node_1",
+      "sourceHandle": "output",
+      "target": "node_2",
+      "targetHandle": "input-1",
+      "id": "reactflow__edge-node_1output-node_2input-1"
+    },
+    {
+      "source": "node_2",
+      "sourceHandle": "output",
+      "target": "node_8",
+      "targetHandle": "messages",
+      "id": "reactflow__edge-node_2output-node_8messages"
+    },
+    {
+      "source": "node_10",
+      "sourceHandle": "output",
+      "target": "node_4",
+      "targetHandle": "input",
+      "id": "reactflow__edge-node_10output-node_4input"
+    },
+    {
+      "source": "node_8",
+      "sourceHandle": "output",
+      "target": "node_10",
+      "targetHandle": "response",
+      "id": "reactflow__edge-node_8output-node_10response"
+    }
+  ]
+}

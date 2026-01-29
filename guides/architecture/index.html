@@ -1,0 +1,4170 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../quick-start/">
+      
+      
+        <link rel="next" href="../progress-nodes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Architecture - Psynapse</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/panzoom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <meta name="panzoom-theme" content="material">
+<meta name="panzoom-data" content='{"selectors": [".mermaid", ".d2"], "initial_zoom_level": 1.0}'> </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#psynapse-architecture-documentation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Psynapse" class="md-header__button md-logo" aria-label="Psynapse" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Psynapse
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/soumik12345/psynapse" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    soumik12345/psynapse
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../quick-start/" class="md-tabs__link">
+          
+  
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/llm/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../backend/executor/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Psynapse" class="md-nav__button md-logo" aria-label="Psynapse" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Psynapse
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/soumik12345/psynapse" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    soumik12345/psynapse
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backend-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backend Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-schema-extraction-schema_extractorpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Schema Extraction (schema_extractor.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-graph-executor-executorpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Graph Executor (executor.py)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Graph Executor (executor.py)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topological-sorting-kahns-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topological Sorting (Kahn's Algorithm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-execution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Execution Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-api-endpoints-mainpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. API Endpoints (main.py)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. API Endpoints (main.py)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-get_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /get_schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /execute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-executestream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /execute/stream
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cors-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CORS Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frontend-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-psynapseeditor-psynapseeditortsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. PsynapseEditor (PsynapseEditor.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-nodelibrarypanel-nodelibrarypaneltsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. NodeLibraryPanel (NodeLibraryPanel.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-functionnode-functionnodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. FunctionNode (FunctionNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-variablenode-variablenodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. VariableNode (VariableNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-listnode-listnodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. ListNode (ListNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-viewnode-viewnodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. ViewNode (ViewNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-statuspanel-statuspaneltsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. StatusPanel (StatusPanel.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-initialization-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Initialization Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-execution-flow-streaming-sse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Execution Flow (Streaming SSE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-node-type-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Node Type Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-graph-execution-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Graph Execution Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Node Graph Execution Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Graph
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#supported-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supported Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primitive-types-for-function-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primitive Types (for Function Parameters):
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variable-node-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variable Node Types:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complex-types-via-python-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complex Types (via Python functions):
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Conversion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llm-message-formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM Message Formatting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#progress-node-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progress Node Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Progress Node Pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threading-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Display
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stream-node-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stream Node Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stream Node Pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-pattern_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#real-world-example-llm-streaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real-World Example: LLM Streaming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threading-model_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-display_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Display
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension Points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extension Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-node-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding New Node Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding New Data Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-nodepacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Nodepacks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-tests-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Tests (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker Compose (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nginx-configuration-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nginx Configuration Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-enhancements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future Enhancements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Future Enhancements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#planned-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../progress-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Progress Nodes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stream-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Streaming Nodes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../annotated-dicts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotated Dictionaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/llm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Backend
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend/executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Graph Executor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend/schema_extractor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Extractor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Frontend
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frontend/components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frontend/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frontend/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frontend/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backend-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Backend Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-schema-extraction-schema_extractorpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Schema Extraction (schema_extractor.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-graph-executor-executorpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Graph Executor (executor.py)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Graph Executor (executor.py)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#topological-sorting-kahns-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topological Sorting (Kahn's Algorithm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#node-execution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Execution Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-api-endpoints-mainpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. API Endpoints (main.py)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. API Endpoints (main.py)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-get_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET /get_schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /execute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-executestream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        POST /execute/stream
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cors-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CORS Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frontend-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Frontend Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-psynapseeditor-psynapseeditortsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. PsynapseEditor (PsynapseEditor.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-nodelibrarypanel-nodelibrarypaneltsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. NodeLibraryPanel (NodeLibraryPanel.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-functionnode-functionnodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. FunctionNode (FunctionNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-variablenode-variablenodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. VariableNode (VariableNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-listnode-listnodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. ListNode (ListNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-viewnode-viewnodetsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. ViewNode (ViewNode.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-statuspanel-statuspaneltsx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. StatusPanel (StatusPanel.tsx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-initialization-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Initialization Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-execution-flow-streaming-sse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Execution Flow (Streaming SSE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-node-type-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Node Type Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-graph-execution-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Graph Execution Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Node Graph Execution Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Graph
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#supported-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supported Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primitive-types-for-function-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Primitive Types (for Function Parameters):
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variable-node-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variable Node Types:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complex-types-via-python-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complex Types (via Python functions):
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Conversion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llm-message-formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LLM Message Formatting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#progress-node-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progress Node Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Progress Node Pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threading-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Display
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stream-node-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stream Node Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stream Node Pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-pattern_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#real-world-example-llm-streaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real-World Example: LLM Streaming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#threading-model_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-display_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Display
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension Points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extension Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-node-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding New Node Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding New Data Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-nodepacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Nodepacks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#backend-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-tests-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Tests (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker Compose (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frontend-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frontend Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nginx-configuration-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nginx Configuration Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-enhancements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future Enhancements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Future Enhancements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#planned-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="psynapse-architecture-documentation">Psynapse Architecture Documentation</h1>
+<h2 id="overview">Overview</h2>
+<p>Psynapse is a full-stack node-based workflow editor that enables visual programming through a drag-and-drop interface. The system consists of three main components:</p>
+<ol>
+<li><strong>Backend (FastAPI)</strong>: Handles schema extraction from Python functions and executes node graphs</li>
+<li><strong>Frontend (React + React Flow)</strong>: Provides visual node graph editor with drag-and-drop functionality</li>
+<li><strong>Nodepacks</strong>: Python modules containing executable functions</li>
+</ol>
+<h2 id="system-architecture">System Architecture</h2>
+<div class="panzoom-box" data-key="alt" id="panzoom0" oncontextmenu="return false;">
+    
+    <nav class="panzoom-nav">
+    <button class="panzoom-info panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm169.8-90.7c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"></path>
+    </svg>
+</button><button class="panzoom-reset panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M125.7 160l50.3 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L48 224c-17.7 0-32-14.3-32-32L16 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z"></path>
+    </svg>
+</button>
+    </nav>
+    <div class="mermaid">graph TB
+    subgraph Frontend["Frontend (React + Vite)"]
+        NodeLib[Node Library Panel]
+        Canvas[ReactFlow Canvas]
+        ExecBtn[Execute Button]
+        Status[Status Panel&lt;br/&gt;Real-time Updates]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        SchemaEP["GET /get_schema&lt;br/&gt;Endpoint"]
+        ExecEP["POST /execute&lt;br/&gt;Endpoint"]
+        StreamEP["POST /execute/stream&lt;br/&gt;Endpoint SSE"]
+
+        SchemaExt[Schema Extractor&lt;br/&gt;- inspect module&lt;br/&gt;- type hints&lt;br/&gt;- docstrings]
+        GraphExec[Graph Executor&lt;br/&gt;- Topological Sort&lt;br/&gt;- Sequential Execution&lt;br/&gt;- Type Conversion]
+        StreamExec[Streaming Executor&lt;br/&gt;- SSE Events&lt;br/&gt;- Progress Updates&lt;br/&gt;- Real-time Status]
+
+        FuncReg[Function Registry]
+        ProgReg[Progress Class Registry]
+        StreamReg[Stream Class Registry]
+    end
+
+    subgraph Nodepacks["Nodepacks"]
+        OpsFile[ops.py&lt;br/&gt;Regular Functions]
+        ProgFile[progress_ops.py&lt;br/&gt;Progress Classes]
+        StreamFile[stream_ops.py&lt;br/&gt;Stream Classes]
+    end
+
+    NodeLib --&gt;|"HTTP GET"| SchemaEP
+    SchemaEP --&gt; SchemaExt
+    SchemaExt --&gt;|"Introspect"| OpsFile
+    SchemaExt --&gt;|"Introspect"| ProgFile
+    SchemaExt --&gt;|"Introspect"| StreamFile
+
+    Canvas --&gt; ExecBtn
+    ExecBtn --&gt;|"HTTP POST"| ExecEP
+    ExecBtn --&gt;|"HTTP POST + SSE"| StreamEP
+
+    ExecEP --&gt; GraphExec
+    StreamEP --&gt; StreamExec
+
+    GraphExec --&gt;|"Load"| FuncReg
+    GraphExec --&gt;|"Load"| ProgReg
+    GraphExec --&gt;|"Load"| StreamReg
+    StreamExec --&gt;|"Load"| FuncReg
+    StreamExec --&gt;|"Load"| ProgReg
+    StreamExec --&gt;|"Load"| StreamReg
+
+    FuncReg -.-&gt;|"Import"| OpsFile
+    ProgReg -.-&gt;|"Import"| ProgFile
+    StreamReg -.-&gt;|"Import"| StreamFile
+
+    StreamEP --&gt;|"SSE Stream"| Status
+    ExecEP --&gt;|"JSON Response"| Canvas
+
+    style Frontend fill:#e1f5ff
+    style Backend fill:#fff4e1
+    style Nodepacks fill:#e8f5e9</div> 
+    <div class="panzoom-info-box panzoom-info-box-bottom panzoom-hidden">
+Hold "Alt" / "Option" to enable pan &amp; zoom
+</div>
+</div>
+<h2 id="backend-architecture">Backend Architecture</h2>
+<h3 id="1-schema-extraction-schema_extractorpy">1. Schema Extraction (<code>schema_extractor.py</code>)</h3>
+<p><strong>Purpose</strong>: Dynamically discover and extract metadata from Python functions and classes in nodepacks.</p>
+<p><strong>Process</strong>:
+1. Scan <code>nodepacks/</code> directory for all <code>ops.py</code>, <code>progress_ops.py</code>, and <code>stream_ops.py</code> files
+2. Load each module dynamically using <code>importlib</code>
+3. For each function in <code>ops.py</code>:
+   - Extract function signature using <code>inspect.signature()</code>
+   - Parse type hints using <code>typing.get_type_hints()</code>
+   - Extract docstrings using <code>inspect.getdoc()</code>
+   - Detect <code>Literal</code> type hints for dropdown UI controls
+   - Build JSON schema with parameters, defaults, and return types
+4. For each class in <code>progress_ops.py</code>:
+   - Extract <code>__call__</code> method signature (skip private classes starting with <code>_</code>)
+   - Parse type hints from <code>__call__</code> method (excluding <code>self</code> parameter)
+   - Extract docstrings from class or <code>__call__</code> method
+   - Detect <code>Literal</code> type hints for dropdown UI controls
+   - Build JSON schema with <code>is_progress_node: true</code> flag
+5. For each class in <code>stream_ops.py</code>:
+   - Extract <code>__call__</code> method signature (skip private classes starting with <code>_</code>)
+   - Parse type hints from <code>__call__</code> method (excluding <code>self</code> parameter)
+   - Extract docstrings from class or <code>__call__</code> method
+   - Detect <code>Literal</code> type hints for dropdown UI controls
+   - Build JSON schema with <code>is_stream_node: true</code> flag</p>
+<p><strong>Output Schema</strong>:
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;function_name&quot;</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;param1&quot;</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;param2&quot;</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;int&quot;</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p">},</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mode&quot;</span><span class="p">,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Literal&quot;</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">      </span><span class="nt">&quot;literal_values&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fast&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;slow&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;medium&quot;</span><span class="p">]</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="nt">&quot;returns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;result&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float&quot;</span><span class="p">}</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">  </span><span class="nt">&quot;docstring&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Function description...&quot;</span><span class="p">,</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span><span class="nt">&quot;filepath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/path/to/ops.py&quot;</span><span class="p">,</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">  </span><span class="nt">&quot;is_progress_node&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h3 id="2-graph-executor-executorpy">2. Graph Executor (<code>executor.py</code>)</h3>
+<p><strong>Purpose</strong>: Execute node graphs in the correct order with dependency resolution.</p>
+<p><strong>Key Components</strong>:
+- <strong>Function Registry</strong>: Dictionary mapping function names to callable functions from <code>ops.py</code>
+- <strong>Progress Class Registry</strong>: Dictionary mapping class names to classes from <code>progress_ops.py</code>
+- <strong>Stream Class Registry</strong>: Dictionary mapping class names to classes from <code>stream_ops.py</code></p>
+<h4 id="topological-sorting-kahns-algorithm">Topological Sorting (Kahn's Algorithm)</h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="mf">1.</span> <span class="n">Calculate</span> <span class="ow">in</span><span class="o">-</span><span class="n">degree</span> <span class="k">for</span> <span class="n">each</span> <span class="n">node</span> <span class="p">(</span><span class="n">count</span> <span class="n">of</span> <span class="n">incoming</span> <span class="n">edges</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="mf">2.</span> <span class="n">Initialize</span> <span class="n">queue</span> <span class="k">with</span> <span class="n">nodes</span> <span class="n">having</span> <span class="ow">in</span><span class="o">-</span><span class="n">degree</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="mf">3.</span> <span class="n">While</span> <span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">empty</span><span class="p">:</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>   <span class="n">a</span><span class="o">.</span> <span class="n">Dequeue</span> <span class="n">node</span> <span class="ow">and</span> <span class="n">add</span> <span class="n">to</span> <span class="nb">sorted</span> <span class="nb">list</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>   <span class="n">b</span><span class="o">.</span> <span class="n">For</span> <span class="n">each</span> <span class="n">neighbor</span><span class="p">,</span> <span class="n">decrease</span> <span class="ow">in</span><span class="o">-</span><span class="n">degree</span> <span class="n">by</span> <span class="mi">1</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>   <span class="n">c</span><span class="o">.</span> <span class="n">If</span> <span class="n">neighbor</span><span class="s1">&#39;s in-degree becomes 0, enqueue it</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="mf">4.</span> <span class="n">If</span> <span class="nb">sorted</span> <span class="nb">list</span> <span class="n">size</span> <span class="err">≠</span> <span class="n">total</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">graph</span> <span class="n">has</span> <span class="n">cycle</span> <span class="p">(</span><span class="n">raises</span> <span class="ne">ValueError</span><span class="p">)</span>
+</span></code></pre></div>
+<h4 id="node-execution-flow">Node Execution Flow</h4>
+<p>The executor supports four node types, each with distinct behavior:</p>
+<ol>
+<li><strong>FunctionNode</strong> (from <code>ops.py</code>):</li>
+<li>Gather inputs: First use node data (default values), then override with connected edge values</li>
+<li>Type conversion: Automatically convert string inputs to appropriate types (int, float, str, bool)</li>
+<li>Function call: Execute corresponding Python function with converted inputs</li>
+<li>
+<p>Store output for downstream nodes</p>
+</li>
+<li>
+<p><strong>VariableNode</strong>:</p>
+</li>
+<li>Output stored value based on <code>variableType</code>: String, Number, Boolean, List, Object, Image</li>
+<li>Support for LLM message formatting:<ul>
+<li><code>llmMessageFormat</code>: Wraps output as <code>{"role": "&lt;role&gt;", "content": "&lt;value&gt;"}</code></li>
+<li><code>textContentFormat</code>: Wraps as <code>{"type": "text", "content": "&lt;value&gt;"}</code> (legacy)</li>
+<li><code>imageContentFormat</code>: For image data URLs with optional LLM message format</li>
+</ul>
+</li>
+<li>
+<p>Type conversion: Parse strings to numbers/booleans, JSON strings to objects, etc.</p>
+</li>
+<li>
+<p><strong>ListNode</strong>:</p>
+</li>
+<li>Aggregates values from multiple connected inputs into a single list</li>
+<li>Input order preserved via indexed handles (<code>input-0</code>, <code>input-1</code>, etc.)</li>
+<li>
+<p>Outputs Python list of collected values</p>
+</li>
+<li>
+<p><strong>ViewNode</strong>:</p>
+</li>
+<li>Receive single input from connected edge</li>
+<li>Store value for display (no processing)</li>
+<li>
+<p>Results returned in API response</p>
+</li>
+<li>
+<p><strong>Progress Nodes</strong> (from <code>progress_ops.py</code>):</p>
+</li>
+<li>Instantiate progress-aware class</li>
+<li>Set up <code>_progress_reporter</code> with callback mechanism</li>
+<li>Execute <code>__call__</code> method in separate thread</li>
+<li>Stream progress updates via callback during execution</li>
+<li>Progress format: <code>{percent: 0.0-1.0, message: "..."}</code></li>
+<li>
+<p>Store output when complete</p>
+</li>
+<li>
+<p><strong>Stream Nodes</strong> (from <code>stream_ops.py</code>):</p>
+</li>
+<li>Instantiate stream-aware class</li>
+<li>Set up <code>_stream_reporter</code> with callback mechanism</li>
+<li>Execute <code>__call__</code> method in separate thread</li>
+<li>Stream text chunks via callback during execution (e.g., LLM token streaming)</li>
+<li>Streaming format: <code>{streaming_text: "accumulated...", streaming_chunk: "new chunk"}</code></li>
+<li>Store final output when complete</li>
+</ol>
+<h4 id="error-handling">Error Handling</h4>
+<ul>
+<li>Type conversion errors (caught and logged)</li>
+<li>Missing functions/classes in registries</li>
+<li>Function execution exceptions (output set to None)</li>
+<li>Thread execution errors for progress and stream nodes</li>
+<li>Cycle detection in graph (raises ValueError)</li>
+</ul>
+<h4 id="environment-variables">Environment Variables</h4>
+<ul>
+<li>Accepts optional <code>env_vars</code> parameter</li>
+<li>Temporarily sets environment variables during execution</li>
+<li>Restores original values after completion</li>
+</ul>
+<h3 id="3-api-endpoints-mainpy">3. API Endpoints (<code>main.py</code>)</h3>
+<p><strong>Initialization</strong>:
+- Uses FastAPI lifespan events to initialize GraphExecutor on startup
+- Loads nodepacks from <code>NODEPACKS_DIR</code> environment variable (default: <code>./nodepacks</code>)
+- Populates function, progress class, and stream class registries on startup</p>
+<p><strong>Endpoints</strong>:</p>
+<h4 id="get">GET <code>/</code></h4>
+<ul>
+<li>Health check endpoint</li>
+<li>Returns: <code>{"message": "Psynapse Backend API"}</code></li>
+</ul>
+<h4 id="get-get_schema">GET <code>/get_schema</code></h4>
+<ul>
+<li>Extracts and returns schemas for all functions/classes in nodepacks</li>
+<li>Calls <code>extract_all_schemas()</code> to scan all <code>ops.py</code>, <code>progress_ops.py</code>, and <code>stream_ops.py</code> files</li>
+<li>Used by frontend on startup to populate node library</li>
+<li>Response: Array of schema objects (see Schema Extraction section)</li>
+</ul>
+<h4 id="post-execute">POST <code>/execute</code></h4>
+<ul>
+<li>Accepts: <code>ExecuteRequest</code> with <code>nodes</code>, <code>edges</code>, and optional <code>env_vars</code></li>
+<li>Executes graph using <code>GraphExecutor.execute_graph()</code></li>
+<li>Returns: ViewNode results only</li>
+<li>Response format: <code>{"results": {"view_node_id": value}}</code></li>
+<li>Traditional single-response execution (no streaming)</li>
+</ul>
+<h4 id="post-executestream">POST <code>/execute/stream</code></h4>
+<ul>
+<li>Accepts: <code>ExecuteRequest</code> with <code>nodes</code>, <code>edges</code>, and optional <code>env_vars</code></li>
+<li>Streams execution status via Server-Sent Events (SSE)</li>
+<li>Provides real-time updates as nodes execute</li>
+<li>Response headers include <code>Cache-Control: no-cache</code> and <code>X-Accel-Buffering: no</code></li>
+<li>Returns status for each node: <code>executing</code> → <code>completed</code>/<code>error</code></li>
+<li>Progress nodes also emit <code>progress</code> status during execution</li>
+<li>Stream nodes emit <code>streaming</code> status with text chunks during execution</li>
+<li>Final event contains ViewNode results</li>
+</ul>
+<p><strong>SSE Event Format:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;add&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;executing&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="s2">&quot;10&quot;</span><span class="p">}}</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;add&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="s2">&quot;10&quot;</span><span class="p">},</span><span class="nt">&quot;output&quot;</span><span class="p">:</span><span class="mi">15</span><span class="p">}</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;done&quot;</span><span class="p">,</span><span class="nt">&quot;results&quot;</span><span class="p">:{</span><span class="nt">&quot;view_node_id&quot;</span><span class="p">:</span><span class="mi">15</span><span class="p">}}</span>
+</span></code></pre></div></p>
+<p><strong>Progress Node Event Format:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_2&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;ProgressOp&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;executing&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">}}</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_2&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;ProgressOp&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;progress&quot;</span><span class="p">,</span><span class="nt">&quot;progress&quot;</span><span class="p">:</span><span class="mf">0.3</span><span class="p">,</span><span class="nt">&quot;progress_message&quot;</span><span class="p">:</span><span class="s2">&quot;Processing item 3/10&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">}}</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_2&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;ProgressOp&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;progress&quot;</span><span class="p">,</span><span class="nt">&quot;progress&quot;</span><span class="p">:</span><span class="mf">0.6</span><span class="p">,</span><span class="nt">&quot;progress_message&quot;</span><span class="p">:</span><span class="s2">&quot;Processing item 6/10&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">}}</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_2&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;ProgressOp&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">},</span><span class="nt">&quot;output&quot;</span><span class="p">:</span><span class="mi">90</span><span class="p">}</span>
+</span></code></pre></div></p>
+<p><strong>Stream Node Event Format:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_3&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;OpenAIChatCompletionStream&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;executing&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">,</span><span class="nt">&quot;messages&quot;</span><span class="p">:[</span><span class="err">...</span><span class="p">]}}</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_3&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;OpenAIChatCompletionStream&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;streaming&quot;</span><span class="p">,</span><span class="nt">&quot;streaming_text&quot;</span><span class="p">:</span><span class="s2">&quot;Hello&quot;</span><span class="p">,</span><span class="nt">&quot;streaming_chunk&quot;</span><span class="p">:</span><span class="s2">&quot;Hello&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">,</span><span class="nt">&quot;messages&quot;</span><span class="p">:[</span><span class="err">...</span><span class="p">]}}</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_3&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;OpenAIChatCompletionStream&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;streaming&quot;</span><span class="p">,</span><span class="nt">&quot;streaming_text&quot;</span><span class="p">:</span><span class="s2">&quot;Hello, world&quot;</span><span class="p">,</span><span class="nt">&quot;streaming_chunk&quot;</span><span class="p">:</span><span class="s2">&quot;, world&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">,</span><span class="nt">&quot;messages&quot;</span><span class="p">:[</span><span class="err">...</span><span class="p">]}}</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_3&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;OpenAIChatCompletionStream&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="s2">&quot;gpt-4&quot;</span><span class="p">,</span><span class="nt">&quot;messages&quot;</span><span class="p">:[</span><span class="err">...</span><span class="p">]},</span><span class="nt">&quot;output&quot;</span><span class="p">:{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="s2">&quot;chatcmpl-...&quot;</span><span class="p">,</span><span class="nt">&quot;choices&quot;</span><span class="p">:[</span><span class="err">...</span><span class="p">]}}</span>
+</span></code></pre></div></p>
+<p><strong>Error Event Format:</strong>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;node_3&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;divide&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;error&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">},</span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="s2">&quot;division by zero&quot;</span><span class="p">}</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="err">da</span><span class="kc">ta</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;error&quot;</span><span class="p">,</span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="s2">&quot;Graph contains a cycle&quot;</span><span class="p">}</span>
+</span></code></pre></div></p>
+<h4 id="cli-commands">CLI Commands</h4>
+<p>The backend includes a Typer CLI with the <code>run</code> command:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>psynapse-backend<span class="w"> </span>run<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--reload<span class="w"> </span>--nodepack-dir<span class="w"> </span>./nodepacks
+</span></code></pre></div></p>
+<h4 id="cors-configuration">CORS Configuration</h4>
+<ul>
+<li>Allows all origins (<code>*</code>) - should be restricted in production</li>
+<li>Allows credentials, all methods, and all headers</li>
+</ul>
+<h2 id="frontend-architecture">Frontend Architecture</h2>
+<h3 id="component-hierarchy">Component Hierarchy</h3>
+<div class="panzoom-box" data-key="alt" id="panzoom0" oncontextmenu="return false;">
+    
+    <nav class="panzoom-nav">
+    <button class="panzoom-info panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm169.8-90.7c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"></path>
+    </svg>
+</button><button class="panzoom-reset panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M125.7 160l50.3 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L48 224c-17.7 0-32-14.3-32-32L16 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z"></path>
+    </svg>
+</button>
+    </nav>
+    <div class="mermaid">graph TD
+    App[App]
+    App --&gt; Editor[PsynapseEditor&lt;br/&gt;ReactFlowProvider]
+
+    Editor --&gt; Library[NodeLibraryPanel]
+    Editor --&gt; Canvas[ReactFlow Canvas]
+    Editor --&gt; Status[StatusPanel]
+
+    Library --&gt; BuiltIn[Built-in Nodes]
+    Library --&gt; FuncNodes[Function Nodes&lt;br/&gt;Dynamic from schemas]
+
+    BuiltIn --&gt; VarNode[VariableNode]
+    BuiltIn --&gt; ListNodeLib[ListNode]
+    BuiltIn --&gt; ViewNodeLib[ViewNode]
+
+    Canvas --&gt; Controls[Controls]
+    Canvas --&gt; MiniMap[MiniMap]
+    Canvas --&gt; Background[Background]
+    Canvas --&gt; CustomNodes[Custom Node Components]
+
+    CustomNodes --&gt; FuncNodeComp[FunctionNode]
+    CustomNodes --&gt; VarNodeComp[VariableNode]
+    CustomNodes --&gt; ListNodeComp[ListNode]
+    CustomNodes --&gt; ViewNodeComp[ViewNode]
+
+    Status --&gt; ExecStatus[ExecutionStatus Array]
+    ExecStatus --&gt; Badge[Node Number Badge]
+    ExecStatus --&gt; Name[Node Name]
+    ExecStatus --&gt; StatusIcon[Status Spinner/Icon]
+    ExecStatus --&gt; Progress[Progress Bar&lt;br/&gt;for Progress Nodes]
+    ExecStatus --&gt; Inputs[Collapsible Inputs]
+    ExecStatus --&gt; Outputs[Outputs/Errors]
+
+    style App fill:#e1f5ff
+    style Editor fill:#b3e5fc
+    style Library fill:#fff9c4
+    style Canvas fill:#c8e6c9
+    style Status fill:#ffccbc</div> 
+    <div class="panzoom-info-box panzoom-info-box-bottom panzoom-hidden">
+Hold "Alt" / "Option" to enable pan &amp; zoom
+</div>
+</div>
+<h3 id="key-components">Key Components</h3>
+<h4 id="1-psynapseeditor-psynapseeditortsx">1. PsynapseEditor (<code>PsynapseEditor.tsx</code>)</h4>
+<p><strong>Responsibilities</strong>:
+- Manage React Flow state (nodes, edges)
+- Handle drag-and-drop from library panel
+- Coordinate graph execution via streaming SSE
+- Update ViewNodes with results
+- Manage execution status and history</p>
+<p><strong>State Management</strong>:
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="o">-</span><span class="w"> </span><span class="nx">nodes</span><span class="o">:</span><span class="w"> </span><span class="kt">Node</span><span class="p">[]</span><span class="w">                    </span><span class="c1">// All nodes on canvas</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="o">-</span><span class="w"> </span><span class="nx">edges</span><span class="o">:</span><span class="w"> </span><span class="kt">Edge</span><span class="p">[]</span><span class="w">                    </span><span class="c1">// All connections</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="o">-</span><span class="w"> </span><span class="nx">reactFlowInstance</span><span class="w">                </span><span class="c1">// React Flow API</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="o">-</span><span class="w"> </span><span class="nx">executing</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="w">               </span><span class="c1">// Execution status flag</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="o">-</span><span class="w"> </span><span class="nx">statusHistory</span><span class="o">:</span><span class="w"> </span><span class="kt">ExecutionStatus</span><span class="p">[]</span><span class="w"> </span><span class="c1">// Real-time execution updates</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="o">-</span><span class="w"> </span><span class="nx">abortExecution</span><span class="o">:</span><span class="w"> </span><span class="p">(()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">)</span><span class="w">     </span><span class="c1">// Cleanup function for aborting SSE stream</span>
+</span></code></pre></div></p>
+<p><strong>Key Functions</strong>:
+- <code>onDrop</code>: Create new node from dragged library item (FunctionNode, VariableNode, ListNode, ViewNode)
+- <code>executeGraph</code>: Serialize graph and stream execution from backend via SSE
+- <code>handleNodeDataChange</code>: Update node input values and properties
+- Node type registry: Maps node types to their React components</p>
+<p><strong>Execution Flow</strong>:
+1. User clicks "Execute" button
+2. Clears previous status history
+3. Calls <code>api.executeGraphStreaming()</code> with status update callback
+4. Receives real-time status updates via SSE
+5. Updates <code>statusHistory</code> state as nodes execute
+6. Shows progress bars for progress nodes
+7. Updates ViewNodes with final results
+8. Handles errors and displays them in StatusPanel</p>
+<h4 id="2-nodelibrarypanel-nodelibrarypaneltsx">2. NodeLibraryPanel (<code>NodeLibraryPanel.tsx</code>)</h4>
+<p><strong>Responsibilities</strong>:
+- Fetch schemas from backend on mount using <code>useSchema</code> hook
+- Display built-in nodes (VariableNode, ListNode, ViewNode)
+- Display draggable function nodes from schemas
+- Handle drag events for all node types</p>
+<p><strong>Built-in Nodes</strong>:
+- <strong>Variable</strong>: Stores values (String, Number, Boolean, List, Object, Image)
+- <strong>List</strong>: Aggregates multiple inputs into array
+- <strong>View</strong>: Displays output values</p>
+<p><strong>Drag Data Format</strong>:
+<div class="language-typescript highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;functionNode&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;variableNode&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;listNode&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;viewNode&#39;</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nx">schema?</span><span class="o">:</span><span class="w"> </span><span class="kt">FunctionSchema</span><span class="w">  </span><span class="c1">// For function nodes</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h4 id="3-functionnode-functionnodetsx">3. FunctionNode (<code>FunctionNode.tsx</code>)</h4>
+<p><strong>Features</strong>:
+- Input handles for each parameter (only if no default value)
+- Input fields with type-appropriate controls:
+  - Text inputs for strings
+  - Number inputs for int/float
+  - Checkboxes for booleans
+  - Dropdowns for Literal types
+- Single output handle
+- Real-time value updates via node data changes</p>
+<p><strong>Styling</strong>:
+- Blue border and handles
+- White background
+- Parameters without defaults show as input handles
+- Parameters with defaults show only in properties panel</p>
+<h4 id="4-variablenode-variablenodetsx">4. VariableNode (<code>VariableNode.tsx</code>)</h4>
+<p><strong>Features</strong>:
+- No input handles (self-contained value storage)
+- Single output handle
+- Type selector: String, Number, Boolean, List, Object, Image
+- Value input appropriate to selected type
+- LLM message formatting options:
+  - <code>llmMessageFormat</code>: Wraps as <code>{"role": "&lt;role&gt;", "content": "&lt;value&gt;"}</code>
+  - Role selector for LLM messages (user, assistant, system)
+- Image upload support with data URL storage</p>
+<p><strong>Styling</strong>:
+- Purple border and handles
+- White background
+- Type-specific input controls</p>
+<h4 id="5-listnode-listnodetsx">5. ListNode (<code>ListNode.tsx</code>)</h4>
+<p><strong>Features</strong>:
+- Multiple indexed input handles (<code>input-0</code>, <code>input-1</code>, etc.)
+- Single output handle
+- Dynamically adds input handles as needed
+- Aggregates all connected inputs into array
+- Preserves input order</p>
+<p><strong>Styling</strong>:
+- Orange border and handles
+- White background
+- Shows number of connected inputs</p>
+<h4 id="6-viewnode-viewnodetsx">6. ViewNode (<code>ViewNode.tsx</code>)</h4>
+<p><strong>Features</strong>:
+- Single input handle
+- Display area for value (supports complex objects/arrays)
+- No output handles
+- Updates after execution with final results
+- JSON pretty-printing for complex values</p>
+<p><strong>Styling</strong>:
+- Green border and handles
+- Light green background
+- Monospace font for values
+- Scrollable content area</p>
+<h4 id="7-statuspanel-statuspaneltsx">7. StatusPanel (<code>StatusPanel.tsx</code>)</h4>
+<p><strong>Features</strong>:
+- Real-time execution monitoring via SSE stream
+- Displays nodes in execution order (numbered badges)
+- Status indicators:
+  - Animated spinner for <code>executing</code> nodes
+  - Progress bar for <code>progress</code> nodes (shows percentage and message)
+  - Streaming text display for <code>streaming</code> nodes (shows accumulated text in real-time)
+  - Green checkmark for <code>completed</code> nodes
+  - Red X for <code>error</code> nodes
+- Collapsible inputs section (click to expand/collapse)
+- Output/error display with JSON pretty-printing
+- Scrollable history
+- Auto-scrolls to latest status update</p>
+<p><strong>Styling</strong>:
+- Fixed 400px width on right side
+- Color-coded status borders:
+  - Blue for executing
+  - Orange for progress
+  - Cyan for streaming
+  - Green for completed
+  - Red for error
+- White cards with colored left borders
+- Monospace font for input/output values</p>
+<p><strong>State Updates</strong>:
+- Receives <code>ExecutionStatus[]</code> from parent PsynapseEditor
+- Updates in real-time as SSE events arrive
+- Shows execution progress visually with progress bars
+- Clears on new execution</p>
+<h3 id="data-flow">Data Flow</h3>
+<h4 id="1-initialization-flow">1. Initialization Flow</h4>
+<div class="panzoom-box" data-key="alt" id="panzoom0" oncontextmenu="return false;">
+    
+    <nav class="panzoom-nav">
+    <button class="panzoom-info panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm169.8-90.7c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"></path>
+    </svg>
+</button><button class="panzoom-reset panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M125.7 160l50.3 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L48 224c-17.7 0-32-14.3-32-32L16 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z"></path>
+    </svg>
+</button>
+    </nav>
+    <div class="mermaid">sequenceDiagram
+    participant User
+    participant Frontend
+    participant useSchema Hook
+    participant Backend
+    participant Nodepacks
+
+    User-&gt;&gt;Frontend: Opens application
+    Frontend-&gt;&gt;useSchema Hook: Mount component
+    useSchema Hook-&gt;&gt;Backend: GET /get_schema
+    Backend-&gt;&gt;Nodepacks: Scan ops.py, progress_ops.py, and stream_ops.py
+    Nodepacks--&gt;&gt;Backend: Function/Class metadata
+    Backend--&gt;&gt;useSchema Hook: Array of schemas
+    useSchema Hook--&gt;&gt;Frontend: Schemas available
+    Frontend-&gt;&gt;Frontend: Populate NodeLibraryPanel
+    User-&gt;&gt;Frontend: Drag nodes onto canvas</div> 
+    <div class="panzoom-info-box panzoom-info-box-bottom panzoom-hidden">
+Hold "Alt" / "Option" to enable pan &amp; zoom
+</div>
+</div>
+<h4 id="2-execution-flow-streaming-sse">2. Execution Flow (Streaming SSE)</h4>
+<div class="panzoom-box" data-key="alt" id="panzoom0" oncontextmenu="return false;">
+    
+    <nav class="panzoom-nav">
+    <button class="panzoom-info panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm169.8-90.7c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"></path>
+    </svg>
+</button><button class="panzoom-reset panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M125.7 160l50.3 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L48 224c-17.7 0-32-14.3-32-32L16 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z"></path>
+    </svg>
+</button>
+    </nav>
+    <div class="mermaid">sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant GraphExecutor
+    participant Nodepacks
+
+    User-&gt;&gt;Frontend: Click "Execute" button
+    Frontend-&gt;&gt;Frontend: Clear previous status history
+    Frontend-&gt;&gt;Frontend: Serialize graph (nodes + edges)
+    Frontend-&gt;&gt;Backend: POST /execute/stream (SSE)
+    Backend-&gt;&gt;GraphExecutor: execute_graph_streaming()
+    GraphExecutor-&gt;&gt;GraphExecutor: Topological sort
+
+    loop For each node in order
+        GraphExecutor-&gt;&gt;Backend: Yield "executing" status
+        Backend--&gt;&gt;Frontend: SSE event: executing
+        Frontend-&gt;&gt;Frontend: Update StatusPanel (show spinner)
+
+        alt Function/Variable/List/View Node
+            GraphExecutor-&gt;&gt;Nodepacks: Call function or process node
+            Nodepacks--&gt;&gt;GraphExecutor: Return result
+            GraphExecutor-&gt;&gt;Backend: Yield "completed" status
+            Backend--&gt;&gt;Frontend: SSE event: completed
+        else Progress Node
+            GraphExecutor-&gt;&gt;Nodepacks: Call progress class __call__
+            loop Progress updates
+                Nodepacks-&gt;&gt;GraphExecutor: Report progress (0.0-1.0)
+                GraphExecutor-&gt;&gt;Backend: Yield "progress" status
+                Backend--&gt;&gt;Frontend: SSE event: progress
+                Frontend-&gt;&gt;Frontend: Update progress bar
+            end
+            Nodepacks--&gt;&gt;GraphExecutor: Return final result
+            GraphExecutor-&gt;&gt;Backend: Yield "completed" status
+            Backend--&gt;&gt;Frontend: SSE event: completed
+        else Stream Node
+            GraphExecutor-&gt;&gt;Nodepacks: Call stream class __call__
+            loop Streaming chunks
+                Nodepacks-&gt;&gt;GraphExecutor: Emit text chunk
+                GraphExecutor-&gt;&gt;Backend: Yield "streaming" status
+                Backend--&gt;&gt;Frontend: SSE event: streaming
+                Frontend-&gt;&gt;Frontend: Update streaming text display
+            end
+            Nodepacks--&gt;&gt;GraphExecutor: Return final result
+            GraphExecutor-&gt;&gt;Backend: Yield "completed" status
+            Backend--&gt;&gt;Frontend: SSE event: completed
+        end
+
+        Frontend-&gt;&gt;Frontend: Update StatusPanel (show result)
+    end
+
+    GraphExecutor-&gt;&gt;Backend: Yield "done" with ViewNode results
+    Backend--&gt;&gt;Frontend: SSE event: done
+    Frontend-&gt;&gt;Frontend: Update ViewNodes with results
+    Frontend-&gt;&gt;Frontend: Mark execution complete</div> 
+    <div class="panzoom-info-box panzoom-info-box-bottom panzoom-hidden">
+Hold "Alt" / "Option" to enable pan &amp; zoom
+</div>
+</div>
+<h4 id="3-node-type-data-flow">3. Node Type Data Flow</h4>
+<p><strong>FunctionNode</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Input: Node data (defaults) + Connected edges (overrides)
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  → Type conversion (str → int/float/bool)
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  → Function execution
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  → Output stored in node_outputs dict
+</span></code></pre></div></p>
+<p><strong>VariableNode</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Input: variableValue + variableType + formatting options
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  → Type conversion based on variableType
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  → Apply LLM message formatting if enabled
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  → Output stored in node_outputs dict
+</span></code></pre></div></p>
+<p><strong>ListNode</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Input: Multiple connected edges with indexed handles (input-0, input-1, ...)
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  → Sort inputs by index
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  → Aggregate into Python list
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  → Output stored in node_outputs dict
+</span></code></pre></div></p>
+<p><strong>ViewNode</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Input: Single connected edge
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  → Pass through value
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  → Store in view_node_results dict
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  → Return in final API response
+</span></code></pre></div></p>
+<p><strong>Progress Node</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Input: Node data + Connected edges
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  → Instantiate progress class
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  → Set up _progress_reporter callback
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  → Execute in separate thread
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  → Yield progress updates (0.0-1.0 + message)
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>  → Store final output in node_outputs dict
+</span></code></pre></div></p>
+<p><strong>Stream Node</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Input: Node data + Connected edges
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  → Instantiate stream class
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  → Set up _stream_reporter callback
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>  → Execute in separate thread
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>  → Yield streaming text chunks (accumulated + chunk)
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>  → Store final output in node_outputs dict
+</span></code></pre></div></p>
+<h2 id="node-graph-execution-details">Node Graph Execution Details</h2>
+<h3 id="example-graph">Example Graph</h3>
+<div class="panzoom-box" data-key="alt" id="panzoom0" oncontextmenu="return false;">
+    
+    <nav class="panzoom-nav">
+    <button class="panzoom-info panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm169.8-90.7c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"></path>
+    </svg>
+</button><button class="panzoom-reset panzoom-button">
+    <svg class="panzoom-icon" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <path d="M125.7 160l50.3 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L48 224c-17.7 0-32-14.3-32-32L16 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 51.2L97.6 97.6c87.5-87.5 229.3-87.5 316.8 0s87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3s-163.8-62.5-226.3 0L125.7 160z"></path>
+    </svg>
+</button>
+    </nav>
+    <div class="mermaid">graph LR
+    V1[VariableNode&lt;br/&gt;value: 5]
+    V2[VariableNode&lt;br/&gt;value: 3]
+    V3[VariableNode&lt;br/&gt;value: 2]
+    V4[VariableNode&lt;br/&gt;value: 4]
+
+    F1[FunctionNode&lt;br/&gt;add]
+    F2[FunctionNode&lt;br/&gt;add]
+    F3[FunctionNode&lt;br/&gt;multiply]
+
+    L1[ListNode]
+
+    View[ViewNode]
+
+    V1 --&gt;|output| F1
+    V2 --&gt;|output| F1
+    V3 --&gt;|output| F2
+    V4 --&gt;|output| F2
+
+    F1 --&gt;|output| F3
+    F2 --&gt;|output| F3
+
+    F1 --&gt;|output| L1
+    F2 --&gt;|output| L1
+
+    F3 --&gt;|output| View
+
+    style V1 fill:#e1bee7
+    style V2 fill:#e1bee7
+    style V3 fill:#e1bee7
+    style V4 fill:#e1bee7
+    style F1 fill:#bbdefb
+    style F2 fill:#bbdefb
+    style F3 fill:#bbdefb
+    style L1 fill:#ffe0b2
+    style View fill:#c8e6c9</div> 
+    <div class="panzoom-info-box panzoom-info-box-bottom panzoom-hidden">
+Hold "Alt" / "Option" to enable pan &amp; zoom
+</div>
+</div>
+<h3 id="execution-steps">Execution Steps</h3>
+<ol>
+<li>
+<p><strong>Topological Sort</strong>:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Order: V1 → V2 → V3 → V4 → F1(add) → F2(add) → L1(list) → F3(multiply) → View
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Sequential Execution</strong>:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>V1: output = 5
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>V2: output = 3
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>V3: output = 2
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>V4: output = 4
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>F1(add): inputs = {a: 5, b: 3} → result = 8
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>F2(add): inputs = {a: 2, b: 4} → result = 6
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>L1(list): inputs = [8, 6] → result = [8, 6]
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>F3(multiply): inputs = {a: 8, b: 6} → result = 48
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>View: input = 48 → display = 48
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>SSE Events Sequence</strong>:
+   <div class="language-json highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1">// Variable nodes</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;V1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;Variable&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;executing&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{}}</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;V1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;Variable&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{},</span><span class="nt">&quot;output&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">}</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1">// ... (V2, V3, V4 similar)</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="c1">// Function nodes</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;F1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;add&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;executing&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">}}</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;F1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;add&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;a&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="nt">&quot;b&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">},</span><span class="nt">&quot;output&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">}</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="c1">// List node</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;L1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;List&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;executing&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;input-0&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="nt">&quot;input-1&quot;</span><span class="p">:</span><span class="mi">6</span><span class="p">}}</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="p">{</span><span class="nt">&quot;node_id&quot;</span><span class="p">:</span><span class="s2">&quot;L1&quot;</span><span class="p">,</span><span class="nt">&quot;node_number&quot;</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">&quot;node_name&quot;</span><span class="p">:</span><span class="s2">&quot;List&quot;</span><span class="p">,</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;completed&quot;</span><span class="p">,</span><span class="nt">&quot;inputs&quot;</span><span class="p">:{</span><span class="nt">&quot;input-0&quot;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="nt">&quot;input-1&quot;</span><span class="p">:</span><span class="mi">6</span><span class="p">},</span><span class="nt">&quot;output&quot;</span><span class="p">:[</span><span class="mi">8</span><span class="p">,</span><span class="mi">6</span><span class="p">]}</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="c1">// Final result</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;done&quot;</span><span class="p">,</span><span class="nt">&quot;results&quot;</span><span class="p">:{</span><span class="nt">&quot;view_node_id&quot;</span><span class="p">:</span><span class="s2">&quot;View&quot;</span><span class="p">,</span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="mi">48</span><span class="p">}}</span>
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Final Response</strong>:
+   <div class="language-json highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="p">{</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">&quot;results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="nt">&quot;View&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">48</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="p">}</span>
+</span></code></pre></div></p>
+</li>
+</ol>
+<h2 id="type-system">Type System</h2>
+<h3 id="supported-types">Supported Types</h3>
+<p>Backend and frontend support these types:</p>
+<h4 id="primitive-types-for-function-parameters">Primitive Types (for Function Parameters):</h4>
+<ul>
+<li><code>int</code>: Integers</li>
+<li><code>float</code>: Floating-point numbers</li>
+<li><code>str</code>: Strings</li>
+<li><code>bool</code>: Booleans</li>
+<li><code>Literal[...]</code>: Dropdown selection (e.g., <code>Literal["fast", "slow"]</code>)</li>
+</ul>
+<h4 id="variable-node-types">Variable Node Types:</h4>
+<ul>
+<li><strong>String</strong>: Text values</li>
+<li><strong>Number</strong>: Integer or floating-point numbers</li>
+<li><strong>Boolean</strong>: True/False values</li>
+<li><strong>List</strong>: JSON array (e.g., <code>[1, 2, 3]</code>)</li>
+<li><strong>Object</strong>: JSON object (e.g., <code>{"key": "value"}</code>)</li>
+<li><strong>Image</strong>: Data URL for images (e.g., <code>data:image/png;base64,...</code>)</li>
+</ul>
+<h4 id="complex-types-via-python-functions">Complex Types (via Python functions):</h4>
+<ul>
+<li><strong>dict</strong>: Python dictionaries (from Object variables or function returns)</li>
+<li><strong>list</strong>: Python lists (from List nodes, List variables, or function returns)</li>
+<li><strong>Any</strong>: Any Python type (used when type hints are missing)</li>
+</ul>
+<h3 id="type-conversion">Type Conversion</h3>
+<p>The executor automatically converts input values for function parameters:
+<div class="language-python highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">if</span> <span class="n">param_type</span> <span class="o">==</span> <span class="nb">float</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    <span class="n">converted_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="k">elif</span> <span class="n">param_type</span> <span class="o">==</span> <span class="nb">int</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    <span class="n">converted_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="k">elif</span> <span class="n">param_type</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>    <span class="n">converted_value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="k">elif</span> <span class="n">param_type</span> <span class="o">==</span> <span class="nb">bool</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>    <span class="n">converted_value</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span></code></pre></div></p>
+<h3 id="llm-message-formatting">LLM Message Formatting</h3>
+<p>Variable nodes support special formatting for LLM integration:</p>
+<p><strong>Standard LLM Message Format</strong> (<code>llmMessageFormat=true</code>):
+<div class="language-json highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="p">{</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello, world!&quot;</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<p><strong>Image Message Format</strong>:
+<div class="language-json highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="p">{</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;image_url&quot;</span><span class="p">,</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">      </span><span class="nt">&quot;image_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data:image/png;base64,...&quot;</span><span class="p">}</span>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<p><strong>Legacy Text Content Format</strong> (<code>textContentFormat=true</code>):
+<div class="language-json highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="p">{</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello, world!&quot;</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="p">}</span>
+</span></code></pre></div></p>
+<h2 id="progress-node-pattern">Progress Node Pattern</h2>
+<p>Progress nodes enable long-running operations to report their status in real-time:</p>
+<h3 id="implementation-pattern">Implementation Pattern</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># In nodepacks/&lt;nodepack&gt;/progress_ops.py</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">_ProgressReporter</span><span class="p">:</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Internal class for progress reporting.&quot;&quot;&quot;</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">total</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Report progress (0.0-1.0) with optional message.&quot;&quot;&quot;</span>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">:</span>
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>            <span class="n">percent</span> <span class="o">=</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span> <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">percent</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>
+</span><span id="__span-23-17"><a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a>
+</span><span id="__span-23-18"><a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyProgressOperation</span><span class="p">:</span>
+</span><span id="__span-23-19"><a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-23-20"><a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a><span class="sd">    A progress-aware operation that reports execution status.</span>
+</span><span id="__span-23-21"><a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-23-22"><a id="__codelineno-23-22" name="__codelineno-23-22" href="#__codelineno-23-22"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-23-23"><a id="__codelineno-23-23" name="__codelineno-23-23" href="#__codelineno-23-23"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_progress_reporter</span> <span class="o">=</span> <span class="n">_ProgressReporter</span><span class="p">()</span>
+</span><span id="__span-23-24"><a id="__codelineno-23-24" name="__codelineno-23-24" href="#__codelineno-23-24"></a>
+</span><span id="__span-23-25"><a id="__codelineno-23-25" name="__codelineno-23-25" href="#__codelineno-23-25"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-23-26"><a id="__codelineno-23-26" name="__codelineno-23-26" href="#__codelineno-23-26"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute operation with progress reporting.&quot;&quot;&quot;</span>
+</span><span id="__span-23-27"><a id="__codelineno-23-27" name="__codelineno-23-27" href="#__codelineno-23-27"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+</span><span id="__span-23-28"><a id="__codelineno-23-28" name="__codelineno-23-28" href="#__codelineno-23-28"></a>            <span class="c1"># Do work...</span>
+</span><span id="__span-23-29"><a id="__codelineno-23-29" name="__codelineno-23-29" href="#__codelineno-23-29"></a>            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span id="__span-23-30"><a id="__codelineno-23-30" name="__codelineno-23-30" href="#__codelineno-23-30"></a>
+</span><span id="__span-23-31"><a id="__codelineno-23-31" name="__codelineno-23-31" href="#__codelineno-23-31"></a>            <span class="c1"># Report progress</span>
+</span><span id="__span-23-32"><a id="__codelineno-23-32" name="__codelineno-23-32" href="#__codelineno-23-32"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_progress_reporter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+</span><span id="__span-23-33"><a id="__codelineno-23-33" name="__codelineno-23-33" href="#__codelineno-23-33"></a>                <span class="n">current</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-23-34"><a id="__codelineno-23-34" name="__codelineno-23-34" href="#__codelineno-23-34"></a>                <span class="n">total</span><span class="o">=</span><span class="n">iterations</span><span class="p">,</span>
+</span><span id="__span-23-35"><a id="__codelineno-23-35" name="__codelineno-23-35" href="#__codelineno-23-35"></a>                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Processing iteration </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">iterations</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-23-36"><a id="__codelineno-23-36" name="__codelineno-23-36" href="#__codelineno-23-36"></a>            <span class="p">)</span>
+</span><span id="__span-23-37"><a id="__codelineno-23-37" name="__codelineno-23-37" href="#__codelineno-23-37"></a>
+</span><span id="__span-23-38"><a id="__codelineno-23-38" name="__codelineno-23-38" href="#__codelineno-23-38"></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Completed </span><span class="si">{</span><span class="n">iterations</span><span class="si">}</span><span class="s2"> iterations&quot;</span>
+</span></code></pre></div>
+<h3 id="threading-model">Threading Model</h3>
+<ul>
+<li>Progress nodes execute in separate threads to avoid blocking</li>
+<li>Progress updates sent via queue from thread to main executor</li>
+<li>Main executor yields SSE events while thread is running</li>
+<li>Errors caught in thread and reported via error status</li>
+</ul>
+<h3 id="frontend-display">Frontend Display</h3>
+<ul>
+<li>Progress nodes show animated progress bar in StatusPanel</li>
+<li>Progress percentage (0-100%) displayed</li>
+<li>Progress message shown below bar</li>
+<li>Real-time updates as operation executes</li>
+</ul>
+<h2 id="stream-node-pattern">Stream Node Pattern</h2>
+<p>Stream nodes enable real-time text streaming for operations like LLM token generation:</p>
+<h3 id="implementation-pattern_1">Implementation Pattern</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># In nodepacks/&lt;nodepack&gt;/stream_ops.py</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">_StreamReporter</span><span class="p">:</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Internal class for stream reporting.&quot;&quot;&quot;</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the callback for stream updates.&quot;&quot;&quot;</span>
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span> <span class="o">=</span> <span class="n">callback</span>
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>
+</span><span id="__span-24-12"><a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">emit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-24-13"><a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Emit a text chunk to the stream.&quot;&quot;&quot;</span>
+</span><span id="__span-24-14"><a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span> <span class="ow">and</span> <span class="n">chunk</span><span class="p">:</span>
+</span><span id="__span-24-15"><a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_callback</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</span><span id="__span-24-16"><a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a>
+</span><span id="__span-24-17"><a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a>
+</span><span id="__span-24-18"><a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStreamOperation</span><span class="p">:</span>
+</span><span id="__span-24-19"><a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-24-20"><a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a><span class="sd">    A stream-aware operation that emits text chunks in real-time.</span>
+</span><span id="__span-24-21"><a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-24-22"><a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-24-23"><a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stream_reporter</span> <span class="o">=</span> <span class="n">_StreamReporter</span><span class="p">()</span>
+</span><span id="__span-24-24"><a id="__codelineno-24-24" name="__codelineno-24-24" href="#__codelineno-24-24"></a>
+</span><span id="__span-24-25"><a id="__codelineno-24-25" name="__codelineno-24-25" href="#__codelineno-24-25"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-24-26"><a id="__codelineno-24-26" name="__codelineno-24-26" href="#__codelineno-24-26"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute operation with streaming output.&quot;&quot;&quot;</span>
+</span><span id="__span-24-27"><a id="__codelineno-24-27" name="__codelineno-24-27" href="#__codelineno-24-27"></a>        <span class="n">result_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-24-28"><a id="__codelineno-24-28" name="__codelineno-24-28" href="#__codelineno-24-28"></a>
+</span><span id="__span-24-29"><a id="__codelineno-24-29" name="__codelineno-24-29" href="#__codelineno-24-29"></a>        <span class="c1"># Example: Process and emit chunks</span>
+</span><span id="__span-24-30"><a id="__codelineno-24-30" name="__codelineno-24-30" href="#__codelineno-24-30"></a>        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">prompt</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+</span><span id="__span-24-31"><a id="__codelineno-24-31" name="__codelineno-24-31" href="#__codelineno-24-31"></a>            <span class="n">processed</span> <span class="o">=</span> <span class="n">word</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+</span><span id="__span-24-32"><a id="__codelineno-24-32" name="__codelineno-24-32" href="#__codelineno-24-32"></a>            <span class="n">result_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">)</span>
+</span><span id="__span-24-33"><a id="__codelineno-24-33" name="__codelineno-24-33" href="#__codelineno-24-33"></a>            <span class="c1"># Emit each chunk as it&#39;s processed</span>
+</span><span id="__span-24-34"><a id="__codelineno-24-34" name="__codelineno-24-34" href="#__codelineno-24-34"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_stream_reporter</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">processed</span><span class="p">)</span>
+</span><span id="__span-24-35"><a id="__codelineno-24-35" name="__codelineno-24-35" href="#__codelineno-24-35"></a>
+</span><span id="__span-24-36"><a id="__codelineno-24-36" name="__codelineno-24-36" href="#__codelineno-24-36"></a>        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result_chunks</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="real-world-example-llm-streaming">Real-World Example: LLM Streaming</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># In nodepacks/llms/stream_ops.py</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">OpenAIChatCompletionStream</span><span class="p">:</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a streaming chat completion request to OpenAI.&quot;&quot;&quot;</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stream_reporter</span> <span class="o">=</span> <span class="n">_StreamReporter</span><span class="p">()</span>
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>
+</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="__span-25-10"><a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+</span><span id="__span-25-11"><a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>        <span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
+</span><span id="__span-25-12"><a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>
+</span><span id="__span-25-13"><a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>        <span class="n">stream</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+</span><span id="__span-25-14"><a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+</span><span id="__span-25-15"><a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>            <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+</span><span id="__span-25-16"><a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>            <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-25-17"><a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>        <span class="p">)</span>
+</span><span id="__span-25-18"><a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>
+</span><span id="__span-25-19"><a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>        <span class="n">accumulated_content</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-25-20"><a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+</span><span id="__span-25-21"><a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a>            <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">choices</span> <span class="ow">and</span> <span class="n">chunk</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">delta</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
+</span><span id="__span-25-22"><a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a>                <span class="n">content</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">delta</span><span class="o">.</span><span class="n">content</span>
+</span><span id="__span-25-23"><a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>                <span class="n">accumulated_content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</span><span id="__span-25-24"><a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>                <span class="c1"># Emit token as it arrives</span>
+</span><span id="__span-25-25"><a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_stream_reporter</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+</span><span id="__span-25-26"><a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>
+</span><span id="__span-25-27"><a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">accumulated_content</span><span class="p">)}</span>
+</span></code></pre></div>
+<h3 id="threading-model_1">Threading Model</h3>
+<ul>
+<li>Stream nodes execute in separate threads to avoid blocking</li>
+<li>Text chunks sent via queue from thread to main executor</li>
+<li>Main executor yields SSE events while thread is running</li>
+<li>Accumulated text tracked for each streaming update</li>
+<li>Errors caught in thread and reported via error status</li>
+</ul>
+<h3 id="frontend-display_1">Frontend Display</h3>
+<ul>
+<li>Stream nodes show real-time text in StatusPanel</li>
+<li>Accumulated text displayed as it arrives</li>
+<li>Typing effect as new chunks append</li>
+<li>Final output shown when streaming completes</li>
+</ul>
+<h2 id="error-handling_1">Error Handling</h2>
+<h3 id="backend-errors">Backend Errors</h3>
+<p><strong>Schema Extraction</strong>:
+- Module loading failures (invalid Python syntax, missing dependencies)
+- Missing type hints (falls back to <code>Any</code> type)
+- Invalid class structures (classes without <code>__call__</code> ignored)</p>
+<p><strong>Graph Execution</strong>:
+- Cycle detection via topological sort (raises <code>ValueError</code>)
+- Missing functions/classes in registries (node skipped, output set to <code>None</code>)
+- Type conversion errors (caught, logged, output set to <code>None</code>)
+- Function execution exceptions (caught, logged, yields error status in streaming)
+- Thread execution errors for progress and stream nodes (caught, yields error status)</p>
+<p><strong>API Errors</strong>:
+- Invalid request format (400 Bad Request)
+- Execution failures (500 Internal Server Error with error details)
+- SSE stream errors (error event with status: "error")</p>
+<h3 id="frontend-errors">Frontend Errors</h3>
+<p><strong>Schema Loading</strong>:
+- Network errors (retries with exponential backoff via useSchema hook)
+- Invalid response format (empty node library displayed)
+- Backend unreachable (error message in console)</p>
+<p><strong>Graph Execution</strong>:
+- Network errors (execution marked as failed)
+- Backend failures (error displayed in StatusPanel)
+- SSE stream interruptions (cleanup via abortExecution callback)
+- Cycle detection (error event displayed)</p>
+<p><strong>User Input</strong>:
+- Invalid type conversions (error shown in node)
+- Missing required parameters (validation in UI)
+- Disconnected required inputs (executed with <code>None</code> value)</p>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<h3 id="backend">Backend</h3>
+<p><strong>Initialization</strong>:
+- Function, progress class, and stream class registries built once on startup
+- Module imports cached by Python's import system
+- Nodepacks directory scanned only during initialization</p>
+<p><strong>Execution</strong>:
+- Topological sort: O(V + E) complexity where V=nodes, E=edges
+- Sequential node execution (no parallelization currently)
+- Type conversion performed once per parameter
+- Environment variables saved/restored efficiently</p>
+<p><strong>Streaming</strong>:
+- SSE events sent immediately as nodes complete
+- No buffering of status updates
+- Progress updates queued and yielded in real-time
+- Thread overhead for progress and stream nodes (one thread per progress/stream node)</p>
+<h3 id="frontend">Frontend</h3>
+<p><strong>Rendering</strong>:
+- React Flow handles large graphs efficiently (virtualization)
+- Memoized node components prevent unnecessary re-renders
+- State updates batched by React for performance</p>
+<p><strong>Execution Monitoring</strong>:
+- StatusPanel updates incrementally (not full re-render)
+- SSE stream parsed and processed efficiently
+- Auto-scroll disabled during user interaction</p>
+<p><strong>Memory Management</strong>:
+- Previous status history cleared before new execution
+- SSE streams properly cleaned up via abortExecution
+- Node components unmount properly on deletion</p>
+<h2 id="extension-points">Extension Points</h2>
+<h3 id="adding-new-node-types">Adding New Node Types</h3>
+<p><strong>Backend</strong> (<code>psynapse_backend/executor.py</code>):
+1. Add new node type handling in <code>execute_graph()</code> and <code>execute_graph_streaming()</code>
+2. Implement execution logic for the node type
+3. Handle inputs/outputs appropriately
+4. Add to node type checks (e.g., <code>elif node_type == "newNodeType"</code>)</p>
+<p><strong>Frontend</strong> (<code>frontend/src/components/</code>):
+1. Create new node component in <code>frontend/src/components/NewNodeType.tsx</code>
+2. Add to <code>nodeTypes</code> registry in <code>PsynapseEditor.tsx</code>
+3. Add to NodeLibraryPanel for drag-and-drop
+4. Update TypeScript types in <code>frontend/src/types/</code></p>
+<h3 id="adding-new-data-types">Adding New Data Types</h3>
+<p><strong>Backend</strong>:
+1. Update type hints in Python functions (e.g., use <code>MyCustomType</code> annotation)
+2. Update <code>get_type_name()</code> in <code>psynapse_backend/schema_extractor.py</code>
+3. Add type conversion logic in executor's <code>execute_graph()</code> methods
+4. Document the type in schema extraction</p>
+<p><strong>Frontend</strong>:
+1. Update input components to handle new type
+2. Add UI controls for the type (if needed)
+3. Update type conversion in node components
+4. Add validation for the new type</p>
+<h3 id="custom-nodepacks">Custom Nodepacks</h3>
+<p><strong>Creating a Nodepack</strong>:
+1. Create directory: <code>nodepacks/my_nodepack/</code>
+2. Add <code>ops.py</code> with type-hinted functions:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_function</span><span class="p">(</span><span class="n">param1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Function description.&quot;&quot;&quot;</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param1</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">param2</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></div>
+3. (Optional) Add <code>progress_ops.py</code> with progress classes:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyProgressOp</span><span class="p">:</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_progress_reporter</span> <span class="o">=</span> <span class="n">_ProgressReporter</span><span class="p">()</span>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>            <span class="c1"># Work...</span>
+</span><span id="__span-27-8"><a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_progress_reporter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">iterations</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Step </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-27-9"><a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a>        <span class="k">return</span> <span class="s2">&quot;Done&quot;</span>
+</span></code></pre></div>
+4. (Optional) Add <code>stream_ops.py</code> with stream classes:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStreamOp</span><span class="p">:</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_stream_reporter</span> <span class="o">=</span> <span class="n">_StreamReporter</span><span class="p">()</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_stream_reporter</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">word</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>        <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span></code></pre></div>
+5. Restart backend or use <code>--nodepack-dir</code> flag
+5. Functions/classes automatically appear in library</p>
+<p><strong>Best Practices</strong>:
+- Always include type hints for all parameters and return values
+- Use <code>Literal</code> types for dropdown selections
+- Provide clear docstrings (shown in UI tooltips)
+- Use default values for optional parameters
+- Test functions independently before integration</p>
+<h2 id="testing">Testing</h2>
+<h3 id="backend-tests">Backend Tests</h3>
+<p>See <code>psynapse_backend/test_backend.py</code> for examples:</p>
+<p><strong>Schema Extraction</strong>:
+- Verify correct parameter extraction
+- Test default value handling
+- Validate <code>Literal</code> type detection
+- Check progress class, stream class, and regular function differentiation</p>
+<p><strong>Graph Execution</strong>:
+- Test topological sort with various graph structures
+- Verify cycle detection (should raise <code>ValueError</code>)
+- Test all node types: FunctionNode, VariableNode, ListNode, ViewNode
+- Validate type conversion accuracy
+- Test progress and stream node threading and callbacks
+- Verify environment variable injection and restoration</p>
+<p><strong>Integration Tests</strong>:
+- End-to-end workflow execution
+- Multi-node graph with complex dependencies
+- Error handling and recovery</p>
+<h3 id="frontend-tests-recommended">Frontend Tests (Recommended)</h3>
+<p><strong>Component Tests</strong>:
+- Node component rendering (FunctionNode, VariableNode, ListNode, ViewNode)
+- StatusPanel updates with different status types
+- NodeLibraryPanel schema loading</p>
+<p><strong>Integration Tests</strong>:
+- Drag-and-drop functionality
+- Edge creation and validation
+- Graph execution flow with SSE
+- Error display and handling</p>
+<p><strong>E2E Tests</strong>:
+- Complete workflow: load → edit → execute → view results
+- Progress and stream node real-time updates
+- Abort execution during progress</p>
+<h2 id="deployment">Deployment</h2>
+<h3 id="docker-compose-recommended">Docker Compose (Recommended)</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># Build and start all services</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>--build
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="c1"># With optional LLM support</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="nv">OPTIONAL_DEPS</span><span class="o">=</span><span class="s2">&quot;llm&quot;</span><span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>--build
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="c1"># Detached mode</span>
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/docker-compose.yml<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<h3 id="backend-deployment">Backend Deployment</h3>
+<p><strong>Development</strong>:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>psynapse-backend<span class="w"> </span>run<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--reload
+</span></code></pre></div></p>
+<p><strong>Production</strong>:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># Using Uvicorn with multiple workers</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>uvicorn<span class="w"> </span>psynapse_backend.main:app<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="c1"># Or via CLI</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>psynapse-backend<span class="w"> </span>run<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
+</span></code></pre></div></p>
+<p><strong>Environment Variables</strong>:
+- <code>NODEPACKS_DIR</code>: Path to nodepacks directory (default: <code>./nodepacks</code>)
+- <code>CORS_ORIGINS</code>: Comma-separated allowed origins (production)</p>
+<h3 id="frontend-deployment">Frontend Deployment</h3>
+<p><strong>Development</strong>:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nb">cd</span><span class="w"> </span>frontend
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>npm<span class="w"> </span>install
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>npm<span class="w"> </span>run<span class="w"> </span>dev
+</span></code></pre></div></p>
+<p><strong>Production Build</strong>:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nb">cd</span><span class="w"> </span>frontend
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>npm<span class="w"> </span>run<span class="w"> </span>build
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>npm<span class="w"> </span>run<span class="w"> </span>preview<span class="w">  </span><span class="c1"># Test production build</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>
+</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="c1"># Deploy dist/ directory with nginx/apache/CDN</span>
+</span></code></pre></div></p>
+<p><strong>Environment Variables</strong>:
+- <code>VITE_API_URL</code>: Backend API URL (default: <code>http://localhost:8000</code>)</p>
+<h3 id="nginx-configuration-example">Nginx Configuration Example</h3>
+<div class="language-nginx highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">your-domain.com</span><span class="p">;</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">    </span><span class="c1"># Frontend</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="w">        </span><span class="kn">root</span><span class="w"> </span><span class="s">/var/www/psynapse/frontend/dist</span><span class="p">;</span>
+</span><span id="__span-34-8"><a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="w">        </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="s">/index.html</span><span class="p">;</span>
+</span><span id="__span-34-9"><a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-34-10"><a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>
+</span><span id="__span-34-11"><a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="w">    </span><span class="c1"># Backend API</span>
+</span><span id="__span-34-12"><a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/api/</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-34-13"><a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:8000/</span><span class="p">;</span>
+</span><span id="__span-34-14"><a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="w">        </span><span class="kn">proxy_http_version</span><span class="w"> </span><span class="mi">1</span><span class="s">.1</span><span class="p">;</span>
+</span><span id="__span-34-15"><a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Upgrade</span><span class="w"> </span><span class="nv">$http_upgrade</span><span class="p">;</span>
+</span><span id="__span-34-16"><a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Connection</span><span class="w"> </span><span class="s">&quot;upgrade&quot;</span><span class="p">;</span>
+</span><span id="__span-34-17"><a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+</span><span id="__span-34-18"><a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a><span class="w">        </span><span class="kn">proxy_cache_bypass</span><span class="w"> </span><span class="nv">$http_upgrade</span><span class="p">;</span>
+</span><span id="__span-34-19"><a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a>
+</span><span id="__span-34-20"><a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a><span class="w">        </span><span class="c1"># For SSE streaming</span>
+</span><span id="__span-34-21"><a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a><span class="w">        </span><span class="kn">proxy_buffering</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+</span><span id="__span-34-22"><a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a><span class="w">        </span><span class="kn">proxy_cache</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+</span><span id="__span-34-23"><a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-34-24"><a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="future-enhancements">Future Enhancements</h2>
+<h3 id="planned-features">Planned Features</h3>
+<ol>
+<li><strong>Workflow Persistence</strong>:</li>
+<li>Save/load workflows to JSON files</li>
+<li>Workflow versioning</li>
+<li>
+<p>Template library</p>
+</li>
+<li>
+<p><strong>Advanced Execution</strong>:</p>
+</li>
+<li>Parallel node execution (where possible)</li>
+<li>Conditional execution (if/else nodes)</li>
+<li>Loop nodes (iterate over lists)</li>
+<li>
+<p>Subgraph nodes (reusable components)</p>
+</li>
+<li>
+<p><strong>Enhanced UI</strong>:</p>
+</li>
+<li>Undo/redo functionality</li>
+<li>Workflow minimap navigation</li>
+<li>Node search and filtering</li>
+<li>Custom node styling</li>
+<li>
+<p>Workflow comments and annotations</p>
+</li>
+<li>
+<p><strong>Validation &amp; Debugging</strong>:</p>
+</li>
+<li>Pre-execution graph validation</li>
+<li>Type checking before execution</li>
+<li>Step-through debugging</li>
+<li>Breakpoints on nodes</li>
+<li>
+<p>Variable inspection</p>
+</li>
+<li>
+<p><strong>Advanced Types</strong>:</p>
+</li>
+<li>Tensor/array types (NumPy, PyTorch)</li>
+<li>DataFrame support (Pandas)</li>
+<li>File path types with file picker</li>
+<li>
+<p>Custom type validators</p>
+</li>
+<li>
+<p><strong>Performance</strong>:</p>
+</li>
+<li>Node result caching/memoization</li>
+<li>Incremental execution (only re-run changed nodes)</li>
+<li>Async execution for I/O-bound operations</li>
+<li>
+<p>WebSocket alternative to SSE</p>
+</li>
+<li>
+<p><strong>Collaboration</strong>:</p>
+</li>
+<li>Multi-user editing (real-time)</li>
+<li>Workflow sharing</li>
+<li>Comment threads on nodes</li>
+<li>
+<p>Execution history</p>
+</li>
+<li>
+<p><strong>Export &amp; Integration</strong>:</p>
+</li>
+<li>Generate standalone Python scripts</li>
+<li>Export as Jupyter notebook</li>
+<li>API endpoint generation from workflows</li>
+<li>CI/CD integration</li>
+</ol>
+<h2 id="conclusion">Conclusion</h2>
+<p>Psynapse provides a flexible, extensible platform for visual programming that combines the power of Python with an intuitive node-based interface. The architecture separates concerns effectively across three main layers:</p>
+<ul>
+<li><strong>Backend</strong>: Robust execution engine with schema introspection</li>
+<li><strong>Frontend</strong>: Interactive visual editor with real-time feedback</li>
+<li><strong>Nodepacks</strong>: Extensible function library system</li>
+</ul>
+<p>Key architectural strengths:
+- <strong>Dynamic Schema Extraction</strong>: Functions automatically become nodes
+- <strong>Real-time Execution Monitoring</strong>: SSE streaming for progress tracking
+- <strong>Type Safety</strong>: Automatic type conversion and validation
+- <strong>Extensibility</strong>: Easy to add new node types and nodepacks
+- <strong>Developer Experience</strong>: Hot reloading, clear error messages, comprehensive docs</p>
+<p>The use of Python's introspection capabilities and React Flow's powerful graph editing features creates a seamless user experience for building and executing complex computational workflows.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.code.copy", "content.code.select", "content.tabs.link", "content.tooltips", "navigation.tracking", "navigation.expand", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+        <script src="../../assets/javascripts/panzoom.min.js"></script>
+      
+        <script src="../../assets/javascripts/zoompan.js"></script>
+      
+    
+  </body>
+</html>
